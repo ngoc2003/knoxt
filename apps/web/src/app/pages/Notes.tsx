@@ -206,7 +206,7 @@ export function Notes() {
             <Input
               type="text"
               value={selectedNote.title}
-              className="text-lg font-semibold border-none shadow-none px-0 focus-visible:ring-0"
+              className="text-lg font-semibold border-none shadow-none focus-visible:ring-0"
               readOnly
             />
           </div>

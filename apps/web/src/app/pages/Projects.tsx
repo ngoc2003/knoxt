@@ -191,7 +191,7 @@ function Column({
   });
 
   return (
-    <div className="flex-1 min-w-0">
+    <div className="flex-1 min-w-0 bg-accent/30 p-2 rounded-md">
       <div className="flex items-center gap-2 mb-4">
         {icon}
         <span className="text-sm font-medium text-gray-700">{title}</span>
