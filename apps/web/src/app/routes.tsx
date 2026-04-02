@@ -6,13 +6,15 @@ import { Notes } from "./pages/Notes";
 import { Finance } from "./pages/Finance";
 import { AIAssistant } from "./pages/AIAssistant";
 import { Settings } from "./pages/Settings";
+import { Landing } from "./pages/Landing";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     Component: Layout,
     children: [
-      { index: true, Component: Dashboard },
+      { index: true, Component: Landing },
+      { path: "dashboard", Component: Dashboard },
       { path: "projects", Component: Projects },
       { path: "notes", Component: Notes },
       { path: "finance", Component: Finance },
