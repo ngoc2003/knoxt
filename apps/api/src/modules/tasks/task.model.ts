@@ -1,0 +1,41 @@
+import {
+  Field,
+  GraphQLISODateTime,
+  ID,
+  Int,
+  ObjectType,
+} from '@nestjs/graphql';
+import { Priority, TaskStatus } from '../../common/enums';
+
+@ObjectType()
+export class Task {
+  @Field(() => ID)
+  id: string;
+
+  @Field()
+  title: string;
+
+  @Field(() => String, { nullable: true })
+  description?: string | null;
+
+  @Field(() => TaskStatus)
+  status: TaskStatus;
+
+  @Field(() => Priority)
+  priority: Priority;
+
+  @Field(() => Int)
+  orderIndex: number;
+
+  @Field(() => ID)
+  projectId: string;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  dueDate?: Date | null;
+
+  @Field(() => GraphQLISODateTime)
+  createdAt: Date;
+
+  @Field(() => GraphQLISODateTime)
+  updatedAt: Date;
+}

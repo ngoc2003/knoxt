@@ -1,159 +1,263 @@
-# Turborepo starter
+# Freelancer Notebook
 
-This Turborepo starter is maintained by the Turborepo core team.
+A comprehensive SaaS platform for freelancers to manage their business operations, built with modern web technologies.
 
-## Using this example
+## Features
 
-Run the following command:
+- **Client Management**: Track customers, projects, and communications
+- **Project & Task Management**: Organize work with projects, tasks, and priorities
+- **Financial Tracking**: Manage income, expenses, invoices, and tax configurations
+- **Note-Taking**: Attach notes to customers, projects, or tasks
+- **AI Assistant**: Integrated AI chat for business assistance
+- **Real-time GraphQL API**: Type-safe, efficient data operations
 
-```sh
-npx create-turbo@latest
-```
+## Tech Stack
 
-## What's inside?
+### Backend (API)
 
-This Turborepo includes the following packages/apps:
+- **NestJS** - Progressive Node.js framework
+- **GraphQL** (Apollo Server) - Code-first API with auto-generated schema
+- **Prisma** - Type-safe database ORM
+- **PostgreSQL** - Primary database
+- **JWT Authentication** - Secure user sessions
+- **bcrypt** - Password hashing
+- **TypeScript** - Static type checking
+
+### Frontend (Web)
+
+- **React** - User interface library
+- **Vite** - Fast build tool and dev server
+- **Apollo Client** - GraphQL client with caching
+- **Tailwind CSS** - Utility-first styling
+- **TypeScript** - Type-safe frontend development
+
+### Infrastructure
+
+- **Turborepo** - Monorepo build system
+- **pnpm** - Fast package manager
+- **ESLint & Prettier** - Code quality and formatting
+
+## Project Structure
 
 ### Apps and Packages
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- `api`: NestJS GraphQL backend with business logic modules
+- `web`: React frontend application
+- `docs`: Next.js documentation site
+- `packages/database`: Prisma schema and database utilities
+- `packages/shared`: Shared TypeScript types and utilities
+- `packages/ui`: Reusable React component library
+- `packages/eslint-config`: ESLint configurations
+- `packages/typescript-config`: TypeScript configurations
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Getting Started
 
-### Utilities
+### Prerequisites
 
-This Turborepo has some additional tools already setup for you:
+- Node.js 18+ and pnpm
+- PostgreSQL database
+- Git
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+### Installation
 
-### Build
+1. **Clone the repository**
 
-To build all apps and packages, run the following command:
+   ```bash
+   git clone https://github.com/ngoc2003/freelancer-notebook.git
+   cd freelancer-notebook
+   ```
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+2. **Install dependencies**
 
-```sh
-cd my-turborepo
-turbo build
+   ```bash
+   pnpm install
+   ```
+
+3. **Setup environment variables**
+
+   ```bash
+   # Copy environment file in the API
+   cp apps/api/.env.example apps/api/.env
+
+   # Copy environment file in the database package
+   cp packages/database/.env.example packages/database/.env
+   ```
+
+4. **Configure your PostgreSQL database**
+
+   ```bash
+   # Update packages/database/.env with your database URL
+   DATABASE_URL="postgresql://username:password@localhost:5432/freelancer_notebook"
+   ```
+
+5. **Setup the database**
+
+   ```bash
+   # Generate Prisma client
+   cd packages/database
+   pnpm prisma generate
+
+   # Run migrations
+   pnpm prisma migrate dev
+   ```
+
+## Development
+
+### Run all services
+
+```bash
+pnpm dev
 ```
 
-Without global `turbo`, use your package manager:
+This starts:
 
-```sh
-cd my-turborepo
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+- API server at http://localhost:3000
+- Web app at http://localhost:3001
+- GraphQL Playground at http://localhost:3000/graphql
+- GraphQL Voyager at http://localhost:3000/voyager
+
+### Run specific services
+
+**API only:**
+
+```bash
+pnpm dev --filter=api
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+**Frontend only:**
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
+```bash
+pnpm dev --filter=web
 ```
 
-Without global `turbo`:
+**Documentation:**
 
-```sh
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```bash
+pnpm dev --filter=docs
 ```
 
-### Develop
+## API Documentation
 
-To develop all apps and packages, run the following command:
+### GraphQL Playground
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Visit http://localhost:3000/graphql to explore the API interactively
 
-```sh
-cd my-turborepo
-turbo dev
+### GraphQL Voyager
+
+Visit http://localhost:3000/voyager for a visual representation of your schema
+
+### Core API Modules
+
+- **Authentication**: `register`, `login` mutations
+- **Users**: User management and profiles
+- **Customers**: Client/customer CRUD operations
+- **Projects**: Project management with customer relationships
+- **Tasks**: Task management with projects, priorities, and status tracking
+- **Notes**: Note-taking system with customer/project associations
+- **Finance**: Income, expense, invoice, and tax management
+- **AI**: Chat sessions with AI assistant
+
+### Example Queries
+
+**Authentication:**
+
+```graphql
+mutation {
+  register(
+    data: {
+      email: "user@example.com"
+      name: "John Doe"
+      password: "password123"
+    }
+  ) {
+    accessToken
+    user {
+      id
+      email
+      name
+    }
+  }
+}
 ```
 
-Without global `turbo`, use your package manager:
+**Customer Management:**
 
-```sh
-cd my-turborepo
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+```graphql
+query {
+  listCustomers(pagination: { skip: 0, take: 10 }) {
+    items {
+      id
+      name
+      email
+      company
+    }
+    total
+  }
+}
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Build & Deploy
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+### Build all packages
 
-```sh
-turbo dev --filter=web
+```bash
+pnpm build
 ```
 
-Without global `turbo`:
+### Build specific package
 
-```sh
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+```bash
+pnpm build --filter=api
+pnpm build --filter=web
 ```
 
-### Remote Caching
+### Production deployment
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+```bash
+# Build for production
+pnpm build
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+# Start API server
+cd apps/api && pnpm start:prod
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
+# Serve web app (after build)
+cd apps/web && pnpm preview
 ```
 
-Without global `turbo`, use your package manager:
+## Testing
 
-```sh
-cd my-turborepo
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+```bash
+# Run all tests
+pnpm test
+
+# Run specific package tests
+pnpm test --filter=api
+pnpm test --filter=web
+
+# Run with coverage
+pnpm test:cov
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## Development Guidelines
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+### Database Changes
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+1. Update Prisma schema in `packages/database/prisma/schema.prisma`
+2. Generate migration: `cd packages/database && pnpm prisma migrate dev`
+3. Regenerate client: `pnpm prisma generate`
 
-```sh
-turbo link
-```
+### Adding New Features
 
-Without global `turbo`:
+1. Create DTOs in the appropriate module
+2. Update GraphQL resolvers and services
+3. Add database models if needed
+4. Write tests for new functionality
 
-```sh
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
+## Contributing
 
-## Useful Links
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)

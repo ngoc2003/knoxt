@@ -10,10 +10,20 @@ import {
   Bell,
   User,
   Users,
+  LogOut,
 } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { useAuth } from "../contexts/AuthContext";
 import LogoSquare from "./LogoSquare";
 import LogoWithText from "./LogoWithText";
 
@@ -29,6 +39,16 @@ const navigation = [
 
 export function Layout() {
   const location = useLocation();
+  const { user, logout } = useAuth();
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((part) => part.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -75,12 +95,12 @@ export function Layout() {
           <div className="flex items-center gap-3">
             <Avatar className="w-9 h-9">
               <AvatarFallback className="bg-indigo-100 text-indigo-600">
-                JD
+                {user ? getUserInitials(user.name) : "U"}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">
-                Ruby Swan
+                {user?.name || "User"}
               </p>
               <p className="text-xs text-gray-500 truncate">Freelancer</p>
             </div>
@@ -110,11 +130,52 @@ export function Layout() {
               <Bell className="w-5 h-5 text-gray-600" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </Button>
-            <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-indigo-100 text-indigo-600">
-                <User className="w-4 h-4" />
-              </AvatarFallback>
-            </Avatar>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full"
+                >
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback className="bg-indigo-100 text-indigo-600">
+                      {user ? (
+                        getUserInitials(user.name)
+                      ) : (
+                        <User className="w-4 h-4" />
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {user?.name || "User"}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email || "user@example.com"}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="cursor-pointer text-red-600 hover:text-red-700"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 

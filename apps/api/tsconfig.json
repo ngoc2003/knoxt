@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["node"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "resolvePackageJsonExports": true,
@@ -15,9 +16,7 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "database/generated/client": [
-        "../../packages/database/generated/client"
-      ]
+      "database/generated/client": ["../../packages/database/generated/client"]
     },
     "incremental": true,
     "skipLibCheck": true,

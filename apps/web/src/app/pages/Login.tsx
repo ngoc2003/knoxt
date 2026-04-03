@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router";
-import { Eye, EyeOff, Mail, Lock, Loader2, CheckCircle2 } from "lucide-react";
+import { Link, useNavigate } from "react-router";
+import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Checkbox } from "../components/ui/checkbox";
 import LogoSquare from "../components/LogoSquare";
+import { useAuth } from "../contexts/AuthContext";
 
 export function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,9 +14,14 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
-    {},
-  );
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    general?: string;
+  }>({});
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -42,11 +48,32 @@ export function Login() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    setErrors({});
+
+    try {
+      await login({ email, password });
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error("Login error:", error);
+
+      // Handle GraphQL errors
+      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+        const graphQLError = error.graphQLErrors[0];
+        if (graphQLError.message.includes("Invalid credentials")) {
+          setErrors({ general: "Invalid email or password" });
+        } else {
+          setErrors({ general: graphQLError.message });
+        }
+      } else if (error.networkError) {
+        setErrors({ general: "Network error. Please try again." });
+      } else {
+        setErrors({
+          general: "An unexpected error occurred. Please try again.",
+        });
+      }
+    } finally {
       setIsLoading(false);
-      // Navigate to dashboard or show success
-    }, 2000);
+    }
   };
 
   return (
@@ -168,6 +195,16 @@ export function Login() {
                 Forgot password?
               </Link>
             </div>
+
+            {/* General Error Message */}
+            {errors.general && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-600 text-sm flex items-center gap-2">
+                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                  {errors.general}
+                </p>
+              </div>
+            )}
 
             {/* Submit Button */}
             <Button

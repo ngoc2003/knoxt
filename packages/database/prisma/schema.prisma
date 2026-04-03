@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/client"
@@ -10,4 +5,310 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum TaskStatus {
+  todo
+  doing
+  done
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+enum CustomerStatus {
+  active
+  inactive
+}
+
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  overdue
+}
+
+enum IncomeStatus {
+  pending
+  received
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  avatarUrl     String?
+  settings      Settings?
+  customers     Customer[]
+  projects      Project[]
+  tasks         Task[]
+  notes         Note[]
+  incomes       Income[]
+  expenses      Expense[]
+  taxConfigs    TaxConfig[]
+  invoices      Invoice[]
+  aiSessions    AiSession[]
+  activityLogs  ActivityLog[]
+  notifications Notification[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+}
+
+model Settings {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  theme     String?
+  locale    String?
+  timezone  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Customer {
+  id        String         @id @default(uuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  name      String
+  email     String?
+  phone     String?
+  company   String?
+  status    CustomerStatus @default(active)
+  projects  Project[]
+  incomes   Income[]
+  invoices  Invoice[]
+  notes     Note[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  deletedAt DateTime?
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  userId      String
+  customerId  String
+  user        User      @relation(fields: [userId], references: [id])
+  customer    Customer  @relation(fields: [customerId], references: [id])
+  name        String
+  description String?
+  tasks       Task[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+}
+
+model Task {
+  id          String       @id @default(uuid())
+  userId      String
+  projectId   String
+  user        User         @relation(fields: [userId], references: [id])
+  project     Project      @relation(fields: [projectId], references: [id])
+  title       String
+  description String?
+  status      TaskStatus   @default(todo)
+  priority    Priority     @default(medium)
+  orderIndex  Int          @default(0)
+  dueDate     DateTime?
+  tags        TaskTagMap[]
+  timeLogs    TaskTimeLog[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+}
+
+model TaskTag {
+  id        String       @id @default(uuid())
+  userId    String
+  name      String
+  color     String?
+  tasks     TaskTagMap[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model TaskTagMap {
+  taskId String
+  tagId  String
+  task   Task    @relation(fields: [taskId], references: [id])
+  tag    TaskTag @relation(fields: [tagId], references: [id])
+
+  @@id([taskId, tagId])
+}
+
+model TaskTimeLog {
+  id        String    @id @default(uuid())
+  taskId    String
+  task      Task      @relation(fields: [taskId], references: [id])
+  startedAt DateTime
+  endedAt   DateTime?
+  duration  Int?
+  note      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Note {
+  id          String       @id @default(uuid())
+  userId      String
+  customerId  String?
+  user        User         @relation(fields: [userId], references: [id])
+  customer    Customer?    @relation(fields: [customerId], references: [id])
+  title       String
+  content     String
+  tags        NoteTagMap[]
+  attachments Attachment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+}
+
+model NoteTag {
+  id        String       @id @default(uuid())
+  userId    String
+  name      String
+  color     String?
+  notes     NoteTagMap[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model NoteTagMap {
+  noteId String
+  tagId  String
+  note   Note    @relation(fields: [noteId], references: [id])
+  tag    NoteTag @relation(fields: [tagId], references: [id])
+
+  @@id([noteId, tagId])
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  noteId    String
+  note      Note     @relation(fields: [noteId], references: [id])
+  url       String
+  filename  String
+  mimeType  String?
+  size      Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Income {
+  id         String       @id @default(uuid())
+  userId     String
+  customerId String
+  invoiceId  String?
+  user       User         @relation(fields: [userId], references: [id])
+  customer   Customer     @relation(fields: [customerId], references: [id])
+  invoice    Invoice?     @relation(fields: [invoiceId], references: [id])
+  amount     Float
+  currency   String       @default("USD")
+  status     IncomeStatus @default(pending)
+  note       String?
+  receivedAt DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model Expense {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Float
+  currency  String   @default("USD")
+  category  String?
+  note      String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TaxConfig {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  rate      Float
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Invoice {
+  id         String        @id @default(uuid())
+  userId     String
+  customerId String
+  user       User          @relation(fields: [userId], references: [id])
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  items      InvoiceItem[]
+  incomes    Income[]
+  status     InvoiceStatus @default(draft)
+  total      Float         @default(0)
+  notes      String?
+  issuedAt   DateTime?
+  dueAt      DateTime?
+  paidAt     DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  description String
+  quantity    Int
+  unitPrice   Float
+  total       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AiSession {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  title     String?
+  messages  AiMessage[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model AiMessage {
+  id        String    @id @default(uuid())
+  sessionId String
+  session   AiSession @relation(fields: [sessionId], references: [id])
+  role      String
+  content   String
+  createdAt DateTime  @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  entity    String?
+  entityId  String?
+  meta      Json?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

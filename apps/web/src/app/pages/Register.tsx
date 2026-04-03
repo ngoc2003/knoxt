@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   Eye,
   EyeOff,
@@ -13,6 +13,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import LogoSquare from "../components/LogoSquare";
+import { useAuth } from "../contexts/AuthContext";
 
 export function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -29,7 +30,11 @@ export function Register() {
     email?: string;
     password?: string;
     confirmPassword?: string;
+    general?: string;
   }>({});
+
+  const { register } = useAuth();
+  const navigate = useNavigate();
 
   const validateForm = () => {
     const newErrors: {
@@ -73,11 +78,36 @@ export function Register() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    setErrors({});
+
+    try {
+      await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error("Registration error:", error);
+
+      // Handle GraphQL errors
+      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+        const graphQLError = error.graphQLErrors[0];
+        if (graphQLError.message.includes("Email already in use")) {
+          setErrors({ general: "An account with this email already exists" });
+        } else {
+          setErrors({ general: graphQLError.message });
+        }
+      } else if (error.networkError) {
+        setErrors({ general: "Network error. Please try again." });
+      } else {
+        setErrors({
+          general: "An unexpected error occurred. Please try again.",
+        });
+      }
+    } finally {
       setIsLoading(false);
-      // Navigate to dashboard or show success
-    }, 2000);
+    }
   };
 
   const updateField = (field: string, value: string) => {
@@ -305,6 +335,16 @@ export function Register() {
                   </p>
                 )}
             </div>
+
+            {/* General Error Message */}
+            {errors.general && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-600 text-sm flex items-center gap-2">
+                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                  {errors.general}
+                </p>
+              </div>
+            )}
 
             {/* Submit Button */}
             <Button
