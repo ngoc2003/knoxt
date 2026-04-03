@@ -123,7 +123,7 @@ Remember to set aside 30% of each invoice for taxes. Would you like me to set up
 - Contributions are tax-deductible and can significantly reduce your liability
 
 **2. Track EVERYTHING**
-- Use Freelancer Notebook to record every business expense
+- Use Taskio to record every business expense
 - Even small purchases add up over the year
 
 **3. Quarterly Estimated Taxes**

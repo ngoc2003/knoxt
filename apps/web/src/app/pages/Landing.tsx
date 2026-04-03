@@ -27,9 +27,7 @@ export function Landing() {
               <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
                 <span className="font-bold text-white text-sm">FN</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">
-                Freelancer Notebook
-              </span>
+              <span className="text-xl font-bold text-gray-900">Taskio</span>
             </div>
 
             <div className="hidden md:flex items-center gap-8">
@@ -87,9 +85,9 @@ export function Landing() {
             </h1>
 
             <p className="text-xl text-gray-600 mb-10 leading-relaxed">
-              Freelancer Notebook combines productivity tools, tax management,
-              and AI assistance to help freelancers stay organized, save on
-              taxes, and grow their business.
+              Taskio combines productivity tools, tax management, and AI
+              assistance to help freelancers stay organized, save on taxes, and
+              grow their business.
             </p>
 
             <div className="flex items-center justify-center gap-4">
@@ -446,7 +444,7 @@ export function Landing() {
                 name: "Sarah Johnson",
                 role: "Graphic Designer",
                 content:
-                  "Freelancer Notebook transformed how I manage my freelance business. The tax features alone have saved me thousands!",
+                  "Taskio transformed how I manage my freelance business. The tax features alone have saved me thousands!",
                 rating: 5,
               },
               {
@@ -618,7 +616,7 @@ export function Landing() {
           </h2>
           <p className="text-xl text-indigo-100 mb-10">
             Join thousands of freelancers who are saving time, reducing taxes,
-            and growing their income with Freelancer Notebook.
+            and growing their income with Taskio.
           </p>
           <div className="flex items-center justify-center gap-4">
             <Link to="/dashboard">
@@ -649,9 +647,7 @@ export function Landing() {
                 <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
                   <span className="font-bold text-white text-sm">FN</span>
                 </div>
-                <span className="text-lg font-bold text-white">
-                  Freelancer Notebook
-                </span>
+                <span className="text-lg font-bold text-white">Taskio</span>
               </div>
               <p className="text-sm">
                 The all-in-one productivity and tax platform for freelancers.
@@ -733,7 +729,7 @@ export function Landing() {
           </div>
 
           <div className="border-t border-gray-800 pt-8 text-sm text-center">
-            <p>&copy; 2026 Freelancer Notebook. All rights reserved.</p>
+            <p>&copy; 2026 Taskio. All rights reserved.</p>
           </div>
         </div>
       </footer>

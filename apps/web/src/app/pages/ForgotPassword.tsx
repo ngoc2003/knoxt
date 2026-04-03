@@ -47,9 +47,7 @@ export function ForgotPassword() {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-2xl mb-4">
               <span className="text-2xl font-bold text-white">FN</span>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Freelancer Notebook
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900">Taskio</h1>
           </div>
 
           {/* Success Card */}
@@ -103,9 +101,7 @@ export function ForgotPassword() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-2xl mb-4">
             <span className="text-2xl font-bold text-white">FN</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Freelancer Notebook
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">Taskio</h1>
         </div>
 
         {/* Card */}
