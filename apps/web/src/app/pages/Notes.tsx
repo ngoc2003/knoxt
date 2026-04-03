@@ -36,7 +36,7 @@ const notes: Note[] = [
     content: `# Client Meeting Notes - Acme Corp
 
 ## Attendees
-- John Doe (Me)
+- Ruby Swan (Me)
 - Sarah Johnson (Acme Corp)
 - Mike Chen (Acme Corp)
 
@@ -86,7 +86,15 @@ Follow up next week with design concepts.`,
   },
 ];
 
-const allTags = ["client", "meeting", "tax", "finance", "ideas", "projects", "personal"];
+const allTags = [
+  "client",
+  "meeting",
+  "tax",
+  "finance",
+  "ideas",
+  "projects",
+  "personal",
+];
 
 export function Notes() {
   const [selectedNote, setSelectedNote] = useState(notes[0]);
@@ -95,7 +103,7 @@ export function Notes() {
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
   };
 

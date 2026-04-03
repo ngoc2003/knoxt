@@ -15,6 +15,7 @@ import {
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import LogoSquare from "../components/LogoSquare";
 
 export function Landing() {
   return (
@@ -24,9 +25,8 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-                <span className="font-bold text-white text-sm">FN</span>
-              </div>
+              <LogoSquare />
+
               <span className="text-xl font-bold text-gray-900">Taskio</span>
             </div>
 
@@ -97,12 +97,6 @@ export function Landing() {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
-              <Button
-                variant="outline"
-                className="border-gray-300 text-gray-700 text-lg px-8 py-6"
-              >
-                Watch Demo
-              </Button>
             </div>
 
             <p className="text-sm text-gray-500 mt-6">
@@ -644,9 +638,8 @@ export function Landing() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-                  <span className="font-bold text-white text-sm">FN</span>
-                </div>
+                <LogoSquare />
+
                 <span className="text-lg font-bold text-white">Taskio</span>
               </div>
               <p className="text-sm">

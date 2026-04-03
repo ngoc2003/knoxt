@@ -138,7 +138,7 @@ export function CustomerModal({
             <Input
               id="name"
               type="text"
-              placeholder="John Doe"
+              placeholder="Ruby Swan"
               value={formData.name}
               onChange={(e) => updateField("name", e.target.value)}
               className={`${

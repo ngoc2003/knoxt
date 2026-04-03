@@ -14,6 +14,8 @@ import {
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
+import LogoSquare from "./LogoSquare";
+import LogoWithText from "./LogoWithText";
 
 const navigation = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -33,14 +35,7 @@ export function Layout() {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-              <span className="font-semibold text-white text-sm">FC</span>
-            </div>
-            <span className="font-semibold text-gray-900">Freelacer Notebook</span>
-          </div>
-        </div>
+        <LogoWithText />
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4">
@@ -58,7 +53,7 @@ export function Layout() {
                   <Link
                     to={item.path}
                     className={`
-                      flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                      flex items-center gap-3 p-3 rounded-md transition-colors
                       ${
                         isActive
                           ? "bg-indigo-50 text-indigo-600"
@@ -85,7 +80,7 @@ export function Layout() {
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">
-                John Doe
+                Ruby Swan
               </p>
               <p className="text-xs text-gray-500 truncate">Freelancer</p>
             </div>

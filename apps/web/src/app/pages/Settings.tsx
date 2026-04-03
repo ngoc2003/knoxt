@@ -2,7 +2,12 @@ import { Save } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
 import { Card } from "../components/ui/card";
 import {
   Select,
@@ -84,7 +89,7 @@ export function Settings() {
                   <Label htmlFor="business">Business Name (Optional)</Label>
                   <Input
                     id="business"
-                    defaultValue="John Doe Consulting"
+                    defaultValue="Ruby Swan Consulting"
                     className="bg-gray-50 border-gray-200"
                   />
                 </div>
@@ -178,7 +183,9 @@ export function Settings() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="single">Single</SelectItem>
-                      <SelectItem value="married">Married Filing Jointly</SelectItem>
+                      <SelectItem value="married">
+                        Married Filing Jointly
+                      </SelectItem>
                       <SelectItem value="married-separate">
                         Married Filing Separately
                       </SelectItem>

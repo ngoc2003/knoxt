@@ -4,6 +4,7 @@ import { Mail, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import LogoSquare from "../components/LogoSquare";
 
 export function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -44,9 +45,11 @@ export function ForgotPassword() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-2xl mb-4">
-              <span className="text-2xl font-bold text-white">FN</span>
-            </div>
+            <img
+              src="/assets/logo-square.png"
+              alt="Taskio Logo"
+              className="mx-auto mb-4 w-16 h-16"
+            />
             <h1 className="text-3xl font-bold text-gray-900">Taskio</h1>
           </div>
 
@@ -98,9 +101,7 @@ export function ForgotPassword() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-2xl mb-4">
-            <span className="text-2xl font-bold text-white">FN</span>
-          </div>
+          <LogoSquare />
           <h1 className="text-3xl font-bold text-gray-900">Taskio</h1>
         </div>
 
