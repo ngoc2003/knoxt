@@ -54,7 +54,7 @@ export function Landing() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Link to="/dashboard">
+              <Link to="/login">
                 <Button variant="ghost" className="text-gray-700">
                   Sign In
                 </Button>

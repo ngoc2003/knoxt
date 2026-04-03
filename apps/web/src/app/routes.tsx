@@ -1,19 +1,37 @@
 import { createBrowserRouter } from "react-router";
 import { Layout } from "./components/Layout";
+import { Landing } from "./pages/Landing";
+import { Login } from "./pages/Login";
+import { Register } from "./pages/Register";
+import { ForgotPassword } from "./pages/ForgotPassword";
 import { Dashboard } from "./pages/Dashboard";
 import { Projects } from "./pages/Projects";
 import { Notes } from "./pages/Notes";
 import { Finance } from "./pages/Finance";
 import { AIAssistant } from "./pages/AIAssistant";
 import { Settings } from "./pages/Settings";
-import { Landing } from "./pages/Landing";
 
 export const router = createBrowserRouter([
   {
     path: "/",
+    Component: Landing,
+  },
+  {
+    path: "/login",
+    Component: Login,
+  },
+  {
+    path: "/register",
+    Component: Register,
+  },
+  {
+    path: "/forgot-password",
+    Component: ForgotPassword,
+  },
+  {
+    path: "/",
     Component: Layout,
     children: [
-      { index: true, Component: Landing },
       { path: "dashboard", Component: Dashboard },
       { path: "projects", Component: Projects },
       { path: "notes", Component: Notes },
