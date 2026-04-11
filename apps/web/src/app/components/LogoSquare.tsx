@@ -1,7 +1,20 @@
-import React from "react";
+import { cn } from "./ui/utils";
 
-const LogoSquare = () => {
-  return <img src="/logo-square.png" alt="Taskio Logo" className="w-12 h-12" />;
+const LogoSquare = ({
+  onClick,
+  className,
+}: {
+  onClick?: () => void;
+  className?: string;
+}) => {
+  return (
+    <img
+      src="/logo-square.png"
+      alt="Taskio Logo"
+      className={cn("w-12 h-12", className)}
+      onClick={onClick}
+    />
+  );
 };
 
 export default LogoSquare;

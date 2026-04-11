@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -10,83 +12,58 @@ import { useAuth } from "../contexts/AuthContext";
 
 export function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{
-    email?: string;
-    password?: string;
-    general?: string;
-  }>({});
-
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const validateForm = () => {
-    const newErrors: { email?: string; password?: string } = {};
-
-    if (!email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Please enter a valid email";
-    }
-
-    if (!password) {
-      newErrors.password = "Password is required";
-    } else if (password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-    setErrors({});
-
-    try {
-      await login({ email, password });
-      navigate("/dashboard");
-    } catch (error: any) {
-      console.error("Login error:", error);
-
-      // Handle GraphQL errors
-      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
-        const graphQLError = error.graphQLErrors[0];
-        if (graphQLError.message.includes("Invalid credentials")) {
-          setErrors({ general: "Invalid email or password" });
-        } else {
-          setErrors({ general: graphQLError.message });
-        }
-      } else if (error.networkError) {
-        setErrors({ general: "Network error. Please try again." });
-      } else {
-        setErrors({
-          general: "An unexpected error occurred. Please try again.",
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+      rememberMe: false,
+    },
+    validationSchema: Yup.object({
+      email: Yup.string()
+        .email("Please enter a valid email")
+        .required("Email is required"),
+      password: Yup.string()
+        .min(6, "Password must be at least 6 characters")
+        .required("Password is required"),
+    }),
+    onSubmit: async (values, { setSubmitting, setErrors }) => {
+      try {
+        await login({
+          email: values.email,
+          password: values.password,
         });
+        navigate("/dashboard");
+      } catch (error: any) {
+        console.log("Login error:", error);
+        if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+          const graphQLError = error.graphQLErrors[0];
+          if (graphQLError.message.includes("Invalid credentials")) {
+            setErrors({ password: "Invalid email or password" });
+          } else {
+            setErrors({ email: graphQLError.message });
+          }
+        } else if (error.networkError) {
+          setErrors({ email: "Network error. Please try again." });
+        } else {
+          setErrors({ email: "An unexpected error occurred." });
+        }
+      } finally {
+        setSubmitting(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-blue-50/50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <LogoSquare />
+        <LogoSquare
+          onClick={() => navigate("/")}
+          className="w-24 h-24 mx-auto mb-8"
+        />
 
-          <h1 className="text-3xl font-bold text-gray-900">Taskio</h1>
-        </div>
-
-        {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">
@@ -95,8 +72,7 @@ export function Login() {
             <p className="text-gray-600">Login to your account</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email Input */}
+          <form onSubmit={formik.handleSubmit} className="space-y-5">
             <div>
               <Label htmlFor="email" className="text-gray-700 mb-2 block">
                 Email
@@ -105,30 +81,26 @@ export function Login() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (errors.email)
-                      setErrors({ ...errors, email: undefined });
-                  }}
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   className={`pl-10 h-12 rounded-lg border ${
-                    errors.email
+                    formik.touched.email && formik.errors.email
                       ? "border-red-500 focus-visible:ring-red-500"
                       : "border-gray-300 focus-visible:ring-blue-500"
                   }`}
                 />
               </div>
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1.5 flex items-center gap-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                  {errors.email}
+              {formik.touched.email && formik.errors.email && (
+                <p className="text-red-500 text-sm mt-1.5">
+                  {formik.errors.email}
                 </p>
               )}
             </div>
 
-            {/* Password Input */}
             <div>
               <Label htmlFor="password" className="text-gray-700 mb-2 block">
                 Password
@@ -137,16 +109,14 @@ export function Login() {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (errors.password)
-                      setErrors({ ...errors, password: undefined });
-                  }}
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   className={`pl-10 pr-10 h-12 rounded-lg border ${
-                    errors.password
+                    formik.touched.password && formik.errors.password
                       ? "border-red-500 focus-visible:ring-red-500"
                       : "border-gray-300 focus-visible:ring-blue-500"
                   }`}
@@ -154,7 +124,7 @@ export function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -163,26 +133,24 @@ export function Login() {
                   )}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-red-500 text-sm mt-1.5 flex items-center gap-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                  {errors.password}
+              {formik.touched.password && formik.errors.password && (
+                <p className="text-red-500 text-sm mt-1.5">
+                  {formik.errors.password}
                 </p>
               )}
             </div>
 
-            {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Checkbox
-                  id="remember"
-                  checked={rememberMe}
+                  id="rememberMe"
+                  checked={formik.values.rememberMe}
                   onCheckedChange={(checked) =>
-                    setRememberMe(checked as boolean)
+                    formik.setFieldValue("rememberMe", checked)
                   }
                 />
                 <label
-                  htmlFor="remember"
+                  htmlFor="rememberMe"
                   className="text-sm text-gray-700 cursor-pointer"
                 >
                   Remember me
@@ -190,29 +158,18 @@ export function Login() {
               </div>
               <Link
                 to="/forgot-password"
-                className="text-sm text-blue-500 hover:text-blue-600 font-medium transition-colors"
+                className="text-sm text-blue-500 hover:text-blue-600 font-medium"
               >
                 Forgot password?
               </Link>
             </div>
 
-            {/* General Error Message */}
-            {errors.general && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-red-600 text-sm flex items-center gap-2">
-                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                  {errors.general}
-                </p>
-              </div>
-            )}
-
-            {/* Submit Button */}
             <Button
               type="submit"
-              disabled={isLoading}
-              className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              disabled={formik.isSubmitting}
+              className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium disabled:bg-gray-300"
             >
-              {isLoading ? (
+              {formik.isSubmitting ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   Logging in...
@@ -223,32 +180,17 @@ export function Login() {
             </Button>
           </form>
 
-          {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-gray-600 text-sm">
               Don't have an account?{" "}
               <Link
                 to="/register"
-                className="text-blue-500 hover:text-blue-600 font-medium transition-colors"
+                className="text-blue-500 hover:text-blue-600 font-medium"
               >
                 Sign up
               </Link>
             </p>
           </div>
-        </div>
-
-        {/* Additional Info */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            By continuing, you agree to our{" "}
-            <a href="#" className="text-gray-700 hover:text-gray-900 underline">
-              Terms
-            </a>{" "}
-            and{" "}
-            <a href="#" className="text-gray-700 hover:text-gray-900 underline">
-              Privacy Policy
-            </a>
-          </p>
         </div>
       </div>
     </div>

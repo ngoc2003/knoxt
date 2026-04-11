@@ -5,7 +5,8 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { useMutation, useQuery } from "@apollo/client/react";
+import { useQuery, useMutation } from "@apollo/client/react"; // Cleaned up import
+
 import {
   LOGIN_MUTATION,
   REGISTER_MUTATION,
@@ -43,81 +44,52 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loginMutation] = useMutation(LOGIN_MUTATION);
   const [registerMutation] = useMutation(REGISTER_MUTATION);
 
-  // Check for existing user on app load
-  const { loading: userQueryLoading } = useQuery(GET_CURRENT_USER_QUERY, {
-    skip: !localStorage.getItem("accessToken"),
-    // onCompleted: (data) => {
-    //   if (data?.me) {
-    //     setUser(data.me);
-    //   }
-    //   setAuthLoading(false);
-    // },
-    // onError: (error) => {
-    //   console.error("Error fetching current user:", error);
-    //   // Clear invalid token
-    //   localStorage.removeItem("accessToken");
-    //   localStorage.removeItem("currentUser");
-    //   setAuthLoading(false);
-    // },
+  // Modern Apollo useQuery: Handle results in useEffect or via 'data'
+  const { data, loading: queryLoading, error } = useQuery(GET_CURRENT_USER_QUERY, {
+    skip: typeof window !== "undefined" && !localStorage.getItem("accessToken"),
   });
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    const storedUser = localStorage.getItem("currentUser");
-
-    if (token && storedUser && !userQueryLoading) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error("Error parsing stored user:", error);
-        localStorage.removeItem("currentUser");
-      }
+    if (data?.me) {
+      setUser(data.me);
+      localStorage.setItem("currentUser", JSON.stringify(data.me));
+    }
+    
+    if (error) {
+      console.error("Auth error:", error);
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("currentUser");
+      setUser(null);
     }
 
-    if (!token) {
+    // Set loading to false once the query finishes (or if skipped)
+    if (!queryLoading) {
       setAuthLoading(false);
     }
-  }, [userQueryLoading]);
+  }, [data, error, queryLoading]);
 
   const login = async (data: LoginInput): Promise<AuthResponse> => {
-    try {
-      const result = await loginMutation({
-        variables: { data },
-      });
-
-      //   if (result.data?.login) {
-      //     const authResponse = result.data.login;
-      //     localStorage.setItem("accessToken", authResponse.accessToken);
-      //     localStorage.setItem("currentUser", JSON.stringify(authResponse.user));
-      //     setUser(authResponse.user);
-      //     return authResponse;
-      //   }
-      throw new Error("Login failed");
-    } catch (error) {
-      console.error("Login error:", error);
-      throw error;
+    const result = await loginMutation({ variables: { data } });
+    if (result.data?.login) {
+      const authResponse = result.data.login;
+      localStorage.setItem("accessToken", authResponse.accessToken);
+      localStorage.setItem("currentUser", JSON.stringify(authResponse.user));
+      setUser(authResponse.user);
+      return authResponse;
     }
+    throw new Error("Login failed");
   };
 
   const register = async (data: RegisterInput): Promise<AuthResponse> => {
-    try {
-      const result = await registerMutation({
-        variables: { data },
-      });
-
-      //   if (result.data?.register) {
-      //     const authResponse = result.data.register;
-      //     localStorage.setItem("accessToken", authResponse.accessToken);
-      //     localStorage.setItem("currentUser", JSON.stringify(authResponse.user));
-      //     setUser(authResponse.user);
-      //     return authResponse;
-      //   }
-      throw new Error("Registration failed");
-    } catch (error) {
-      console.error("Registration error:", error);
-      throw error;
+    const result = await registerMutation({ variables: { data } });
+    if (result.data?.register) {
+      const authResponse = result.data.register;
+      localStorage.setItem("accessToken", authResponse.accessToken);
+      localStorage.setItem("currentUser", JSON.stringify(authResponse.user));
+      setUser(authResponse.user);
+      return authResponse;
     }
+    throw new Error("Registration failed");
   };
 
   const logout = () => {
@@ -129,7 +101,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const value = {
     user,
-    loading: authLoading || userQueryLoading,
+    loading: authLoading,
     login,
     register,
     logout,

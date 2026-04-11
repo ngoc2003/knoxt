@@ -10,7 +10,9 @@ import {
   Flag,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { ProjectModal } from "../components/ProjectModal";
 
 type Priority = "low" | "medium" | "high";
 type Status = "todo" | "doing" | "done";
@@ -190,7 +192,7 @@ function Column({
   });
 
   return (
-    <div className="flex-1 min-w-0 bg-accent/30 p-2 rounded-md">
+    <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 mb-4">
         {icon}
         <span className="text-sm font-medium text-gray-700">{title}</span>
@@ -215,6 +217,7 @@ function Column({
 
 function ProjectsContent() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
 
   const moveTask = (taskId: string, newStatus: Status) => {
     setTasks((prevTasks) =>
@@ -222,6 +225,11 @@ function ProjectsContent() {
         task.id === taskId ? { ...task, status: newStatus } : task,
       ),
     );
+  };
+
+  const handleSaveProject = (projectData: any) => {
+    console.log("Project saved:", projectData);
+    // In real app, this would create a new project
   };
 
   const todoTasks = tasks.filter((t) => t.status === "todo");
@@ -238,9 +246,12 @@ function ProjectsContent() {
             Manage your tasks with drag & drop
           </p>
         </div>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+        <Button
+          onClick={() => setIsProjectModalOpen(true)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white"
+        >
           <Plus className="w-4 h-4 mr-2" />
-          New Task
+          New Project
         </Button>
       </div>
 
@@ -274,6 +285,13 @@ function ProjectsContent() {
           badgeClass="bg-green-50 text-green-600"
         />
       </div>
+
+      {/* Project Modal */}
+      <ProjectModal
+        isOpen={isProjectModalOpen}
+        onClose={() => setIsProjectModalOpen(false)}
+        onSave={handleSaveProject}
+      />
     </div>
   );
 }

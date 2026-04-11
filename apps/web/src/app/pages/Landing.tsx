@@ -16,8 +16,10 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import LogoSquare from "../components/LogoSquare";
+import { useAuth } from "../contexts/AuthContext";
 
 export function Landing() {
+  const { user } = useAuth()
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
@@ -52,17 +54,21 @@ export function Landing() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Link to="/login">
-                <Button variant="ghost" className="text-gray-700">
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/dashboard">
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                  Get Started
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+              {
+                !user ? (
+                  <Link to="/login">
+                    <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                      Sign In
+                    </Button>
+                  </Link>) : (
+                  <Link to="/dashboard">
+                    <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                      Go to Dashboard
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                )
+              }
             </div>
           </div>
         </div>
