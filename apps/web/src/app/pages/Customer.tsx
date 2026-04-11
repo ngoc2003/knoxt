@@ -39,8 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { CustomerModal } from "../components/CustomerModal";
-import { DeleteConfirmDialog } from "../components/DeleteConfirmDialog";
+import { CustomerModal, DeleteConfirmDialog } from "../components/modal";
 
 interface Customer {
   id: string;

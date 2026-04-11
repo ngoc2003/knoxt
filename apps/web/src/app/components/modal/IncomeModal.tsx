@@ -1,22 +1,22 @@
 import { useState, useEffect } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "./ui/dialog";
+} from "../ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "../ui/select";
 
 interface Income {
   id?: string;
@@ -146,11 +146,10 @@ export function IncomeModal({
               type="date"
               value={formData.date}
               onChange={(e) => updateField("date", e.target.value)}
-              className={`${
-                errors.date
+              className={`${errors.date
                   ? "border-red-500 focus-visible:ring-red-500"
                   : "border-gray-300 focus-visible:ring-blue-500"
-              }`}
+                }`}
             />
             {errors.date && (
               <p className="text-red-500 text-sm mt-1.5">{errors.date}</p>
@@ -168,11 +167,10 @@ export function IncomeModal({
               placeholder="Website Development Payment"
               value={formData.source}
               onChange={(e) => updateField("source", e.target.value)}
-              className={`${
-                errors.source
+              className={`${errors.source
                   ? "border-red-500 focus-visible:ring-red-500"
                   : "border-gray-300 focus-visible:ring-blue-500"
-              }`}
+                }`}
             />
             {errors.source && (
               <p className="text-red-500 text-sm mt-1.5">{errors.source}</p>
@@ -190,11 +188,10 @@ export function IncomeModal({
               placeholder="Acme Corporation"
               value={formData.client}
               onChange={(e) => updateField("client", e.target.value)}
-              className={`${
-                errors.client
+              className={`${errors.client
                   ? "border-red-500 focus-visible:ring-red-500"
                   : "border-gray-300 focus-visible:ring-blue-500"
-              }`}
+                }`}
             />
             {errors.client && (
               <p className="text-red-500 text-sm mt-1.5">{errors.client}</p>
@@ -232,11 +229,10 @@ export function IncomeModal({
                   placeholder="5000"
                   value={formData.amount}
                   onChange={(e) => updateField("amount", e.target.value)}
-                  className={`pl-7 ${
-                    errors.amount
+                  className={`pl-7 ${errors.amount
                       ? "border-red-500 focus-visible:ring-red-500"
                       : "border-gray-300 focus-visible:ring-blue-500"
-                  }`}
+                    }`}
                 />
               </div>
               {errors.amount && (

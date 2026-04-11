@@ -12,9 +12,9 @@ import {
   Users,
   LogOut,
 } from "lucide-react";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
-import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,10 +22,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+} from "../components/ui/dropdown-menu";
 import { useAuth } from "../contexts/AuthContext";
-import LogoSquare from "./LogoSquare";
-import LogoWithText from "./LogoWithText";
+import LogoSquare from "../components/LogoSquare";
+import LogoWithText from "../components/LogoWithText";
 
 const navigation = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },

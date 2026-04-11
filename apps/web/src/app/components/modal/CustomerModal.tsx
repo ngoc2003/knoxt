@@ -1,23 +1,23 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "./ui/dialog";
+} from "../ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "../ui/select";
 
 interface Customer {
   id?: string;
@@ -141,11 +141,10 @@ export function CustomerModal({
               placeholder="Ruby Swan"
               value={formData.name}
               onChange={(e) => updateField("name", e.target.value)}
-              className={`${
-                errors.name
+              className={`${errors.name
                   ? "border-red-500 focus-visible:ring-red-500"
                   : "border-gray-300 focus-visible:ring-blue-500"
-              }`}
+                }`}
             />
             {errors.name && (
               <p className="text-red-500 text-sm mt-1.5">{errors.name}</p>
@@ -163,11 +162,10 @@ export function CustomerModal({
               placeholder="john@example.com"
               value={formData.email}
               onChange={(e) => updateField("email", e.target.value)}
-              className={`${
-                errors.email
+              className={`${errors.email
                   ? "border-red-500 focus-visible:ring-red-500"
                   : "border-gray-300 focus-visible:ring-blue-500"
-              }`}
+                }`}
             />
             {errors.email && (
               <p className="text-red-500 text-sm mt-1.5">{errors.email}</p>
@@ -185,11 +183,10 @@ export function CustomerModal({
               placeholder="+1 (555) 123-4567"
               value={formData.phone}
               onChange={(e) => updateField("phone", e.target.value)}
-              className={`${
-                errors.phone
+              className={`${errors.phone
                   ? "border-red-500 focus-visible:ring-red-500"
                   : "border-gray-300 focus-visible:ring-blue-500"
-              }`}
+                }`}
             />
             {errors.phone && (
               <p className="text-red-500 text-sm mt-1.5">{errors.phone}</p>
@@ -207,11 +204,10 @@ export function CustomerModal({
               placeholder="Acme Corporation"
               value={formData.company}
               onChange={(e) => updateField("company", e.target.value)}
-              className={`${
-                errors.company
+              className={`${errors.company
                   ? "border-red-500 focus-visible:ring-red-500"
                   : "border-gray-300 focus-visible:ring-blue-500"
-              }`}
+                }`}
             />
             {errors.company && (
               <p className="text-red-500 text-sm mt-1.5">{errors.company}</p>

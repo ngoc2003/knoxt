@@ -34,8 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { IncomeModal } from "../components/IncomeModal";
-import { ExpenseModal } from "../components/ExpenseModal";
+import { ExpenseModal, IncomeModal } from "../components/modal";
 
 const incomeData = [
   {
@@ -224,16 +223,14 @@ export function Finance() {
           <Button
             variant="outline"
             onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className={`border-gray-300 text-gray-700 hover:bg-gray-50 ${
-              isFilterOpen ? "bg-blue-50 border-blue-300 text-blue-700" : ""
-            }`}
+            className={`border-gray-300 text-gray-700 hover:bg-gray-50 ${isFilterOpen ? "bg-blue-50 border-blue-300 text-blue-700" : ""
+              }`}
           >
             <Filter className="w-4 h-4 mr-2" />
             Filter
             <ChevronDown
-              className={`w-4 h-4 ml-2 transition-transform ${
-                isFilterOpen ? "rotate-180" : ""
-              }`}
+              className={`w-4 h-4 ml-2 transition-transform ${isFilterOpen ? "rotate-180" : ""
+                }`}
             />
           </Button>
         </div>

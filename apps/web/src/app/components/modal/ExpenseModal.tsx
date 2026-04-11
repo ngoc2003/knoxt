@@ -1,22 +1,22 @@
 import { useState, useEffect } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "./ui/dialog";
+} from "../ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "../ui/select";
 
 interface Expense {
   id?: string;
@@ -139,11 +139,10 @@ export function ExpenseModal({
               type="date"
               value={formData.date}
               onChange={(e) => updateField("date", e.target.value)}
-              className={`${
-                errors.date
+              className={`${errors.date
                   ? "border-red-500 focus-visible:ring-red-500"
                   : "border-gray-300 focus-visible:ring-blue-500"
-              }`}
+                }`}
             />
             {errors.date && (
               <p className="text-red-500 text-sm mt-1.5">{errors.date}</p>
@@ -161,11 +160,10 @@ export function ExpenseModal({
               placeholder="Adobe Creative Cloud Subscription"
               value={formData.description}
               onChange={(e) => updateField("description", e.target.value)}
-              className={`${
-                errors.description
+              className={`${errors.description
                   ? "border-red-500 focus-visible:ring-red-500"
                   : "border-gray-300 focus-visible:ring-blue-500"
-              }`}
+                }`}
             />
             {errors.description && (
               <p className="text-red-500 text-sm mt-1.5">
@@ -217,11 +215,10 @@ export function ExpenseModal({
                 placeholder="99.99"
                 value={formData.amount}
                 onChange={(e) => updateField("amount", e.target.value)}
-                className={`pl-7 ${
-                  errors.amount
+                className={`pl-7 ${errors.amount
                     ? "border-red-500 focus-visible:ring-red-500"
                     : "border-gray-300 focus-visible:ring-blue-500"
-                }`}
+                  }`}
               />
             </div>
             {errors.amount && (

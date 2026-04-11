@@ -12,7 +12,7 @@ import {
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
-import { ProjectModal } from "../components/ProjectModal";
+import { ProjectModal } from "../components/modal";
 
 type Priority = "low" | "medium" | "high";
 type Status = "todo" | "doing" | "done";
@@ -125,9 +125,8 @@ function TaskCard({ task, moveTask }: TaskCardProps) {
   return (
     <div
       ref={drag}
-      className={`p-4 bg-white rounded-lg border border-gray-200 shadow-sm cursor-move hover:shadow-md transition-shadow ${
-        isDragging ? "opacity-50" : ""
-      }`}
+      className={`p-4 bg-white rounded-lg border border-gray-200 shadow-sm cursor-move hover:shadow-md transition-shadow ${isDragging ? "opacity-50" : ""
+        }`}
     >
       <div className="flex items-start gap-2 mb-3">
         <p className="text-sm font-medium text-gray-900 flex-1">{task.title}</p>
@@ -203,9 +202,8 @@ function Column({
 
       <div
         ref={drop}
-        className={`space-y-3 min-h-[600px] p-3 rounded-lg transition-colors ${
-          isOver ? "bg-indigo-50/50" : "bg-gray-50/50"
-        }`}
+        className={`space-y-3 min-h-[600px] p-3 rounded-lg transition-colors ${isOver ? "bg-indigo-50/50" : "bg-gray-50/50"
+          }`}
       >
         {tasks.map((task) => (
           <TaskCard key={task.id} task={task} moveTask={moveTask} />

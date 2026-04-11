@@ -1,5 +1,4 @@
 import { createBrowserRouter } from "react-router";
-import { Layout } from "./components/Layout";
 import { ProtectedRoute, PublicRoute } from "./components/RouteGuards";
 import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
@@ -13,6 +12,7 @@ import { Finance } from "./pages/Finance";
 import { AIAssistant } from "./pages/AIAssistant";
 import { Settings } from "./pages/Settings";
 import { Customers } from "./pages/Customer";
+import { Layout } from "./layout/Layout";
 
 export const router = createBrowserRouter([
   {
