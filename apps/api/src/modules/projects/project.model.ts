@@ -1,4 +1,6 @@
 import { Field, GraphQLISODateTime, ID, ObjectType } from '@nestjs/graphql';
+import { Customer } from '../customers/customer.model';
+import { Income } from '../finance/models/finance.models';
 
 @ObjectType()
 export class Project {
@@ -19,4 +21,10 @@ export class Project {
 
   @Field(() => GraphQLISODateTime)
   updatedAt: Date;
+
+  @Field(() => [Income])
+  incomes: Income[];
+
+  @Field(() => Customer)
+  customer: Customer;
 }

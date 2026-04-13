@@ -6,7 +6,6 @@ import {
   UpdateCustomerInput,
 } from './dto/customer.dto';
 import { PaginationInput } from '../../common/pagination.dto';
-import { CustomerStatus } from '../../common/enums';
 import { Prisma } from 'database/generated/client';
 
 @Injectable()
@@ -40,6 +39,10 @@ export class CustomersService {
     const [items, total] = await Promise.all([
       this.prisma.customer.findMany({
         where,
+        include: {
+          projects: { where: { deletedAt: null } },
+          incomes: true,
+        },
         skip: pagination.skip ?? 0,
         take: pagination.take ?? 20,
         orderBy: { createdAt: 'desc' },
@@ -47,6 +50,7 @@ export class CustomersService {
       this.prisma.customer.count({ where }),
     ]);
 
+    console.log(items);
     return {
       items,
       total,

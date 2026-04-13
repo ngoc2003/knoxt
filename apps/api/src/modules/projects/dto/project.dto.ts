@@ -16,6 +16,10 @@ export class CreateProjectInput {
   @Field()
   @IsUUID()
   customerId: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  budget?: string;
 }
 
 @InputType()

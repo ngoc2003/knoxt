@@ -3,15 +3,33 @@ import { PrismaService } from '../../database/prisma.service';
 import { CreateProjectInput, UpdateProjectInput } from './dto/project.dto';
 import { PaginationInput } from '../../common/pagination.dto';
 import { Prisma } from 'database/generated/client';
+import { FinanceService } from '../finance/finance.service';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly financeService: FinanceService,
+  ) {}
 
-  async create(userId: string, data: CreateProjectInput) {
-    return this.prisma.project.create({
-      data: { ...data, userId },
+  async create(userId: string, data: CreateProjectInput & { budget?: string }) {
+    const { budget, ...projectData } = data;
+    const project = await this.prisma.project.create({
+      data: { ...projectData, userId },
     });
+
+    // If budget is provided, create an income record
+    if (budget && !isNaN(Number(budget))) {
+      await this.financeService.createIncome(userId, {
+        amount: Number(budget),
+        customerId: data.customerId,
+        currency: 'USD',
+        projectId: project.id,
+        note: `Initial project budget for ${project.name}`,
+      });
+    }
+
+    return project;
   }
 
   async findAll(
@@ -31,10 +49,16 @@ export class ProjectsService {
         skip: pagination.skip ?? 0,
         take: pagination.take ?? 20,
         orderBy: { createdAt: 'desc' },
-        include: { customer: true },
+        include: { customer: true, incomes: true },
       }),
       this.prisma.project.count({ where }),
     ]);
+    console.log(
+      'ProjectsService.findAll - where:',
+      where,
+      'items found:',
+      items.length,
+    );
 
     return {
       items,

@@ -5,7 +5,8 @@ import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { Dashboard } from "./pages/Dashboard";
-import { Projects } from "./pages/Projects";
+import { ProjectListPage } from "./pages/ProjectListPage";
+import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { CustomerDetail } from "./pages/CustomerDetail";
 import { Notes } from "./pages/Notes";
 import { Finance } from "./pages/Finance";
@@ -52,7 +53,8 @@ export const router = createBrowserRouter([
     ),
     children: [
       { path: "dashboard", Component: Dashboard },
-      { path: "projects", Component: Projects },
+      { path: "projects", Component: ProjectListPage },
+      { path: "projects/:projectId", Component: ProjectDetailPage },
       { path: "customers", Component: Customers },
       { path: "customers/:id", Component: CustomerDetail },
       { path: "notes", Component: Notes },

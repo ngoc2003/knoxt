@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { CustomerSelect } from "./CustomerSelect";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -21,12 +22,14 @@ import {
 interface Project {
   id?: string;
   name: string;
-  client: string;
+  customerId?: string;
+  client?: string; // for backward compatibility
   status: "active" | "completed" | "on-hold";
   startDate: string;
   endDate?: string;
   budget: string;
   description?: string;
+  customerObj?: any;
 }
 
 interface ProjectModalProps {
@@ -44,33 +47,42 @@ export function ProjectModal({
 }: ProjectModalProps) {
   const [formData, setFormData] = useState<Partial<Project>>({
     name: "",
+    customerId: undefined,
     client: "",
     status: "active",
     startDate: "",
     endDate: "",
     budget: "",
     description: "",
+    customerObj: undefined,
   });
 
   const [errors, setErrors] = useState<{
     name?: string;
-    client?: string;
+    customerId?: string;
     startDate?: string;
     budget?: string;
   }>({});
 
   useEffect(() => {
     if (project) {
-      setFormData(project);
+      setFormData({
+        ...project,
+        customerId: project.customerId,
+        client: project.client || "",
+        customerObj: undefined,
+      });
     } else {
       setFormData({
         name: "",
+        customerId: undefined,
         client: "",
         status: "active",
         startDate: "",
         endDate: "",
         budget: "",
         description: "",
+        customerObj: undefined,
       });
     }
     setErrors({});
@@ -79,7 +91,7 @@ export function ProjectModal({
   const validateForm = () => {
     const newErrors: {
       name?: string;
-      client?: string;
+      customerId?: string;
       startDate?: string;
       budget?: string;
     } = {};
@@ -88,8 +100,8 @@ export function ProjectModal({
       newErrors.name = "Project name is required";
     }
 
-    if (!formData.client?.trim()) {
-      newErrors.client = "Client is required";
+    if (!formData.customerId) {
+      newErrors.customerId = "Client is required";
     }
 
     if (!formData.startDate) {
@@ -108,10 +120,13 @@ export function ProjectModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
-
-    onSave(formData);
+    onSave({
+      ...formData,
+      customerId: formData.customerId,
+      client: undefined,
+      customerObj: undefined,
+    });
     onClose();
   };
 
@@ -119,6 +134,18 @@ export function ProjectModal({
     setFormData({ ...formData, [field]: value });
     if (errors[field as keyof typeof errors]) {
       setErrors({ ...errors, [field]: undefined });
+    }
+  };
+
+  // Special handler for customer selection/creation
+  const handleCustomerChange = (name: string, customerObj?: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      customerId: customerObj?.id,
+      customerObj,
+    }));
+    if (errors.customerId) {
+      setErrors({ ...errors, customerId: undefined });
     }
   };
 
@@ -154,25 +181,18 @@ export function ProjectModal({
             )}
           </div>
 
-          {/* Client */}
+          {/* Client (Customer) */}
           <div>
-            <Label htmlFor="client" className="text-gray-700 mb-2 block">
+            <Label htmlFor="customer" className="text-gray-700 mb-2 block">
               Client <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="client"
-              type="text"
-              placeholder="Acme Corporation"
-              value={formData.client}
-              onChange={(e) => updateField("client", e.target.value)}
-              className={`${
-                errors.client
-                  ? "border-red-500 focus-visible:ring-red-500"
-                  : "border-gray-300 focus-visible:ring-blue-500"
-              }`}
+            <CustomerSelect
+              value={formData.customerObj?.name || ""}
+              onChange={handleCustomerChange}
+              placeholder="Select or type customer..."
             />
-            {errors.client && (
-              <p className="text-red-500 text-sm mt-1.5">{errors.client}</p>
+            {errors.customerId && (
+              <p className="text-red-500 text-sm mt-1.5">{errors.customerId}</p>
             )}
           </div>
 

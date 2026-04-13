@@ -53,6 +53,11 @@ export class CreateIncomeInput {
   @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()
   receivedAt?: Date;
+
+  @Field(() => String, { nullable: true })
+  @IsUUID()
+  @IsOptional()
+  projectId?: string;
 }
 
 @InputType()

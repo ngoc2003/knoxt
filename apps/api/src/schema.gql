@@ -48,6 +48,7 @@ input CreateIncomeInput {
   customerId: String!
   invoiceId: String
   note: String
+  projectId: String
   receivedAt: DateTime
   status: IncomeStatus
 }
@@ -67,6 +68,7 @@ input CreateNoteInput {
 }
 
 input CreateProjectInput {
+  budget: String
   customerId: String!
   description: String
   name: String!
@@ -94,10 +96,22 @@ type Customer {
 }
 
 type CustomerPage {
-  items: [Customer!]!
+  items: [CustomerPageItem!]!
   skip: Int!
   take: Int!
   total: Int!
+}
+
+type CustomerPageItem {
+  company: String
+  createdAt: DateTime!
+  email: String
+  id: ID!
+  incomes: [Income!]!
+  name: String!
+  phone: String
+  status: CustomerStatus!
+  updatedAt: DateTime!
 }
 
 enum CustomerStatus {
@@ -292,9 +306,11 @@ enum Priority {
 
 type Project {
   createdAt: DateTime!
+  customer: Customer!
   customerId: ID!
   description: String
   id: ID!
+  incomes: [Income!]!
   name: String!
   updatedAt: DateTime!
 }

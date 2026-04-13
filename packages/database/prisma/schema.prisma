@@ -98,6 +98,7 @@ model Project {
   customerId  String
   user        User      @relation(fields: [userId], references: [id])
   customer    Customer  @relation(fields: [customerId], references: [id])
+  incomes     Income[]
   name        String
   description String?
   tasks       Task[]
@@ -201,14 +202,16 @@ model Attachment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
-model Income {
+ 
+ model Income {
   id         String       @id @default(uuid())
   userId     String
   customerId String
+  projectId  String?
   invoiceId  String?
   user       User         @relation(fields: [userId], references: [id])
   customer   Customer     @relation(fields: [customerId], references: [id])
+  project    Project?     @relation(fields: [projectId], references: [id])
   invoice    Invoice?     @relation(fields: [invoiceId], references: [id])
   amount     Float
   currency   String       @default("USD")

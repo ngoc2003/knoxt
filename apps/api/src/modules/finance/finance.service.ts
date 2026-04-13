@@ -30,6 +30,7 @@ export class FinanceService {
         status: data.status ?? 'pending',
         note: data.note,
         receivedAt: data.receivedAt,
+        projectId: data.projectId,
       },
     });
   }

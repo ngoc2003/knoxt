@@ -70,7 +70,7 @@ export class TasksService {
     const task = await this.prisma.task.findFirst({
       where: { id, userId, deletedAt: null },
     });
-    if (!task) throw new NotFoundException('Task not found');
+    if (!task) throw new NotFoundException('Task not found' + id);
     return task;
   }
 
