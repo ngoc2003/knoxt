@@ -71,7 +71,10 @@ input CreateProjectInput {
   budget: String
   customerId: String!
   description: String
+  endDate: String
   name: String!
+  startDate: String!
+  status: String!
 }
 
 input CreateTaskInput {
@@ -309,9 +312,13 @@ type Project {
   customer: Customer!
   customerId: ID!
   description: String
+  endDate: DateTime
   id: ID!
   incomes: [Income!]!
   name: String!
+  startDate: DateTime!
+  status: String!
+  tasks: [Task!]!
   updatedAt: DateTime!
 }
 
@@ -360,6 +367,7 @@ type Task {
   id: ID!
   orderIndex: Int!
   priority: Priority!
+  project: Project!
   projectId: ID!
   status: TaskStatus!
   title: String!
@@ -415,7 +423,10 @@ input UpdateNoteInput {
 
 input UpdateProjectInput {
   description: String
+  endDate: String
   name: String
+  startDate: String
+  status: String
 }
 
 input UpdateTaskInput {

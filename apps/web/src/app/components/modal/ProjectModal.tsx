@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { format, parseISO } from "date-fns";
 
 interface Project {
   id?: string;
@@ -30,13 +31,26 @@ interface Project {
   budget: string;
   description?: string;
   customerObj?: any;
+  customer: any;
+  incomes?: { amount: number }[];
 }
 
 interface ProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (project: Partial<Project>) => void;
+  onSave: (project: Partial<Project>) => void | Promise<void>;
   project?: Project | null;
+}
+
+export function toDateInputValue(value?: string | Date) {
+  if (!value) return "";
+
+  try {
+    const date = typeof value === "string" ? parseISO(value) : value;
+    return format(date, "yyyy-MM-dd");
+  } catch {
+    return "";
+  }
 }
 
 export function ProjectModal({
@@ -66,11 +80,18 @@ export function ProjectModal({
 
   useEffect(() => {
     if (project) {
+      const budget = project.incomes?.reduce(
+        (acc, income) => acc + income.amount,
+        0,
+      );
       setFormData({
         ...project,
         customerId: project.customerId,
         client: project.client || "",
-        customerObj: undefined,
+        startDate: toDateInputValue(project.startDate),
+        endDate: toDateInputValue(project.endDate),
+        customerObj: project.customer || undefined,
+        budget: budget ? budget.toString() : "",
       });
     } else {
       setFormData({
@@ -85,6 +106,7 @@ export function ProjectModal({
         customerObj: undefined,
       });
     }
+
     setErrors({});
   }, [project, isOpen]);
 
@@ -93,6 +115,7 @@ export function ProjectModal({
       name?: string;
       customerId?: string;
       startDate?: string;
+
       budget?: string;
     } = {};
 
@@ -118,15 +141,17 @@ export function ProjectModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    onSave({
+
+    await onSave({
       ...formData,
       customerId: formData.customerId,
       client: undefined,
       customerObj: undefined,
     });
+
     onClose();
   };
 

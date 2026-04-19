@@ -69,6 +69,23 @@ export const PROJECT_DETAIL_QUERY = gql`
       customerId
       createdAt
       updatedAt
+      status
+      startDate
+      endDate
+      tasks {
+        id
+        title
+        priority
+        status
+      }
+      incomes {
+        id
+        amount
+      }
+      customer {
+        id
+        name
+      }
     }
   }
 `;

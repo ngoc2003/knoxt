@@ -6,6 +6,7 @@ import {
   ObjectType,
 } from '@nestjs/graphql';
 import { Priority, TaskStatus } from '../../common/enums';
+import { Project } from '../projects/project.model';
 
 @ObjectType()
 export class Task {
@@ -38,4 +39,7 @@ export class Task {
 
   @Field(() => GraphQLISODateTime)
   updatedAt: Date;
+
+  @Field(() => Project)
+  project: Project;
 }

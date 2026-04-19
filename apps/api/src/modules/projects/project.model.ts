@@ -1,6 +1,7 @@
 import { Field, GraphQLISODateTime, ID, ObjectType } from '@nestjs/graphql';
 import { Customer } from '../customers/customer.model';
 import { Income } from '../finance/models/finance.models';
+import { Task } from '../tasks/task.model';
 
 @ObjectType()
 export class Project {
@@ -27,4 +28,16 @@ export class Project {
 
   @Field(() => Customer)
   customer: Customer;
+
+  @Field(() => String)
+  status: string;
+
+  @Field(() => GraphQLISODateTime)
+  startDate: Date;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  endDate?: Date;
+
+  @Field(() => [Task])
+  tasks: Task[];
 }

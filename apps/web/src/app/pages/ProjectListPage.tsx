@@ -24,6 +24,9 @@ export function ProjectListPage() {
           description: projectData.description,
           customerId: projectData.customerId,
           budget: projectData.budget,
+          status: projectData.status,
+          startDate: projectData.startDate,
+          endDate: projectData.endDate,
         },
       },
     });

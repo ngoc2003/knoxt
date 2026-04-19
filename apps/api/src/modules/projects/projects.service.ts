@@ -12,10 +12,37 @@ export class ProjectsService {
     private readonly financeService: FinanceService,
   ) {}
 
-  async create(userId: string, data: CreateProjectInput & { budget?: string }) {
+  private toProjectCreateData(userId: string, data: CreateProjectInput) {
+    const { endDate, startDate, ...rest } = data;
+
+    return {
+      ...rest,
+      userId,
+      startDate: new Date(startDate),
+      endDate: endDate ? new Date(endDate) : null,
+    };
+  }
+
+  private toProjectUpdateData(data: UpdateProjectInput) {
+    return {
+      ...(data.name !== undefined ? { name: data.name } : {}),
+      ...(data.description !== undefined
+        ? { description: data.description }
+        : {}),
+      ...(data.status !== undefined ? { status: data.status } : {}),
+      ...(data.startDate !== undefined
+        ? { startDate: new Date(data.startDate) }
+        : {}),
+      ...(data.endDate !== undefined
+        ? { endDate: data.endDate ? new Date(data.endDate) : null }
+        : {}),
+    };
+  }
+
+  async create(userId: string, data: CreateProjectInput) {
     const { budget, ...projectData } = data;
     const project = await this.prisma.project.create({
-      data: { ...projectData, userId },
+      data: this.toProjectCreateData(userId, { ...projectData }),
     });
 
     // If budget is provided, create an income record
@@ -74,6 +101,7 @@ export class ProjectsService {
       include: {
         customer: true,
         tasks: { where: { deletedAt: null }, orderBy: { orderIndex: 'asc' } },
+        incomes: true,
       },
     });
     if (!project) throw new NotFoundException('Project not found');
@@ -82,7 +110,10 @@ export class ProjectsService {
 
   async update(userId: string, id: string, data: UpdateProjectInput) {
     await this.findOne(userId, id);
-    return this.prisma.project.update({ where: { id }, data });
+    return this.prisma.project.update({
+      where: { id },
+      data: this.toProjectUpdateData(data),
+    });
   }
 
   async remove(userId: string, id: string) {

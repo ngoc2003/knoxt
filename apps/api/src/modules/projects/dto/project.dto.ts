@@ -1,5 +1,12 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsDateString,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 @InputType()
 export class CreateProjectInput {
@@ -20,6 +27,20 @@ export class CreateProjectInput {
   @Field(() => String, { nullable: true })
   @IsOptional()
   budget?: string;
+
+  @Field(() => String)
+  @IsString()
+  @IsIn(['active', 'completed', 'on-hold'])
+  status: string;
+
+  @Field(() => String)
+  @IsDateString()
+  startDate: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 }
 
 @InputType()
@@ -33,4 +54,20 @@ export class UpdateProjectInput {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @IsIn(['active', 'completed', 'on-hold'])
+  status?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 }
