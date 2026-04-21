@@ -6,10 +6,14 @@ export const TASKS_QUERY = gql`
       items {
         id
         title
-        tags
         priority
         time
         status
+        tags {
+          id
+          name
+          color
+        }
       }
     }
   }
@@ -21,6 +25,20 @@ export const MOVE_TASK_MUTATION = gql`
       id
       status
       orderIndex
+    }
+  }
+`;
+
+export const CREATE_TASK_MUTATION = gql`
+  mutation CreateTask($input: CreateTaskInput!) {
+    createTask(data: $input) {
+      id
+      title
+      description
+      priority
+      status
+      dueDate
+      projectId
     }
   }
 `;

@@ -4,14 +4,36 @@ import {
   PROJECT_DETAIL_QUERY,
   UPDATE_PROJECT_MUTATION,
 } from "../graphql/project";
-import { MOVE_TASK_MUTATION } from "../graphql/task";
+import { MOVE_TASK_MUTATION, CREATE_TASK_MUTATION } from "../graphql/task";
 import { KanbanBoard } from "./KanbanBoard";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Button } from "../components/ui/button";
 import { ArrowLeft, Pencil, Plus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProjectModal } from "../components/modal";
+import { TaskModal } from "../components/modal/TaskModal";
+
+interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  priority: "low" | "medium" | "high";
+  status: "todo" | "doing" | "done";
+  dueDate?: string;
+  projectId: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+  startDate: string;
+  endDate?: string;
+  customerId: string;
+  tasks: Task[];
+}
 
 export function ProjectDetailPage() {
   const { projectId } = useParams();
@@ -27,25 +49,55 @@ export function ProjectDetailPage() {
 
   const [moveTaskMutation] = useMutation(MOVE_TASK_MUTATION);
   const [updateProjectMutation] = useMutation(UPDATE_PROJECT_MUTATION);
+  const [createTaskMutation] = useMutation(CREATE_TASK_MUTATION);
 
   const project = (projectData as any)?.projectDetail;
-  const tasks = project?.tasks || [];
 
   // State for ProjectModal
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  // State for TaskModal
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
+  const [tasksState, setTasksState] = useState([] as Task[]);
+
+  // Update tasks state when project data changes
+  useEffect(() => {
+    if (project?.tasks) {
+      setTasksState(project.tasks);
+    }
+  }, [project]);
 
   const handleMoveTask = async (
     taskId: string,
     newStatus: string,
     newOrderIndex = 0,
   ) => {
-    await moveTaskMutation({
-      variables: {
-        input: { id: taskId, status: newStatus, orderIndex: newOrderIndex },
-      },
-    });
-    // refetch();
+    try {
+      const { data }: { data?: { moveTask: Task } } = await moveTaskMutation({
+        variables: {
+          input: { id: taskId, status: newStatus, orderIndex: newOrderIndex },
+        },
+      });
+
+      const updatedTask = data?.moveTask;
+
+      if (updatedTask.status !== newStatus) {
+        alert(
+          `Task status has been updated to '${updatedTask.status}' on the server. Please try again with the new status card.`,
+        );
+      } else {
+        // Update the task locally
+        const updatedTasks = tasksState.map((task: Task) =>
+          task.id === taskId ? { ...task, status: newStatus } : task,
+        );
+        setTasksState(updatedTasks);
+      }
+    } catch (error) {
+      console.error("Failed to move task", error);
+    }
   };
+
+  console.log("Project data:", project);
 
   const handleSaveProject = async (projectData: any) => {
     if (!projectId) return;
@@ -69,6 +121,24 @@ export function ProjectDetailPage() {
       ],
       awaitRefetchQueries: true,
     });
+  };
+
+  const handleCreateTask = async (taskData: Partial<Task>) => {
+    try {
+      await createTaskMutation({
+        variables: { input: taskData },
+        refetchQueries: [
+          {
+            query: PROJECT_DETAIL_QUERY,
+            variables: { id: projectId },
+          },
+        ],
+        awaitRefetchQueries: true,
+      });
+      setIsTaskModalOpen(false);
+    } catch (error) {
+      console.error("Failed to create task", error);
+    }
   };
 
   if (projectLoading) return <div>Loading...</div>;
@@ -98,8 +168,8 @@ export function ProjectDetailPage() {
             size="icon"
             className="min-w-36"
             variant="default"
-            aria-label="Edit project"
-            onClick={() => setIsProjectModalOpen(true)}
+            aria-label="Add new task"
+            onClick={() => setIsTaskModalOpen(true)}
           >
             <Plus />
             Add new task
@@ -110,13 +180,19 @@ export function ProjectDetailPage() {
         {project.name}
       </h1>
       <DndProvider backend={HTML5Backend}>
-        <KanbanBoard tasks={tasks} moveTask={handleMoveTask} />
+        <KanbanBoard tasks={tasksState} moveTask={handleMoveTask} />
       </DndProvider>
       <ProjectModal
         isOpen={isProjectModalOpen}
         onClose={() => setIsProjectModalOpen(false)}
         onSave={handleSaveProject}
         project={project}
+      />
+      <TaskModal
+        task={{ projectId: project.id }}
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        onSave={handleCreateTask}
       />
     </div>
   );

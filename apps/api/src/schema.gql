@@ -84,6 +84,7 @@ input CreateTaskInput {
   priority: Priority
   projectId: String!
   status: TaskStatus
+  tags: [String!]
   title: String!
 }
 
@@ -237,6 +238,7 @@ input ListTasksInput {
   projectId: String
   search: String
   status: TaskStatus
+  tags: [String!]
 }
 
 input LoginInput {
@@ -360,6 +362,12 @@ input SendAiMessageInput {
   sessionId: String!
 }
 
+type Tag {
+  color: String
+  id: ID!
+  name: String!
+}
+
 type Task {
   createdAt: DateTime!
   description: String
@@ -370,6 +378,7 @@ type Task {
   project: Project!
   projectId: ID!
   status: TaskStatus!
+  tags: [Tag!]
   title: String!
   updatedAt: DateTime!
 }
@@ -435,6 +444,7 @@ input UpdateTaskInput {
   orderIndex: Int
   priority: Priority
   status: TaskStatus
+  tags: [String!]
   title: String
 }
 

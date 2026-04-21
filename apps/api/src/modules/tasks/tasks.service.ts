@@ -13,21 +13,43 @@ import { Prisma } from 'database/generated/client';
 export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async resolveTagIds(
+    userId: string,
+    tagNames: string[],
+  ): Promise<string[]> {
+    const tagRecords = await Promise.all(
+      tagNames.map(async (name) => {
+        const existing = await this.prisma.taskTag.findFirst({
+          where: { userId, name },
+        });
+        if (existing) return existing;
+        return this.prisma.taskTag.create({ data: { userId, name } });
+      }),
+    );
+    return tagRecords.map((t) => t.id);
+  }
+
   async create(userId: string, data: CreateTaskInput) {
+    const { tags, ...rest } = data;
     const lastTask = await this.prisma.task.findFirst({
       where: { projectId: data.projectId, userId, deletedAt: null },
       orderBy: { orderIndex: 'desc' },
     });
     const orderIndex =
-      data.orderIndex ?? (lastTask ? lastTask.orderIndex + 1 : 0);
+      rest.orderIndex ?? (lastTask ? lastTask.orderIndex + 1 : 0);
+
+    const tagIds = tags ? await this.resolveTagIds(userId, tags) : [];
 
     return this.prisma.task.create({
       data: {
-        ...data,
+        ...rest,
         userId,
         orderIndex,
-        status: data.status ?? 'todo',
-        priority: data.priority ?? 'medium',
+        status: rest.status ?? 'todo',
+        priority: rest.priority ?? 'medium',
+        tags: {
+          create: tagIds.map((tagId) => ({ tagId })),
+        },
       },
     });
   }
@@ -53,13 +75,17 @@ export class TasksService {
         where,
         skip: pagination.skip ?? 0,
         take: pagination.take ?? 20,
+        include: { tags: { include: { tag: true } } },
         orderBy: [{ status: 'asc' }, { orderIndex: 'asc' }],
       }),
       this.prisma.task.count({ where }),
     ]);
 
     return {
-      items,
+      items: items.map((task) => ({
+        ...task,
+        tags: task.tags.map((t) => t.tag),
+      })),
       total,
       skip: pagination.skip ?? 0,
       take: pagination.take ?? 20,
@@ -76,7 +102,19 @@ export class TasksService {
 
   async update(userId: string, id: string, data: UpdateTaskInput) {
     await this.findOne(userId, id);
-    return this.prisma.task.update({ where: { id }, data });
+    const { tags, ...rest } = data;
+
+    const updateData: Prisma.TaskUpdateInput = { ...rest };
+
+    if (tags !== undefined) {
+      const tagIds = await this.resolveTagIds(userId, tags);
+      updateData.tags = {
+        deleteMany: {},
+        create: tagIds.map((tagId) => ({ tagId })),
+      };
+    }
+
+    return this.prisma.task.update({ where: { id }, data: updateData });
   }
 
   async moveTask(userId: string, input: MoveTaskInput) {

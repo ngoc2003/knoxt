@@ -44,6 +44,7 @@ export const PROJECTS_QUERY = gql`
         customerId
         createdAt
         updatedAt
+        status
         customer {
           id
           name
@@ -77,6 +78,11 @@ export const PROJECT_DETAIL_QUERY = gql`
         title
         priority
         status
+        tags {
+          id
+          name
+          color
+        }
       }
       incomes {
         id

@@ -9,6 +9,18 @@ import { Priority, TaskStatus } from '../../common/enums';
 import { Project } from '../projects/project.model';
 
 @ObjectType()
+export class Tag {
+  @Field(() => ID)
+  id: string;
+
+  @Field()
+  name: string;
+
+  @Field(() => String, { nullable: true })
+  color?: string | null;
+}
+
+@ObjectType()
 export class Task {
   @Field(() => ID)
   id: string;
@@ -42,4 +54,7 @@ export class Task {
 
   @Field(() => Project)
   project: Project;
+
+  @Field(() => [Tag], { nullable: true })
+  tags?: Tag[];
 }

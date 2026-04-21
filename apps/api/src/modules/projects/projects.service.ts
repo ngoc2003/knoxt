@@ -100,12 +100,22 @@ export class ProjectsService {
       where: { id, userId, deletedAt: null },
       include: {
         customer: true,
-        tasks: { where: { deletedAt: null }, orderBy: { orderIndex: 'asc' } },
+        tasks: {
+          where: { deletedAt: null },
+          orderBy: { orderIndex: 'asc' },
+          include: { tags: { include: { tag: true } } },
+        },
         incomes: true,
       },
     });
     if (!project) throw new NotFoundException('Project not found');
-    return project;
+    return {
+      ...project,
+      tasks: project.tasks.map((task) => ({
+        ...task,
+        tags: task.tags.map((t) => t.tag),
+      })),
+    };
   }
 
   async update(userId: string, id: string, data: UpdateProjectInput) {

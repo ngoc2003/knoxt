@@ -24,7 +24,23 @@ export function ProjectCard({ project }: { project: any }) {
       onClick={() => navigate(`/projects/${project.id}`)}
     >
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold text-gray-900">{project.name}</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {project.name}
+          </h2>
+
+          <Badge
+            className={
+              project.status === "active"
+                ? "bg-blue-100 text-blue-700"
+                : project.status === "completed"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-100 text-gray-700"
+            }
+          >
+            {project.status}
+          </Badge>
+        </div>
 
         <span className="text-sm font-medium text-green-600">
           ${totalIncomes.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
