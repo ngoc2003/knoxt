@@ -4,16 +4,16 @@ import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 
-import { PrismaModule } from './database/prisma.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { UsersModule } from './modules/users/users.module';
-import { CustomersModule } from './modules/customers/customers.module';
-import { ProjectsModule } from './modules/projects/projects.module';
-import { TasksModule } from './modules/tasks/tasks.module';
-import { NotesModule } from './modules/notes/notes.module';
-import { FinanceModule } from './modules/finance/finance.module';
-import { AiModule } from './modules/ai/ai.module';
-import { VoyagerController } from './voyager.controller';
+import { PrismaModule } from './infrastructure/prisma/prisma.module';
+import { AuthModule } from './domains/auth/auth.module';
+import { UsersModule } from './domains/users/users.module';
+import { CustomersModule } from './domains/customers/customers.module';
+import { ProjectsModule } from './domains/projects/projects.module';
+import { TasksModule } from './domains/tasks/tasks.module';
+import { NotesModule } from './domains/notes/notes.module';
+import { FinanceModule } from './domains/finance/finance.module';
+import { AiModule } from './domains/ai/ai.module';
+import { VoyagerController } from './infrastructure/graphql/voyager.controller';
 
 @Module({
   controllers: [VoyagerController],
