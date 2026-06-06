@@ -7,6 +7,7 @@ import {
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { CombinedGraphQLErrors } from "@apollo/client/errors";
+import { toast } from "sonner";
 
 const httpLink = createHttpLink({
   uri: "http://localhost:3000/graphql",
@@ -22,22 +23,40 @@ const authLink = setContext((_, { headers }) => {
   };
 });
 
-const errorLink = onError(({ error }) => {
-  // Handle GraphQL errors
+const errorLink = onError(({ error, operation }) => {
+  const { suppressGlobalError } = operation.getContext();
+
   if (CombinedGraphQLErrors.is(error)) {
     for (const err of error.errors) {
-      console.log("[GraphQL error]:", err.message);
+      const isAuthMutation = ["Login", "Register"].includes(
+        operation.operationName,
+      );
+      const hasAuthenticatedSession = Boolean(
+        localStorage.getItem("accessToken"),
+      );
 
-      if (err.extensions?.code === "UNAUTHENTICATED") {
+      if (
+        err.extensions?.code === "UNAUTHENTICATED" &&
+        hasAuthenticatedSession &&
+        !isAuthMutation
+      ) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("currentUser");
         window.location.href = "/login";
+        return;
+      }
+
+      if (!suppressGlobalError) {
+        const userMessage = err.extensions?.userMessage;
+        toast.error(
+          typeof userMessage === "string"
+            ? userMessage
+            : "Something went wrong. Please try again.",
+        );
       }
     }
-  }
-  // Handle network errors
-  else if (error) {
-    console.log("[Network error]:", error);
+  } else if (error && !suppressGlobalError) {
+    toast.error("Unable to connect to the server. Please try again.");
   }
 });
 

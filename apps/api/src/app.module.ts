@@ -14,6 +14,7 @@ import { NotesModule } from './domains/notes/notes.module';
 import { FinanceModule } from './domains/finance/finance.module';
 import { AiModule } from './domains/ai/ai.module';
 import { VoyagerController } from './infrastructure/graphql/voyager.controller';
+import { formatGraphQLError } from './infrastructure/graphql/format-error';
 
 @Module({
   controllers: [VoyagerController],
@@ -25,6 +26,7 @@ import { VoyagerController } from './infrastructure/graphql/voyager.controller';
       sortSchema: true,
       playground: process.env.NODE_ENV !== 'production',
       context: ({ req }: { req: Request }) => ({ req }),
+      formatError: formatGraphQLError,
     }),
     PrismaModule,
     AuthModule,

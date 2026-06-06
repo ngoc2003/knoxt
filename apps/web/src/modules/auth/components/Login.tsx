@@ -29,27 +29,15 @@ export function Login() {
         .min(6, "Password must be at least 6 characters")
         .required("Password is required"),
     }),
-    onSubmit: async (values, { setSubmitting, setErrors }) => {
+    onSubmit: async (values, { setSubmitting }) => {
       try {
         await login({
           email: values.email,
           password: values.password,
         });
         navigate("/dashboard");
-      } catch (error: any) {
-        console.log("Login error:", error);
-        if (error.graphQLErrors && error.graphQLErrors.length > 0) {
-          const graphQLError = error.graphQLErrors[0];
-          if (graphQLError.message.includes("Invalid credentials")) {
-            setErrors({ password: "Invalid email or password" });
-          } else {
-            setErrors({ email: graphQLError.message });
-          }
-        } else if (error.networkError) {
-          setErrors({ email: "Network error. Please try again." });
-        } else {
-          setErrors({ email: "An unexpected error occurred." });
-        }
+      } catch {
+        // The Apollo error link shows the server-provided user message.
       } finally {
         setSubmitting(false);
       }

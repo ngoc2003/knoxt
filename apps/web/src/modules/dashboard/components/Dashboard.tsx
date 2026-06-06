@@ -1,3 +1,6 @@
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Card } from "@/shared/ui/card";
 import {
   TrendingUp,
   DollarSign,
@@ -8,9 +11,6 @@ import {
   Circle,
   AlertCircle,
 } from "lucide-react";
-import { Button } from "../../../shared/ui/button";
-import { Card } from "../../../shared/ui/card";
-import { Badge } from "../../../shared/ui/badge";
 
 export function Dashboard() {
   return (

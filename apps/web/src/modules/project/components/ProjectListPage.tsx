@@ -9,7 +9,7 @@ export function ProjectListPage() {
   const { data, loading, error, refetch } = useQuery(PROJECTS_QUERY, {
     variables: { pagination: { skip: 0, take: 50 } },
   });
-  const [createProject] = useMutation(CREATE_PROJECT_MUTATION, { client });
+  const [createProject] = useMutation(CREATE_PROJECT_MUTATION);
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const projects = (data as any)?.projects?.items || [];

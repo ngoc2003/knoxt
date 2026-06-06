@@ -44,7 +44,7 @@ export function Register() {
         .oneOf([Yup.ref("password")], "Passwords do not match")
         .required("Please confirm your password"),
     }),
-    onSubmit: async (values, { setSubmitting, setErrors }) => {
+    onSubmit: async (values, { setSubmitting }) => {
       try {
         await register({
           name: values.name,
@@ -52,19 +52,8 @@ export function Register() {
           password: values.password,
         });
         navigate("/dashboard");
-      } catch (error: any) {
-        if (error.graphQLErrors && error.graphQLErrors.length > 0) {
-          const graphQLError = error.graphQLErrors[0];
-          if (graphQLError.message.includes("Email already in use")) {
-            setErrors({ email: "An account with this email already exists" });
-          } else {
-            setErrors({ email: graphQLError.message });
-          }
-        } else if (error.networkError) {
-          setErrors({ email: "Network error. Please try again." });
-        } else {
-          setErrors({ email: "An unexpected error occurred." });
-        }
+      } catch {
+        // The Apollo error link shows the server-provided user message.
       } finally {
         setSubmitting(false);
       }

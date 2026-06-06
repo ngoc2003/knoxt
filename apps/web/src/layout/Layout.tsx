@@ -15,16 +15,10 @@ import {
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import LogoWithText from "@/shared/components/LogoWithText";
 import { Input } from "@/shared/ui/input";
-import { Avatar, AvatarFallback } from "@radix-ui/react-avatar";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuItem,
-} from "@radix-ui/react-dropdown-menu";
+
 import { Button } from "@/shared/ui/button";
+import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu";
 
 const navigation = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -50,7 +44,7 @@ export function Layout() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen w-screen overflow-hidden bg-gray-50">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         {/* Logo */}
@@ -108,10 +102,9 @@ export function Layout() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
         {/* Top Bar */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-          {/* Search */}
           <div className="flex-1 max-w-md">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -123,7 +116,6 @@ export function Layout() {
             </div>
           </div>
 
-          {/* Actions */}
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="w-5 h-5 text-gray-600" />
@@ -177,9 +169,8 @@ export function Layout() {
             </DropdownMenu>
           </div>
         </header>
-
         {/* Page Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-scroll">
           <Outlet />
         </main>
       </div>

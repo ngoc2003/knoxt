@@ -10,8 +10,9 @@ import { Landing } from "@/modules/landing/components/Landing";
 import { Notes } from "@/modules/notes/components/Notes";
 import { ProjectDetailPage } from "@/modules/project/components/ProjectDetailPage";
 import { ProjectListPage } from "@/modules/project/components/ProjectListPage";
+import { Settings } from "@/modules/settings/components/Settings";
 import { ProtectedRoute, PublicRoute } from "@/shared/components/RouteGuards";
-import { Layout, Settings } from "lucide-react";
+import { Layout } from "@/layout/Layout";
 import { createBrowserRouter } from "react-router";
 
 export const router = createBrowserRouter([

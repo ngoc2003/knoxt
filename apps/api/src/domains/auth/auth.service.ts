@@ -37,12 +37,12 @@ export class AuthService {
   async login(data: LoginInput): Promise<AuthResponse> {
     const user = await this.authRepo.findByEmail(data.email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid email or password');
     }
 
     const passwordValid = await bcrypt.compare(data.password, user.passwordHash);
     if (!passwordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid email or password');
     }
 
     return this.buildAuthResponse(user);
