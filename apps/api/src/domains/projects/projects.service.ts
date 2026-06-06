@@ -19,6 +19,8 @@ import {
 import { PaginationInput } from '../../core/common/dtos/pagination.dto';
 import { FinanceService } from '../finance/finance.service';
 import { MailService } from '../../infrastructure/mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../../core/common/enum/enums';
 
 @Injectable()
 export class ProjectsService {
@@ -27,6 +29,7 @@ export class ProjectsService {
     private readonly projectRepo: IProjectRepository,
     private readonly financeService: FinanceService,
     private readonly mailService: MailService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(userId: string, data: CreateProjectInput) {
@@ -116,7 +119,17 @@ export class ProjectsService {
     }
 
     if (user) {
+      const isNewMember = !project.members.some(
+        (member) => member.userId === user.id,
+      );
       const member = await this.projectRepo.addMember(data);
+      if (member && isNewMember) {
+        await this.notificationsService.create(
+          member.userId,
+          NotificationType.projectMemberAdded,
+          `You were added to "${project.name}" as ${member.role}.`,
+        );
+      }
       return {
         status: 'member-added',
         member,

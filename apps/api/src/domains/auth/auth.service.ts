@@ -9,6 +9,8 @@ import * as bcrypt from 'bcrypt';
 import { AUTH_REPOSITORY } from '../../core/constants/repository.tokens';
 import type { IAuthRepository } from './application/ports/auth.repository';
 import { RegisterInput, LoginInput, AuthResponse } from './dto/auth.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../../core/common/enum/enums';
 
 @Injectable()
 export class AuthService {
@@ -16,6 +18,7 @@ export class AuthService {
     @Inject(AUTH_REPOSITORY)
     private readonly authRepo: IAuthRepository,
     private readonly jwtService: JwtService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async register(data: RegisterInput): Promise<AuthResponse> {
@@ -35,6 +38,11 @@ export class AuthService {
       user.id,
       user.email,
       data.invitationToken,
+    );
+    await this.notificationsService.create(
+      user.id,
+      NotificationType.welcome,
+      `Welcome to TaskIO, ${user.name}!`,
     );
 
     return this.buildAuthResponse(user);

@@ -1,6 +1,8 @@
 import { JwtService } from '@nestjs/jwt';
 import { IAuthRepository } from './application/ports/auth.repository';
 import { AuthService } from './auth.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../../core/common/enum/enums';
 
 describe('AuthService invitation acceptance', () => {
   const authRepo = {
@@ -11,7 +13,10 @@ describe('AuthService invitation acceptance', () => {
   const jwt = {
     sign: jest.fn().mockReturnValue('token'),
   } as unknown as JwtService;
-  const service = new AuthService(authRepo, jwt);
+  const notificationsService = {
+    create: jest.fn(),
+  } as unknown as jest.Mocked<NotificationsService>;
+  const service = new AuthService(authRepo, jwt, notificationsService);
 
   beforeEach(() => jest.clearAllMocks());
 
@@ -39,6 +44,11 @@ describe('AuthService invitation acceptance', () => {
       'user-id',
       'invited@example.com',
       'invitation-token',
+    );
+    expect(notificationsService.create).toHaveBeenCalledWith(
+      'user-id',
+      NotificationType.welcome,
+      'Welcome to TaskIO, Invited User!',
     );
   });
 });

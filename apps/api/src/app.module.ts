@@ -17,6 +17,7 @@ import { VoyagerController } from './infrastructure/graphql/voyager.controller';
 import { formatGraphQLError } from './infrastructure/graphql/format-error';
 import { AuthorizationModule } from './core/authorization/authorization.module';
 import { MailModule } from './infrastructure/mail/mail.module';
+import { NotificationsModule } from './domains/notifications/notifications.module';
 
 @Module({
   controllers: [VoyagerController],
@@ -33,6 +34,7 @@ import { MailModule } from './infrastructure/mail/mail.module';
     PrismaModule,
     AuthorizationModule,
     MailModule,
+    NotificationsModule,
     AuthModule,
     UsersModule,
     CustomersModule,

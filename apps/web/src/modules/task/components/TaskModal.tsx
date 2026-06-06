@@ -1,19 +1,24 @@
 import { useState, useEffect } from "react";
 
 import { TagSelect } from "./TagSelect";
-import { DialogHeader, DialogFooter } from "@/shared/ui/dialog";
+import {
+  DialogHeader,
+  DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
-import { Dialog, DialogContent, DialogTitle } from "@radix-ui/react-dialog";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@radix-ui/react-select";
 import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 
 interface TaskModalProps {
   isOpen: boolean;

@@ -64,6 +64,19 @@ export enum IncomeStatus {
   received = "received",
 }
 
+export enum NotificationType {
+  welcome = "welcome",
+  projectMemberAdded = "project-member-added",
+}
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  message: string;
+  read: boolean;
+  createdAt: string | Date;
+}
+
 // ─── Task ─────────────────────────────────────────────────────────────────────
 
 export interface Tag {

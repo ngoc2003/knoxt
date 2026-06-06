@@ -7,9 +7,11 @@ import { AuthResolver } from './auth.resolver';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PrismaAuthRepository } from './infrastructure/prisma-auth.repository';
 import { AUTH_REPOSITORY } from '../../core/constants/repository.tokens';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
+    NotificationsModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

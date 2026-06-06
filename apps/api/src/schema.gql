@@ -290,6 +290,7 @@ type Mutation {
   deleteProject(id: String!): Project!
   deleteTask(id: String!): Task!
   login(data: LoginInput!): AuthResponse!
+  markAllNotificationsRead: Boolean!
   moveTask(input: MoveTaskInput!): Task!
   register(data: RegisterInput!): AuthResponse!
   removeProjectMember(data: RemoveProjectMemberInput!): ProjectMember!
@@ -319,6 +320,19 @@ type NotePage {
   skip: Int!
   take: Int!
   total: Int!
+}
+
+type Notification {
+  createdAt: DateTime!
+  id: ID!
+  message: String!
+  read: Boolean!
+  type: NotificationType!
+}
+
+enum NotificationType {
+  projectMemberAdded
+  welcome
 }
 
 input PaginationInput {
@@ -404,6 +418,7 @@ type Query {
   me: User!
   noteDetail(id: String!): Note!
   notes(filter: ListNotesInput, pagination: PaginationInput): NotePage!
+  notifications: [Notification!]!
   projectDetail(id: String!): Project!
   projects(customerId: String, pagination: PaginationInput): ProjectPage!
   projectsByCustomer(customerId: String!, pagination: PaginationInput): ProjectPage!

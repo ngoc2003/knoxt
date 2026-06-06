@@ -41,9 +41,15 @@ export enum Permission {
   projectDelete = 'project.delete',
 }
 
+export enum NotificationType {
+  welcome = 'welcome',
+  projectMemberAdded = 'project-member-added',
+}
+
 registerEnumType(Priority, { name: 'Priority' });
 registerEnumType(CustomerStatus, { name: 'CustomerStatus' });
 registerEnumType(InvoiceStatus, { name: 'InvoiceStatus' });
 registerEnumType(IncomeStatus, { name: 'IncomeStatus' });
 registerEnumType(SortOrder, { name: 'SortOrder' });
 registerEnumType(ProjectRole, { name: 'ProjectRole' });
+registerEnumType(NotificationType, { name: 'NotificationType' });

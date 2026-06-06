@@ -7,7 +7,6 @@ import {
   Sparkles,
   Settings,
   Search,
-  Bell,
   User,
   Users,
   LogOut,
@@ -19,6 +18,7 @@ import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu";
+import { NotificationCenter } from "@/modules/notification/components/NotificationCenter";
 
 const navigation = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -117,10 +117,7 @@ export function Layout() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-5 h-5 text-gray-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </Button>
+            <NotificationCenter />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
