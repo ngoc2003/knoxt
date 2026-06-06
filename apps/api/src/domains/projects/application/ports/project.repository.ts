@@ -14,6 +14,7 @@ import type {
 } from '../../../../core/common/dtos/pagination.dto';
 import type {
   CreateProjectInput,
+  DeleteProjectColumnInput,
   CreateProjectColumnInput,
   AddProjectMemberInput,
   CancelProjectInvitationInput,
@@ -55,6 +56,7 @@ export interface IProjectRepository {
     data: CreateProjectColumnInput,
   ): Promise<ProjectColumn | null>;
   reorderColumns(data: ReorderProjectColumnsInput): Promise<ProjectColumn[]>;
+  deleteColumn(data: DeleteProjectColumnInput): Promise<ProjectColumn | null>;
   addMember(
     data: AddProjectMemberInput,
   ): Promise<(ProjectMember & { user: User }) | null>;

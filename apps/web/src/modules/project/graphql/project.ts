@@ -128,6 +128,7 @@ export const PROJECT_DETAIL_QUERY = gql`
           id
           name
           email
+          avatarUrl
         }
       }
       invitations {
@@ -157,6 +158,14 @@ export const REORDER_PROJECT_COLUMNS_MUTATION = gql`
       key
       name
       orderIndex
+    }
+  }
+`;
+
+export const DELETE_PROJECT_COLUMN_MUTATION = gql`
+  mutation DeleteProjectColumn($data: DeleteProjectColumnInput!) {
+    deleteProjectColumn(data: $data) {
+      id
     }
   }
 `;

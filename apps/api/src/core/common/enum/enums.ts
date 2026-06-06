@@ -44,6 +44,7 @@ export enum Permission {
 export enum NotificationType {
   welcome = 'welcome',
   projectMemberAdded = 'project-member-added',
+  projectDeleted = 'project-deleted',
 }
 
 registerEnumType(Priority, { name: 'Priority' });

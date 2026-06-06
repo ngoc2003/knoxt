@@ -146,6 +146,11 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+input DeleteProjectColumnInput {
+  columnId: String!
+  projectId: String!
+}
+
 type Expense {
   amount: Float!
   category: String
@@ -289,6 +294,7 @@ type Mutation {
   deleteInvoice(id: String!): Invoice!
   deleteNote(id: String!): Note!
   deleteProject(id: String!): Project!
+  deleteProjectColumn(data: DeleteProjectColumnInput!): ProjectColumn!
   deleteTask(id: String!): Task!
   login(data: LoginInput!): AuthResponse!
   markAllNotificationsRead: Boolean!
@@ -332,6 +338,7 @@ type Notification {
 }
 
 enum NotificationType {
+  projectDeleted
   projectMemberAdded
   welcome
 }

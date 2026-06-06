@@ -2,7 +2,7 @@ import { useNavigate, useParams } from "react-router";
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
   PROJECT_DETAIL_QUERY,
-  CREATE_PROJECT_COLUMN_MUTATION,
+  DELETE_PROJECT_MUTATION,
   REORDER_PROJECT_COLUMNS_MUTATION,
   UPDATE_PROJECT_MUTATION,
 } from "../graphql/project";
@@ -10,7 +10,14 @@ import {
 import { KanbanBoard } from "../../task/components/KanbanBoard";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { ArrowLeft, Columns3, Pencil, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  Columns3,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import {
   MOVE_TASK_MUTATION,
@@ -20,9 +27,17 @@ import {
 import { ProjectModal } from "./ProjectModal";
 import { Button } from "@/shared/ui/button";
 import { TaskModal } from "@/modules/task/components/TaskModal";
-import { Input } from "@/shared/ui/input";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { ProjectMembersDialog } from "./ProjectMembersDialog";
+import { ManageProjectColumnsDialog } from "./ManageProjectColumnsDialog";
+import { DeleteConfirmDialog } from "@/shared/components/DeleteConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 
 interface Task {
   id: string;
@@ -96,9 +111,7 @@ export function ProjectDetailPage() {
   const [updateProjectMutation] = useMutation(UPDATE_PROJECT_MUTATION);
   const [createTaskMutation] = useMutation(CREATE_TASK_MUTATION);
   const [updateTaskMutation] = useMutation(UPDATE_TASK_MUTATION);
-  const [createProjectColumnMutation] = useMutation(
-    CREATE_PROJECT_COLUMN_MUTATION,
-  );
+  const [deleteProjectMutation] = useMutation(DELETE_PROJECT_MUTATION);
   const [reorderProjectColumnsMutation] = useMutation(
     REORDER_PROJECT_COLUMNS_MUTATION,
   );
@@ -110,7 +123,8 @@ export function ProjectDetailPage() {
   // State for TaskModal
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [newColumnName, setNewColumnName] = useState("");
+  const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
+  const [isDeleteProjectOpen, setIsDeleteProjectOpen] = useState(false);
 
   const [tasksState, setTasksState] = useState([] as Task[]);
   const [columnsState, setColumnsState] = useState([] as ProjectColumn[]);
@@ -188,20 +202,6 @@ export function ProjectDetailPage() {
       ],
       awaitRefetchQueries: true,
     });
-  };
-
-  const handleCreateColumn = async () => {
-    const name = newColumnName.trim();
-    if (!name || !projectId) return;
-
-    await createProjectColumnMutation({
-      variables: { data: { projectId, name } },
-      refetchQueries: [
-        { query: PROJECT_DETAIL_QUERY, variables: { id: projectId } },
-      ],
-      awaitRefetchQueries: true,
-    });
-    setNewColumnName("");
   };
 
   const handleMoveColumn = async (columnId: string, targetColumnId: string) => {
@@ -295,6 +295,12 @@ export function ProjectDetailPage() {
     setSelectedTask(null);
   };
 
+  const handleDeleteProject = async () => {
+    if (!projectId) return;
+    await deleteProjectMutation({ variables: { id: projectId } });
+    navigate("/projects");
+  };
+
   if (projectLoading) return <div>Loading...</div>;
   if (!project) return <div>Project not found.</div>;
 
@@ -325,23 +331,6 @@ export function ProjectDetailPage() {
           )}
           {canEdit && (
             <>
-              <Input
-                value={newColumnName}
-                onChange={(event) => setNewColumnName(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") void handleCreateColumn();
-                }}
-                placeholder="New column name"
-                className="w-44"
-              />
-              <Button
-                variant="outline"
-                disabled={!newColumnName.trim()}
-                onClick={handleCreateColumn}
-              >
-                <Columns3 />
-                Add column
-              </Button>
               <Button
                 variant="outline"
                 size="icon"
@@ -367,6 +356,29 @@ export function ProjectDetailPage() {
               </Button>
             </>
           )}
+          {isOwner && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" aria-label="More actions">
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => setIsManageColumnsOpen(true)}>
+                  <Columns3 />
+                  Manage columns
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={() => setIsDeleteProjectOpen(true)}
+                >
+                  <Trash2 />
+                  Delete project
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </nav>
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">
@@ -379,6 +391,7 @@ export function ProjectDetailPage() {
           moveTask={handleMoveTask}
           moveColumn={handleMoveColumn}
           canEdit={canEdit}
+          canManageColumns={isOwner}
           onTaskClick={(task) => {
             setSelectedTask(task as Task);
             setIsTaskModalOpen(true);
@@ -406,6 +419,26 @@ export function ProjectDetailPage() {
         columns={columnsState}
         members={project.members}
         availableTags={[]}
+      />
+      <ManageProjectColumnsDialog
+        isOpen={isManageColumnsOpen}
+        onClose={() => setIsManageColumnsOpen(false)}
+        projectId={project.id}
+        columns={columnsState}
+        taskCounts={tasksState.reduce<Record<string, number>>(
+          (counts, task) => ({
+            ...counts,
+            [task.status]: (counts[task.status] ?? 0) + 1,
+          }),
+          {},
+        )}
+      />
+      <DeleteConfirmDialog
+        isOpen={isDeleteProjectOpen}
+        onClose={() => setIsDeleteProjectOpen(false)}
+        onConfirm={() => void handleDeleteProject()}
+        title="Delete project?"
+        description={`This will delete "${project.name}" and remove it for every project member.`}
       />
     </div>
   );

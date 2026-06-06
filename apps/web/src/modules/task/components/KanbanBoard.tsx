@@ -28,6 +28,7 @@ export function KanbanBoard({
   moveTask,
   moveColumn,
   canEdit,
+  canManageColumns,
   onTaskClick,
 }: {
   tasks: any[];
@@ -35,6 +36,7 @@ export function KanbanBoard({
   moveTask: (taskId: string, newStatus: string, newOrderIndex?: number) => void;
   moveColumn: (columnId: string, targetColumnId: string) => void;
   canEdit: boolean;
+  canManageColumns: boolean;
   onTaskClick: (task: Task) => void;
 }) {
   return (
@@ -53,6 +55,7 @@ export function KanbanBoard({
             moveTask={moveTask}
             moveColumn={moveColumn}
             canEdit={canEdit}
+            canManageColumns={canManageColumns}
             onTaskClick={onTaskClick}
             badgeClass="bg-indigo-50 text-indigo-600"
           />
@@ -72,6 +75,7 @@ interface ColumnProps {
   moveTask: (taskId: string, newStatus: Status) => void;
   moveColumn: (columnId: string, targetColumnId: string) => void;
   canEdit: boolean;
+  canManageColumns: boolean;
   onTaskClick: (task: Task) => void;
   badgeClass: string;
 }
@@ -89,6 +93,7 @@ function Column({
   moveTask,
   moveColumn,
   canEdit,
+  canManageColumns,
   onTaskClick,
   badgeClass,
 }: ColumnProps) {
@@ -102,7 +107,7 @@ function Column({
   });
   const [{ isColumnOver }, columnDrop] = useDrop({
     accept: COLUMN_TYPE,
-    canDrop: (item: { id: string }) => canEdit && item.id !== id,
+    canDrop: (item: { id: string }) => canManageColumns && item.id !== id,
     drop: (item: { id: string }) => moveColumn(item.id, id),
     collect: (monitor) => ({
       isColumnOver: monitor.isOver() && monitor.canDrop(),
@@ -111,7 +116,7 @@ function Column({
   const [{ isColumnDragging }, columnDrag] = useDrag({
     type: COLUMN_TYPE,
     item: { id },
-    canDrag: canEdit,
+    canDrag: canManageColumns,
     collect: (monitor) => ({
       isColumnDragging: monitor.isDragging(),
     }),
@@ -130,15 +135,17 @@ function Column({
         ref={(node) => {
           columnDrag(node as unknown as HTMLDivElement | null);
         }}
-        className={`flex items-center gap-2 mb-4 ${canEdit ? "cursor-grab active:cursor-grabbing" : ""}`}
+        className={`flex items-center gap-2 mb-4 ${canManageColumns ? "cursor-grab active:cursor-grabbing" : ""}`}
       >
         <div
-          role="button"
-          tabIndex={0}
-          aria-label={`Drag ${title} column`}
+          role={canManageColumns ? "button" : undefined}
+          tabIndex={canManageColumns ? 0 : undefined}
+          aria-label={canManageColumns ? `Drag ${title} column` : undefined}
           className="flex items-center gap-2"
         >
-          <GripVertical className="h-4 w-4 text-gray-400" />
+          {canManageColumns && (
+            <GripVertical className="h-4 w-4 text-gray-400" />
+          )}
           {icon}
           <span className="text-sm font-medium text-gray-700">{title}</span>
         </div>

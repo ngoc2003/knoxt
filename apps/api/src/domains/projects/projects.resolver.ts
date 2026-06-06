@@ -12,6 +12,7 @@ import { ProjectPage } from './project-page.model';
 import {
   CreateProjectColumnInput,
   CreateProjectInput,
+  DeleteProjectColumnInput,
   AddProjectMemberInput,
   CancelProjectInvitationInput,
   RemoveProjectMemberInput,
@@ -98,6 +99,15 @@ export class ProjectsResolver {
     @Args('data') data: ReorderProjectColumnsInput,
   ) {
     return this.projectsService.reorderColumns(user.id, data);
+  }
+
+  @Mutation(() => ProjectColumn)
+  @RequirePermission(Permission.projectEdit, 'project', 'data.projectId')
+  deleteProjectColumn(
+    @CurrentUser() user: AuthUser,
+    @Args('data') data: DeleteProjectColumnInput,
+  ) {
+    return this.projectsService.deleteColumn(user.id, data);
   }
 
   @Mutation(() => ProjectShareResult)

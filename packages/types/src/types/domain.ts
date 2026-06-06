@@ -67,6 +67,7 @@ export enum IncomeStatus {
 export enum NotificationType {
   welcome = "welcome",
   projectMemberAdded = "project-member-added",
+  projectDeleted = "project-deleted",
 }
 
 export interface Notification {
@@ -184,6 +185,11 @@ export interface ProjectColumn {
 export interface ReorderProjectColumnsInput {
   projectId: string;
   columnIds: string[];
+}
+
+export interface DeleteProjectColumnInput {
+  projectId: string;
+  columnId: string;
 }
 
 export interface CreateProjectInput {

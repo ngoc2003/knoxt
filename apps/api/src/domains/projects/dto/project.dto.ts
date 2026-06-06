@@ -109,6 +109,17 @@ export class ReorderProjectColumnsInput {
 }
 
 @InputType()
+export class DeleteProjectColumnInput {
+  @Field()
+  @IsUUID()
+  projectId: string;
+
+  @Field()
+  @IsUUID()
+  columnId: string;
+}
+
+@InputType()
 export class AddProjectMemberInput {
   @Field()
   @IsUUID()

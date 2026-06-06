@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Inject,
   NotFoundException,
@@ -9,6 +10,7 @@ import type { IProjectRepository } from './application/ports/project.repository'
 import {
   CreateProjectColumnInput,
   CreateProjectInput,
+  DeleteProjectColumnInput,
   AddProjectMemberInput,
   CancelProjectInvitationInput,
   RemoveProjectMemberInput,
@@ -80,11 +82,21 @@ export class ProjectsService {
   }
 
   async remove(userId: string, id: string) {
-    await this.findOne(userId, id);
+    const project = await this.findOne(userId, id);
+    await Promise.all(
+      project.members.map((member) =>
+        this.notificationsService.create(
+          member.userId,
+          NotificationType.projectDeleted,
+          `The project "${project.name}" was deleted.`,
+        ),
+      ),
+    );
     return this.projectRepo.remove(userId, id);
   }
 
   async createColumn(userId: string, data: CreateProjectColumnInput) {
+    await this.ensureOwner(userId, data.projectId);
     if (!data.name.trim()) {
       throw new BadRequestException('Column name is required');
     }
@@ -95,6 +107,7 @@ export class ProjectsService {
 
   async reorderColumns(userId: string, data: ReorderProjectColumnsInput) {
     const project = await this.findOne(userId, data.projectId);
+    this.assertOwner(userId, project.userId);
     const currentIds = new Set(project.columns.map((column) => column.id));
     const orderedIds = new Set(data.columnIds);
 
@@ -109,6 +122,17 @@ export class ProjectsService {
     }
 
     return this.projectRepo.reorderColumns(data);
+  }
+
+  async deleteColumn(userId: string, data: DeleteProjectColumnInput) {
+    const project = await this.findOne(userId, data.projectId);
+    this.assertOwner(userId, project.userId);
+    if (project.columns.length <= 1) {
+      throw new BadRequestException('A project must have at least one column');
+    }
+    const column = await this.projectRepo.deleteColumn(data);
+    if (!column) throw new NotFoundException('Project column not found');
+    return column;
   }
 
   async addMember(userId: string, data: AddProjectMemberInput) {
@@ -172,5 +196,16 @@ export class ProjectsService {
     if (!invitation)
       throw new NotFoundException('Project invitation not found');
     return invitation;
+  }
+
+  private async ensureOwner(userId: string, projectId: string) {
+    const project = await this.findOne(userId, projectId);
+    this.assertOwner(userId, project.userId);
+  }
+
+  private assertOwner(userId: string, ownerId: string) {
+    if (userId !== ownerId) {
+      throw new ForbiddenException('Only the project owner can manage columns');
+    }
   }
 }

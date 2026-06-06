@@ -5,11 +5,7 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { Notification, NotificationType } from "@repo/types";
 import { Button } from "@/shared/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/shared/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import {
   MARK_ALL_NOTIFICATIONS_READ_MUTATION,
@@ -97,7 +93,8 @@ export function NotificationCenter() {
                 >
                   <div className="mt-0.5 h-8 w-8 rounded-full bg-indigo-50 p-2 text-indigo-600">
                     {notification.type ===
-                    NotificationType.projectMemberAdded ? (
+                      NotificationType.projectMemberAdded ||
+                    notification.type === NotificationType.projectDeleted ? (
                       <FolderKanban className="h-4 w-4" />
                     ) : (
                       <Sparkles className="h-4 w-4" />

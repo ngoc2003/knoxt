@@ -7,6 +7,7 @@ import type {
   CancelProjectInvitationInput,
   CreateProjectColumnInput,
   CreateProjectInput,
+  DeleteProjectColumnInput,
   RemoveProjectMemberInput,
   ReorderProjectColumnsInput,
   UpdateProjectMemberRoleInput,
@@ -201,6 +202,26 @@ export class PrismaProjectRepository implements IProjectRepository {
       where: { projectId: data.projectId },
       orderBy: { orderIndex: 'asc' },
     });
+  }
+
+  async deleteColumn(data: DeleteProjectColumnInput) {
+    const column = await this.prisma.projectColumn.findFirst({
+      where: { id: data.columnId, projectId: data.projectId },
+    });
+    if (!column) return null;
+
+    const [, deletedColumn] = await this.prisma.$transaction([
+      this.prisma.task.updateMany({
+        where: {
+          projectId: data.projectId,
+          status: column.key,
+          deletedAt: null,
+        },
+        data: { assigneeId: null, deletedAt: new Date() },
+      }),
+      this.prisma.projectColumn.delete({ where: { id: column.id } }),
+    ]);
+    return deletedColumn;
   }
 
   async addMember(data: AddProjectMemberInput) {
