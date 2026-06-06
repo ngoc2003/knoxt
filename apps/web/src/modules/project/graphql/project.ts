@@ -53,6 +53,16 @@ export const PROJECTS_QUERY = gql`
           id
           amount
         }
+        columns {
+          id
+          key
+          name
+          orderIndex
+        }
+        tasks {
+          id
+          status
+        }
       }
       total
       skip
@@ -84,6 +94,12 @@ export const PROJECT_DETAIL_QUERY = gql`
           color
         }
       }
+      columns {
+        id
+        key
+        name
+        orderIndex
+      }
       incomes {
         id
         amount
@@ -92,6 +108,17 @@ export const PROJECT_DETAIL_QUERY = gql`
         id
         name
       }
+    }
+  }
+`;
+
+export const CREATE_PROJECT_COLUMN_MUTATION = gql`
+  mutation CreateProjectColumn($data: CreateProjectColumnInput!) {
+    createProjectColumn(data: $data) {
+      id
+      key
+      name
+      orderIndex
     }
   }
 `;

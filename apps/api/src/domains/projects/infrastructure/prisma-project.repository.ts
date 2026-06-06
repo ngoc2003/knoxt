@@ -3,6 +3,7 @@ import { Prisma } from 'database/generated/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import type { PaginationInput } from '../../../core/common/dtos/pagination.dto';
 import type {
+  CreateProjectColumnInput,
   CreateProjectInput,
   UpdateProjectInput,
 } from '../dto/project.dto';
@@ -25,6 +26,13 @@ export class PrismaProjectRepository implements IProjectRepository {
       userId,
       startDate: new Date(startDate),
       endDate: endDate ? new Date(endDate) : null,
+      columns: {
+        create: [
+          { key: 'todo', name: 'To-do', orderIndex: 0 },
+          { key: 'doing', name: 'Doing', orderIndex: 1 },
+          { key: 'done', name: 'Done', orderIndex: 2 },
+        ],
+      },
     };
   }
 
@@ -51,7 +59,12 @@ export class PrismaProjectRepository implements IProjectRepository {
         skip: pagination.skip ?? 0,
         take: pagination.take ?? 20,
         orderBy: { createdAt: 'desc' },
-        include: { customer: true, incomes: true },
+        include: {
+          customer: true,
+          incomes: true,
+          columns: { orderBy: { orderIndex: 'asc' } },
+          tasks: { where: { deletedAt: null }, orderBy: { orderIndex: 'asc' } },
+        },
       }),
       this.prisma.project.count({ where }),
     ]);
@@ -75,6 +88,7 @@ export class PrismaProjectRepository implements IProjectRepository {
           include: { tags: { include: { tag: true } } },
         },
         incomes: true,
+        columns: { orderBy: { orderIndex: 'asc' } },
       },
     });
 
@@ -112,6 +126,39 @@ export class PrismaProjectRepository implements IProjectRepository {
     return this.prisma.project.update({
       where: { id },
       data: { deletedAt: new Date() },
+    });
+  }
+
+  async createColumn(userId: string, data: CreateProjectColumnInput) {
+    const project = await this.prisma.project.findFirst({
+      where: { id: data.projectId, userId, deletedAt: null },
+      include: { columns: true },
+    });
+    if (!project) return null;
+
+    const name = data.name.trim();
+    const baseKey =
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'column';
+    const keys = new Set(project.columns.map((column) => column.key));
+    let key = baseKey;
+    let suffix = 2;
+    while (keys.has(key)) key = `${baseKey}-${suffix++}`;
+
+    const maxOrder = project.columns.reduce(
+      (max, column) => Math.max(max, column.orderIndex),
+      -1,
+    );
+
+    return this.prisma.projectColumn.create({
+      data: {
+        projectId: project.id,
+        key,
+        name,
+        orderIndex: data.orderIndex ?? maxOrder + 1,
+      },
     });
   }
 }

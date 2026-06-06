@@ -1,7 +1,28 @@
-import { Field, GraphQLISODateTime, ID, ObjectType } from '@nestjs/graphql';
+import {
+  Field,
+  GraphQLISODateTime,
+  ID,
+  Int,
+  ObjectType,
+} from '@nestjs/graphql';
 import { Customer } from '../customers/customer.model';
 import { Income } from '../finance/models/finance.models';
 import { Task } from '../tasks/task.model';
+
+@ObjectType()
+export class ProjectColumn {
+  @Field(() => ID)
+  id: string;
+
+  @Field()
+  key: string;
+
+  @Field()
+  name: string;
+
+  @Field(() => Int)
+  orderIndex: number;
+}
 
 @ObjectType()
 export class Project {
@@ -40,4 +61,7 @@ export class Project {
 
   @Field(() => [Task])
   tasks: Task[];
+
+  @Field(() => [ProjectColumn])
+  columns: ProjectColumn[];
 }

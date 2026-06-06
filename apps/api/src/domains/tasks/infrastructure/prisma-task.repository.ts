@@ -127,4 +127,16 @@ export class PrismaTaskRepository implements ITaskRepository {
       data: { deletedAt: new Date() },
     });
   }
+
+  async projectHasColumn(userId: string, projectId: string, status: string) {
+    const column = await this.prisma.projectColumn.findFirst({
+      where: {
+        projectId,
+        key: status,
+        project: { userId, deletedAt: null },
+      },
+      select: { id: true },
+    });
+    return Boolean(column);
+  }
 }

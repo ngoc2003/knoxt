@@ -1,9 +1,13 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
-import { Project } from './project.model';
+import { Project, ProjectColumn } from './project.model';
 import { ProjectPage } from './project-page.model';
-import { CreateProjectInput, UpdateProjectInput } from './dto/project.dto';
+import {
+  CreateProjectColumnInput,
+  CreateProjectInput,
+  UpdateProjectInput,
+} from './dto/project.dto';
 import { GqlAuthGuard } from '../../core/common/guards/gql-auth.guard';
 import {
   AuthUser,
@@ -59,5 +63,13 @@ export class ProjectsResolver {
   @Mutation(() => Project)
   deleteProject(@CurrentUser() user: AuthUser, @Args('id') id: string) {
     return this.projectsService.remove(user.id, id);
+  }
+
+  @Mutation(() => ProjectColumn)
+  createProjectColumn(
+    @CurrentUser() user: AuthUser,
+    @Args('data') data: CreateProjectColumnInput,
+  ) {
+    return this.projectsService.createColumn(user.id, data);
   }
 }

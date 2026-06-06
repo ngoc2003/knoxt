@@ -1,7 +1,16 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Inject,
+  NotFoundException,
+} from '@nestjs/common';
 import { PROJECT_REPOSITORY } from '../../core/constants/repository.tokens';
 import type { IProjectRepository } from './application/ports/project.repository';
-import { CreateProjectInput, UpdateProjectInput } from './dto/project.dto';
+import {
+  CreateProjectColumnInput,
+  CreateProjectInput,
+  UpdateProjectInput,
+} from './dto/project.dto';
 import { PaginationInput } from '../../core/common/dtos/pagination.dto';
 import { FinanceService } from '../finance/finance.service';
 
@@ -52,5 +61,14 @@ export class ProjectsService {
   async remove(userId: string, id: string) {
     await this.findOne(userId, id);
     return this.projectRepo.remove(userId, id);
+  }
+
+  async createColumn(userId: string, data: CreateProjectColumnInput) {
+    if (!data.name.trim()) {
+      throw new BadRequestException('Column name is required');
+    }
+    const column = await this.projectRepo.createColumn(userId, data);
+    if (!column) throw new NotFoundException('Project not found');
+    return column;
   }
 }

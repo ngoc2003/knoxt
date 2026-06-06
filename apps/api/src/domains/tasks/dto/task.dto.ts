@@ -8,7 +8,7 @@ import {
   IsUUID,
   MaxLength,
 } from 'class-validator';
-import { Priority, TaskStatus } from '../../../core/common/enum/enums';
+import { Priority } from '../../../core/common/enum/enums';
 
 @InputType()
 export class CreateTaskInput {
@@ -26,10 +26,10 @@ export class CreateTaskInput {
   @IsUUID()
   projectId: string;
 
-  @Field(() => TaskStatus, { nullable: true })
-  @IsEnum(TaskStatus)
+  @Field(() => String, { nullable: true })
+  @IsString()
   @IsOptional()
-  status?: TaskStatus;
+  status?: string;
 
   @Field(() => Priority, { nullable: true })
   @IsEnum(Priority)
@@ -64,10 +64,10 @@ export class UpdateTaskInput {
   @IsOptional()
   description?: string;
 
-  @Field(() => TaskStatus, { nullable: true })
-  @IsEnum(TaskStatus)
+  @Field(() => String, { nullable: true })
+  @IsString()
   @IsOptional()
-  status?: TaskStatus;
+  status?: string;
 
   @Field(() => Priority, { nullable: true })
   @IsEnum(Priority)
@@ -96,9 +96,9 @@ export class MoveTaskInput {
   @IsUUID()
   id: string;
 
-  @Field(() => TaskStatus)
-  @IsEnum(TaskStatus)
-  status: TaskStatus;
+  @Field()
+  @IsString()
+  status: string;
 
   @Field(() => Int)
   @IsInt()
@@ -111,10 +111,10 @@ export class ListTasksInput {
   @IsOptional()
   projectId?: string;
 
-  @Field(() => TaskStatus, { nullable: true })
-  @IsEnum(TaskStatus)
+  @Field(() => String, { nullable: true })
+  @IsString()
   @IsOptional()
-  status?: TaskStatus;
+  status?: string;
 
   @Field(() => Priority, { nullable: true })
   @IsEnum(Priority)

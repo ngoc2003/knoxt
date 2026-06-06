@@ -1,5 +1,6 @@
-import { Field, InputType } from '@nestjs/graphql';
+import { Field, InputType, Int } from '@nestjs/graphql';
 import {
+  IsInt,
   IsDateString,
   IsIn,
   IsOptional,
@@ -70,4 +71,21 @@ export class UpdateProjectInput {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+}
+
+@InputType()
+export class CreateProjectColumnInput {
+  @Field()
+  @IsUUID()
+  projectId: string;
+
+  @Field()
+  @IsString()
+  @MaxLength(100)
+  name: string;
+
+  @Field(() => Int, { nullable: true })
+  @IsInt()
+  @IsOptional()
+  orderIndex?: number;
 }

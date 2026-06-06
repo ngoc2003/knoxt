@@ -5,7 +5,7 @@ import {
   Int,
   ObjectType,
 } from '@nestjs/graphql';
-import { Priority, TaskStatus } from '../../core/common/enum/enums';
+import { Priority } from '../../core/common/enum/enums';
 import { Project } from '../projects/project.model';
 
 @ObjectType()
@@ -31,8 +31,8 @@ export class Task {
   @Field(() => String, { nullable: true })
   description?: string | null;
 
-  @Field(() => TaskStatus)
-  status: TaskStatus;
+  @Field()
+  status: string;
 
   @Field(() => Priority)
   priority: Priority;

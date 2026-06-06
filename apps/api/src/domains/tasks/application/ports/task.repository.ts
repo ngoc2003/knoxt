@@ -24,4 +24,9 @@ export interface ITaskRepository {
   update(userId: string, id: string, data: UpdateTaskInput): Promise<Task>;
   moveTask(userId: string, input: MoveTaskInput): Promise<Task>;
   remove(userId: string, id: string): Promise<Task>;
+  projectHasColumn(
+    userId: string,
+    projectId: string,
+    status: string,
+  ): Promise<boolean>;
 }

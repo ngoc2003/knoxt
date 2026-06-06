@@ -5,12 +5,7 @@ import { Badge } from "../../../shared/ui/badge";
 export function ProjectCard({ project }: { project: any }) {
   const navigate = useNavigate();
   const clientName = project.customer?.name || "Unknown Client";
-  const todoCount =
-    project.tasks?.filter((t: any) => t.status === "todo").length || 0;
-  const doingCount =
-    project.tasks?.filter((t: any) => t.status === "doing").length || 0;
-  const doneCount =
-    project.tasks?.filter((t: any) => t.status === "done").length || 0;
+  const columns = project.columns || [];
 
   const totalIncomes =
     project.incomes?.reduce(
@@ -47,10 +42,14 @@ export function ProjectCard({ project }: { project: any }) {
         </span>
       </div>
       <div className="text-sm text-gray-600 mb-2">{clientName}</div>
-      <div className="flex gap-2 text-xs">
-        <Badge variant="secondary">To-do: {todoCount}</Badge>
-        <Badge variant="secondary">Doing: {doingCount}</Badge>
-        <Badge variant="secondary">Done: {doneCount}</Badge>
+      <div className="flex flex-wrap gap-2 text-xs">
+        {columns.map((column: any) => (
+          <Badge key={column.id} variant="secondary">
+            {column.name}:{" "}
+            {project.tasks?.filter((task: any) => task.status === column.key)
+              .length || 0}
+          </Badge>
+        ))}
       </div>
     </Card>
   );

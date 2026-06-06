@@ -20,7 +20,8 @@ interface TaskModalProps {
   onClose: () => void;
   onSave: (task: Partial<Task>) => void | Promise<void>;
   task?: Partial<Task> | null;
-  availableTags: string[];
+  availableTags?: string[];
+  columns?: { key: string; name: string }[];
 }
 
 interface Task {
@@ -28,24 +29,30 @@ interface Task {
   title: string;
   description?: string;
   priority: "low" | "medium" | "high";
-  status: "todo" | "doing" | "done";
+  status: string;
   dueDate?: string;
   projectId: string;
   tags?: string[];
 }
+
+const DEFAULT_COLUMNS = [
+  { key: "todo", name: "To-do" },
+  { key: "doing", name: "Doing" },
+  { key: "done", name: "Done" },
+];
 
 export function TaskModal({
   isOpen,
   onClose,
   onSave,
   task,
-  availableTags,
+  columns = DEFAULT_COLUMNS,
 }: TaskModalProps) {
   const [formData, setFormData] = useState<Partial<Task>>({
     title: "",
     description: "",
     priority: "medium",
-    status: "todo",
+    status: columns[0]?.key || "todo",
     dueDate: "",
     projectId: "",
     tags: [],
@@ -67,7 +74,7 @@ export function TaskModal({
         title: "",
         description: "",
         priority: "medium",
-        status: "todo",
+        status: columns[0]?.key || "todo",
         dueDate: "",
         projectId: "",
         tags: [],
@@ -75,7 +82,7 @@ export function TaskModal({
     }
 
     setErrors({});
-  }, [task, isOpen]);
+  }, [task, isOpen, columns]);
 
   const validateForm = () => {
     const newErrors: {
@@ -177,17 +184,17 @@ export function TaskModal({
             </Label>
             <Select
               value={formData.status}
-              onValueChange={(value: "todo" | "doing" | "done") =>
-                updateField("status", value)
-              }
+              onValueChange={(value) => updateField("status", value)}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todo">To-do</SelectItem>
-                <SelectItem value="doing">Doing</SelectItem>
-                <SelectItem value="done">Done</SelectItem>
+                {columns.map((column) => (
+                  <SelectItem key={column.key} value={column.key}>
+                    {column.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

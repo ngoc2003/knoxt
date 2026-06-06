@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Inject,
+  NotFoundException,
+} from '@nestjs/common';
 import { TASK_REPOSITORY } from '../../core/constants/repository.tokens';
 import type { ITaskRepository } from './application/ports/task.repository';
 import {
@@ -17,6 +22,11 @@ export class TasksService {
   ) {}
 
   async create(userId: string, data: CreateTaskInput) {
+    await this.ensureProjectColumn(
+      userId,
+      data.projectId,
+      data.status ?? 'todo',
+    );
     return this.taskRepo.create(userId, data);
   }
 
@@ -35,17 +45,38 @@ export class TasksService {
   }
 
   async update(userId: string, id: string, data: UpdateTaskInput) {
-    await this.findOne(userId, id);
+    const task = await this.findOne(userId, id);
+    if (data.status) {
+      await this.ensureProjectColumn(userId, task.projectId, data.status);
+    }
     return this.taskRepo.update(userId, id, data);
   }
 
   async moveTask(userId: string, input: MoveTaskInput) {
-    await this.findOne(userId, input.id);
+    const task = await this.findOne(userId, input.id);
+    await this.ensureProjectColumn(userId, task.projectId, input.status);
     return this.taskRepo.moveTask(userId, input);
   }
 
   async remove(userId: string, id: string) {
     await this.findOne(userId, id);
     return this.taskRepo.remove(userId, id);
+  }
+
+  private async ensureProjectColumn(
+    userId: string,
+    projectId: string,
+    status: string,
+  ) {
+    const exists = await this.taskRepo.projectHasColumn(
+      userId,
+      projectId,
+      status,
+    );
+    if (!exists) {
+      throw new BadRequestException(
+        `Column '${status}' does not exist in this project`,
+      );
+    }
   }
 }

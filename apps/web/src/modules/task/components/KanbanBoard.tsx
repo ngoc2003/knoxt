@@ -3,7 +3,14 @@ import { Badge } from "../../../shared/ui/badge";
 import { Clock, Flag } from "lucide-react";
 
 type Priority = "low" | "medium" | "high";
-type Status = "todo" | "doing" | "done";
+type Status = string;
+
+interface ProjectColumn {
+  id: string;
+  key: string;
+  name: string;
+  orderIndex: number;
+}
 
 interface Task {
   id: string;
@@ -15,44 +22,30 @@ interface Task {
 }
 export function KanbanBoard({
   tasks,
+  columns,
   moveTask,
 }: {
   tasks: any[];
+  columns: ProjectColumn[];
   moveTask: (taskId: string, newStatus: string, newOrderIndex?: number) => void;
 }) {
-  const todoTasks = tasks.filter((t) => t.status === "todo");
-  const doingTasks = tasks.filter((t) => t.status === "doing");
-  const doneTasks = tasks.filter((t) => t.status === "done");
-
   return (
-    <div className="grid grid-cols-3 gap-4">
-      <Column
-        status="todo"
-        title="To-do"
-        icon={null}
-        tasks={todoTasks}
-        count={todoTasks.length}
-        moveTask={moveTask}
-        badgeClass="bg-gray-100 text-gray-600"
-      />
-      <Column
-        status="doing"
-        title="Doing"
-        icon={null}
-        tasks={doingTasks}
-        count={doingTasks.length}
-        moveTask={moveTask}
-        badgeClass="bg-indigo-50 text-indigo-600"
-      />
-      <Column
-        status="done"
-        title="Done"
-        icon={null}
-        tasks={doneTasks}
-        count={doneTasks.length}
-        moveTask={moveTask}
-        badgeClass="bg-green-50 text-green-600"
-      />
+    <div className="flex gap-4 overflow-x-auto pb-4">
+      {columns.map((column) => {
+        const columnTasks = tasks.filter((task) => task.status === column.key);
+        return (
+          <Column
+            key={column.id}
+            status={column.key}
+            title={column.name}
+            icon={null}
+            tasks={columnTasks}
+            count={columnTasks.length}
+            moveTask={moveTask}
+            badgeClass="bg-indigo-50 text-indigo-600"
+          />
+        );
+      })}
     </div>
   );
 }
@@ -87,7 +80,7 @@ function Column({
   });
 
   return (
-    <div className="flex-1 min-w-0">
+    <div className="w-80 min-w-80">
       <div className="flex items-center gap-2 mb-4">
         {icon}
         <span className="text-sm font-medium text-gray-700">{title}</span>

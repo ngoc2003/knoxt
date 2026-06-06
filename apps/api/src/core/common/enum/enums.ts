@@ -1,11 +1,5 @@
 import { registerEnumType } from '@nestjs/graphql';
 
-export enum TaskStatus {
-  todo = 'todo',
-  doing = 'doing',
-  done = 'done',
-}
-
 export enum Priority {
   low = 'low',
   medium = 'medium',
@@ -34,7 +28,6 @@ export enum SortOrder {
   desc = 'desc',
 }
 
-registerEnumType(TaskStatus, { name: 'TaskStatus' });
 registerEnumType(Priority, { name: 'Priority' });
 registerEnumType(CustomerStatus, { name: 'CustomerStatus' });
 registerEnumType(InvoiceStatus, { name: 'InvoiceStatus' });

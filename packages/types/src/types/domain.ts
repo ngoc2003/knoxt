@@ -41,12 +41,6 @@ export interface PageResult<T> {
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-export enum TaskStatus {
-  todo = "todo",
-  doing = "doing",
-  done = "done",
-}
-
 export enum Priority {
   low = "low",
   medium = "medium",
@@ -82,7 +76,7 @@ export interface Task {
   id: string;
   title: string;
   description?: string | null;
-  status: TaskStatus;
+  status: string;
   priority: Priority;
   orderIndex: number;
   projectId: string;
@@ -96,7 +90,7 @@ export interface CreateTaskInput {
   title: string;
   description?: string;
   projectId: string;
-  status?: TaskStatus;
+  status?: string;
   priority?: Priority;
   orderIndex?: number;
   dueDate?: Date;
@@ -106,7 +100,7 @@ export interface CreateTaskInput {
 export interface UpdateTaskInput {
   title?: string;
   description?: string;
-  status?: TaskStatus;
+  status?: string;
   priority?: Priority;
   orderIndex?: number;
   dueDate?: Date;
@@ -115,13 +109,13 @@ export interface UpdateTaskInput {
 
 export interface MoveTaskInput {
   id: string;
-  status: TaskStatus;
+  status: string;
   orderIndex: number;
 }
 
 export interface ListTasksInput {
   projectId?: string;
-  status?: TaskStatus;
+  status?: string;
   priority?: Priority;
   search?: string;
   tags?: string[];
@@ -139,6 +133,14 @@ export interface Project {
   endDate?: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  columns?: ProjectColumn[];
+}
+
+export interface ProjectColumn {
+  id: string;
+  key: string;
+  name: string;
+  orderIndex: number;
 }
 
 export interface CreateProjectInput {

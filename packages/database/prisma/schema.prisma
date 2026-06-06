@@ -9,12 +9,6 @@ datasource db {
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
-enum TaskStatus {
-  todo
-  doing
-  done
-}
-
 enum Priority {
   low
   medium
@@ -93,39 +87,55 @@ model Customer {
 }
 
 model Project {
-  id          String    @id @default(uuid())
+  id          String          @id @default(uuid())
   userId      String
   customerId  String
-  user        User      @relation(fields: [userId], references: [id])
-  customer    Customer  @relation(fields: [customerId], references: [id])
+  user        User            @relation(fields: [userId], references: [id])
+  customer    Customer        @relation(fields: [customerId], references: [id])
   incomes     Income[]
   name        String
   description String?
-  status      String    @default("active")
+  status      String          @default("active")
   startDate   DateTime
   endDate     DateTime?
   tasks       Task[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  columns     ProjectColumn[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   deletedAt   DateTime?
 }
 
+model ProjectColumn {
+  id         String   @id @default(uuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  key        String
+  name       String
+  orderIndex Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([projectId, key])
+  @@unique([projectId, name])
+  @@index([projectId, orderIndex])
+}
+
 model Task {
-  id          String       @id @default(uuid())
+  id          String        @id @default(uuid())
   userId      String
   projectId   String
-  user        User         @relation(fields: [userId], references: [id])
-  project     Project      @relation(fields: [projectId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
+  project     Project       @relation(fields: [projectId], references: [id])
   title       String
   description String?
-  status      TaskStatus   @default(todo)
-  priority    Priority     @default(medium)
-  orderIndex  Int          @default(0)
+  status      String        @default("todo")
+  priority    Priority      @default(medium)
+  orderIndex  Int           @default(0)
   dueDate     DateTime?
   tags        TaskTagMap[]
   timeLogs    TaskTimeLog[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   deletedAt   DateTime?
 }
 
@@ -205,8 +215,8 @@ model Attachment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
- 
- model Income {
+
+model Income {
   id         String       @id @default(uuid())
   userId     String
   customerId String

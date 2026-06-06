@@ -67,6 +67,12 @@ input CreateNoteInput {
   title: String!
 }
 
+input CreateProjectColumnInput {
+  name: String!
+  orderIndex: Int
+  projectId: String!
+}
+
 input CreateProjectInput {
   budget: String
   customerId: String!
@@ -83,7 +89,7 @@ input CreateTaskInput {
   orderIndex: Int
   priority: Priority
   projectId: String!
-  status: TaskStatus
+  status: String
   tags: [String!]
   title: String!
 }
@@ -237,7 +243,7 @@ input ListTasksInput {
   priority: Priority
   projectId: String
   search: String
-  status: TaskStatus
+  status: String
   tags: [String!]
 }
 
@@ -249,7 +255,7 @@ input LoginInput {
 input MoveTaskInput {
   id: String!
   orderIndex: Int!
-  status: TaskStatus!
+  status: String!
 }
 
 type Mutation {
@@ -260,6 +266,7 @@ type Mutation {
   createInvoice(data: CreateInvoiceInput!): Invoice!
   createNote(data: CreateNoteInput!): Note!
   createProject(data: CreateProjectInput!): Project!
+  createProjectColumn(data: CreateProjectColumnInput!): ProjectColumn!
   createTask(data: CreateTaskInput!): Task!
   deleteAiSession(id: String!): AiSession!
   deleteCustomer(id: String!): Customer!
@@ -310,6 +317,7 @@ enum Priority {
 }
 
 type Project {
+  columns: [ProjectColumn!]!
   createdAt: DateTime!
   customer: Customer!
   customerId: ID!
@@ -322,6 +330,13 @@ type Project {
   status: String!
   tasks: [Task!]!
   updatedAt: DateTime!
+}
+
+type ProjectColumn {
+  id: ID!
+  key: String!
+  name: String!
+  orderIndex: Int!
 }
 
 type ProjectPage {
@@ -377,7 +392,7 @@ type Task {
   priority: Priority!
   project: Project!
   projectId: ID!
-  status: TaskStatus!
+  status: String!
   tags: [Tag!]
   title: String!
   updatedAt: DateTime!
@@ -388,12 +403,6 @@ type TaskPage {
   skip: Int!
   take: Int!
   total: Int!
-}
-
-enum TaskStatus {
-  doing
-  done
-  todo
 }
 
 input UpdateCustomerInput {
@@ -443,7 +452,7 @@ input UpdateTaskInput {
   dueDate: DateTime
   orderIndex: Int
   priority: Priority
-  status: TaskStatus
+  status: String
   tags: [String!]
   title: String
 }
