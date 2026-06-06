@@ -1,19 +1,19 @@
+import { AIAssistant } from "@/modules/ai-assistant/components/AIAssistant";
+import { ForgotPassword } from "@/modules/auth/components/ForgotPassword";
+import { Login } from "@/modules/auth/components/Login";
+import { Register } from "@/modules/auth/components/Register";
+import { Customers } from "@/modules/customer/components/Customer";
+import { CustomerDetail } from "@/modules/customer/components/CustomerDetail";
+import { Dashboard } from "@/modules/dashboard/components/Dashboard";
+import { Finance } from "@/modules/finance/components/Finance";
+import { Landing } from "@/modules/landing/components/Landing";
+import { Notes } from "@/modules/notes/components/Notes";
+import { ProjectDetailPage } from "@/modules/project/components/ProjectDetailPage";
+import { ProjectListPage } from "@/modules/project/components/ProjectListPage";
+import { Settings } from "@/modules/settings/components/Settings";
+import { ProtectedRoute, PublicRoute } from "@/shared/components/RouteGuards";
+import { Layout } from "@/layout/Layout";
 import { createBrowserRouter } from "react-router";
-import { ProtectedRoute, PublicRoute } from "./components/RouteGuards";
-import { Landing } from "./pages/Landing";
-import { Login } from "./pages/Login";
-import { Register } from "./pages/Register";
-import { ForgotPassword } from "./pages/ForgotPassword";
-import { Dashboard } from "./pages/Dashboard";
-import { ProjectListPage } from "./pages/ProjectListPage";
-import { ProjectDetailPage } from "./pages/ProjectDetailPage";
-import { CustomerDetail } from "./pages/CustomerDetail";
-import { Notes } from "./pages/Notes";
-import { Finance } from "./pages/Finance";
-import { AIAssistant } from "./pages/AIAssistant";
-import { Settings } from "./pages/Settings";
-import { Customers } from "./pages/Customer";
-import { Layout } from "./layout/Layout";
 
 export const router = createBrowserRouter([
   {

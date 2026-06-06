@@ -15,6 +15,10 @@ export default defineConfig({
       // Alias @ to the src directory
       // eslint-disable-next-line no-undef
       "@": path.resolve(__dirname, "./src"),
+      "@/modules": path.resolve(__dirname, "./src/modules"),
+      "@/shared": path.resolve(__dirname, "./src/shared"),
+      "@/layout": path.resolve(__dirname, "./src/layout"),
+      "@/app": path.resolve(__dirname, "./src/app"),
     },
   },
 

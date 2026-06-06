@@ -6,6 +6,7 @@ A comprehensive SaaS platform for freelancers to manage their business operation
 
 - **Client Management**: Track customers, projects, and communications
 - **Project & Task Management**: Organize work with projects, tasks, and priorities
+- **Project Collaboration**: Share projects with role-based permissions and email invitations
 - **Financial Tracking**: Manage income, expenses, invoices, and tax configurations
 - **Note-Taking**: Attach notes to customers, projects, or tasks
 - **AI Assistant**: Integrated AI chat for business assistance
@@ -21,6 +22,7 @@ A comprehensive SaaS platform for freelancers to manage their business operation
 - **PostgreSQL** - Primary database
 - **JWT Authentication** - Secure user sessions
 - **bcrypt** - Password hashing
+- **Nodemailer** - Gmail-compatible SMTP invitation delivery
 - **TypeScript** - Static type checking
 
 ### Frontend (Web)
@@ -43,12 +45,10 @@ A comprehensive SaaS platform for freelancers to manage their business operation
 
 - `api`: NestJS GraphQL backend with business logic modules
 - `web`: React frontend application
-- `docs`: Next.js documentation site
 - `packages/database`: Prisma schema and database utilities
-- `packages/shared`: Shared TypeScript types and utilities
+- `packages/types`: Shared TypeScript domain and auth types
 - `packages/ui`: Reusable React component library
-- `packages/eslint-config`: ESLint configurations
-- `packages/typescript-config`: TypeScript configurations
+- `packages/config`: Shared TypeScript and ESLint configurations
 
 ## Getting Started
 
@@ -90,6 +90,19 @@ A comprehensive SaaS platform for freelancers to manage their business operation
    DATABASE_URL="postgresql://username:password@localhost:5432/freelancer_notebook"
    ```
 
+   To send invitations through Gmail, configure the following values in
+   `apps/api/.env`. Use a Google App Password, not your normal Gmail password.
+
+   ```env
+   WEB_URL="http://localhost:5173"
+   SMTP_HOST="smtp.gmail.com"
+   SMTP_PORT=465
+   SMTP_SECURE=true
+   SMTP_USER="your@gmail.com"
+   SMTP_PASS="your_16_character_app_password"
+   SMTP_FROM="Taskio <your@gmail.com>"
+   ```
+
 5. **Setup the database**
 
    ```bash
@@ -112,7 +125,7 @@ pnpm dev
 This starts:
 
 - API server at http://localhost:3000
-- Web app at http://localhost:3001
+- Web app at http://localhost:5173
 - GraphQL Playground at http://localhost:3000/graphql
 - GraphQL Voyager at http://localhost:3000/voyager
 
@@ -128,12 +141,6 @@ pnpm dev --filter=api
 
 ```bash
 pnpm dev --filter=web
-```
-
-**Documentation:**
-
-```bash
-pnpm dev --filter=docs
 ```
 
 ## API Documentation
@@ -196,6 +203,109 @@ query {
 }
 ```
 
+## Project Collaboration Flow
+
+Projects support multiple members through role-based permissions, pending email
+invitations, and secure invitation tokens.
+
+### Roles and permissions
+
+| Role   | Read project | Edit project/tasks/columns | Manage members | Delete project |
+| ------ | ------------ | -------------------------- | -------------- | -------------- |
+| Viewer | Yes          | No                         | No             | No             |
+| Editor | Yes          | Yes                        | No             | No             |
+| Admin  | Yes          | Yes                        | Yes            | No             |
+| Owner  | Yes          | Yes                        | Yes            | Yes            |
+
+Permissions are enforced on both the UI and API. API enforcement is the source
+of truth.
+
+### Sharing with a registered user
+
+1. An owner or admin opens the project's **Share** dialog.
+2. They enter an existing user's email and select a role.
+3. `addProjectMember` immediately creates or updates a `ProjectMember`.
+4. Any stale pending invitation for that project/email is removed.
+5. The shared project appears in the member's project list.
+
+### Sharing with an unregistered user
+
+1. The server creates or updates a pending `ProjectInvitation`.
+2. The invitation stores the project, normalized email, role, inviter, and a
+   unique security token.
+3. The server attempts to send a Gmail SMTP email with a link shaped like:
+
+   ```text
+   /register?email=member@example.com&invitation=<token>&project=<project-id>
+   ```
+
+4. The Share dialog shows the invitation as pending and allows it to be
+   canceled.
+5. If SMTP is unavailable, the invitation remains persisted and the UI reports
+   that delivery is not configured or failed.
+
+### Accepting an invitation
+
+1. The invited user opens the emailed registration link.
+2. The registration page prefills the email and submits the invitation token.
+3. Registration validates that the token belongs to the submitted email.
+4. All pending project invitations for that verified email become
+   `ProjectMember` records in one transaction.
+5. Claimed invitations are deleted and the user is redirected to the shared
+   project.
+
+The token is required to claim invitations. Registering with the same email
+without the emailed token does not grant project access.
+
+### Authorization architecture
+
+Resolvers use the reusable permission decorator:
+
+```ts
+@RequirePermission(Permission.projectEdit, "project", "id")
+```
+
+`PermissionGuard` resolves the resource from GraphQL arguments. For task
+operations it resolves the parent project first, then
+`ProjectAuthorizationService` checks owner/member permissions.
+
+When adding future role-controlled features:
+
+1. Add a permission to `Permission` in
+   `apps/api/src/core/common/enum/enums.ts`.
+2. Map that permission to the appropriate roles in
+   `ProjectAuthorizationService`, or add another resource authorization
+   provider.
+3. Protect the resolver with `@RequirePermission(...)`.
+4. Keep repository queries aligned with the permission model.
+5. Hide unavailable UI controls, but never rely on UI checks for security.
+
+### Collaboration data model
+
+- `ProjectMember`: active project access for a registered user.
+- `ProjectInvitation`: pending access for an email address, protected by a
+  unique token.
+- `ProjectRole`: `viewer`, `editor`, or `admin`.
+- Project owners are represented by `Project.userId` and implicitly have every
+  project permission.
+
+### Collaboration GraphQL operations
+
+- `addProjectMember`: adds a registered member or creates/sends an invitation.
+- `updateProjectMemberRole`: changes an active member's role.
+- `removeProjectMember`: removes active project access.
+- `cancelProjectInvitation`: cancels a pending invitation.
+- `projectDetail`: returns members/invitations only to owners/admins; regular
+  members receive only their own membership.
+
+### Email delivery behavior
+
+`MailService` uses Nodemailer and Gmail-compatible SMTP configuration.
+Invitation persistence happens before delivery. Delivery errors are logged and
+returned as `emailSent: false` without deleting the pending invitation.
+
+Do not commit real SMTP credentials. Keep them in `apps/api/.env`.
+
 ## Build & Deploy
 
 ### Build all packages
@@ -227,15 +337,11 @@ cd apps/web && pnpm preview
 ## Testing
 
 ```bash
-# Run all tests
-pnpm test
-
-# Run specific package tests
-pnpm test --filter=api
-pnpm test --filter=web
+# Run API tests
+pnpm --filter api test
 
 # Run with coverage
-pnpm test:cov
+pnpm --filter api test:cov
 ```
 
 ## Development Guidelines
@@ -245,6 +351,17 @@ pnpm test:cov
 1. Update Prisma schema in `packages/database/prisma/schema.prisma`
 2. Generate migration: `cd packages/database && pnpm prisma migrate dev`
 3. Regenerate client: `pnpm prisma generate`
+4. Validate with `pnpm --filter database exec prisma validate`
+
+### Validation Checklist
+
+```bash
+pnpm --filter database generate
+pnpm --filter database exec prisma validate
+pnpm --filter api build
+pnpm --filter api test -- --runInBand
+pnpm --filter web build
+```
 
 ### Adding New Features
 
@@ -260,4 +377,3 @@ pnpm test:cov
 3. Commit your changes: `git commit -m 'Add amazing feature'`
 4. Push to the branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
-
