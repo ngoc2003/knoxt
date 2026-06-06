@@ -75,7 +75,11 @@ export class PrismaProjectRepository implements IProjectRepository {
           user: true,
           incomes: true,
           columns: { orderBy: { orderIndex: 'asc' } },
-          tasks: { where: { deletedAt: null }, orderBy: { orderIndex: 'asc' } },
+          tasks: {
+            where: { deletedAt: null },
+            orderBy: { orderIndex: 'asc' },
+            include: { assignee: true },
+          },
           members: { include: { user: true }, orderBy: { createdAt: 'asc' } },
           invitations: { orderBy: { createdAt: 'asc' } },
         },
@@ -100,7 +104,7 @@ export class PrismaProjectRepository implements IProjectRepository {
         tasks: {
           where: { deletedAt: null },
           orderBy: { orderIndex: 'asc' },
-          include: { tags: { include: { tag: true } } },
+          include: { assignee: true, tags: { include: { tag: true } } },
         },
         incomes: true,
         columns: { orderBy: { orderIndex: 'asc' } },
@@ -269,10 +273,18 @@ export class PrismaProjectRepository implements IProjectRepository {
       where: { id: data.memberId, projectId: data.projectId },
     });
     if (!member) return null;
-    return this.prisma.projectMember.delete({
-      where: { id: member.id },
-      include: { user: true },
-    });
+
+    const [, deletedMember] = await this.prisma.$transaction([
+      this.prisma.task.updateMany({
+        where: { projectId: data.projectId, assigneeId: member.userId },
+        data: { assigneeId: null },
+      }),
+      this.prisma.projectMember.delete({
+        where: { id: member.id },
+        include: { user: true },
+      }),
+    ]);
+    return deletedMember;
   }
 
   async cancelInvitation(data: CancelProjectInvitationInput) {

@@ -6,9 +6,17 @@ export const TASKS_QUERY = gql`
       items {
         id
         title
+        description
         priority
-        time
         status
+        dueDate
+        projectId
+        assigneeId
+        assignee {
+          id
+          name
+          email
+        }
         tags {
           id
           name
@@ -39,6 +47,37 @@ export const CREATE_TASK_MUTATION = gql`
       status
       dueDate
       projectId
+      assigneeId
+      assignee {
+        id
+        name
+        email
+      }
+    }
+  }
+`;
+
+export const UPDATE_TASK_MUTATION = gql`
+  mutation UpdateTask($id: String!, $data: UpdateTaskInput!) {
+    updateTask(id: $id, data: $data) {
+      id
+      title
+      description
+      priority
+      status
+      dueDate
+      projectId
+      assigneeId
+      assignee {
+        id
+        name
+        email
+      }
+      tags {
+        id
+        name
+        color
+      }
     }
   }
 `;

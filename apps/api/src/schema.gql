@@ -95,6 +95,7 @@ input CreateProjectInput {
 }
 
 input CreateTaskInput {
+  assigneeId: String
   description: String
   dueDate: DateTime
   orderIndex: Int
@@ -455,6 +456,8 @@ type Tag {
 }
 
 type Task {
+  assignee: User
+  assigneeId: ID
   createdAt: DateTime!
   description: String
   dueDate: DateTime
@@ -525,6 +528,7 @@ input UpdateProjectMemberRoleInput {
 }
 
 input UpdateTaskInput {
+  assigneeId: String
   description: String
   dueDate: DateTime
   orderIndex: Int

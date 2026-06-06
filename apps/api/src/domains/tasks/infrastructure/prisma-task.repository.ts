@@ -59,6 +59,7 @@ export class PrismaTaskRepository implements ITaskRepository {
           create: tagIds.map((tagId) => ({ tagId })),
         },
       },
+      include: { assignee: true },
     });
   }
 
@@ -83,7 +84,7 @@ export class PrismaTaskRepository implements ITaskRepository {
         where,
         skip: pagination.skip ?? 0,
         take: pagination.take ?? 20,
-        include: { tags: { include: { tag: true } } },
+        include: { assignee: true, tags: { include: { tag: true } } },
         orderBy: [{ status: 'asc' }, { orderIndex: 'asc' }],
       }),
       this.prisma.task.count({ where }),
@@ -103,12 +104,19 @@ export class PrismaTaskRepository implements ITaskRepository {
   async findOne(userId: string, id: string) {
     return this.prisma.task.findFirst({
       where: { id, deletedAt: null, project: this.projectAccessibleBy(userId) },
+      include: { assignee: true, tags: { include: { tag: true } } },
     });
   }
 
   async update(userId: string, id: string, data: UpdateTaskInput) {
-    const { tags, ...rest } = data;
+    const { assigneeId, tags, ...rest } = data;
     const updateData: Prisma.TaskUpdateInput = { ...rest };
+
+    if (assigneeId !== undefined) {
+      updateData.assignee = assigneeId
+        ? { connect: { id: assigneeId } }
+        : { disconnect: true };
+    }
 
     if (tags !== undefined) {
       const tagIds = await this.resolveTagIds(userId, tags);
@@ -118,7 +126,11 @@ export class PrismaTaskRepository implements ITaskRepository {
       };
     }
 
-    return this.prisma.task.update({ where: { id }, data: updateData });
+    return this.prisma.task.update({
+      where: { id },
+      data: updateData,
+      include: { assignee: true },
+    });
   }
 
   async moveTask(userId: string, input: MoveTaskInput) {
@@ -145,5 +157,13 @@ export class PrismaTaskRepository implements ITaskRepository {
       select: { id: true },
     });
     return Boolean(column);
+  }
+
+  async projectHasMember(projectId: string, memberId: string) {
+    const member = await this.prisma.projectMember.findUnique({
+      where: { projectId_userId: { projectId, userId: memberId } },
+      select: { id: true },
+    });
+    return Boolean(member);
   }
 }

@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import {
   MOVE_TASK_MUTATION,
   CREATE_TASK_MUTATION,
+  UPDATE_TASK_MUTATION,
 } from "@/modules/task/graphql/task";
 import { ProjectModal } from "./ProjectModal";
 import { Button } from "@/shared/ui/button";
@@ -31,6 +32,20 @@ interface Task {
   status: string;
   dueDate?: string;
   projectId: string;
+  assigneeId?: string | null;
+  assignee?: { id: string; name: string; email: string } | null;
+  tags?: { id: string; name: string; color?: string | null }[];
+}
+
+interface TaskFormData {
+  title: string;
+  description?: string;
+  priority: "low" | "medium" | "high";
+  status: string;
+  dueDate?: string;
+  projectId: string;
+  assigneeId?: string | null;
+  tags?: string[];
 }
 
 interface ProjectColumn {
@@ -55,7 +70,7 @@ interface Project {
     id: string;
     userId: string;
     role: "viewer" | "editor" | "admin";
-    user: { name: string; email: string };
+    user: { name: string; email: string; avatarUrl?: string | null };
   }[];
   invitations: {
     id: string;
@@ -80,6 +95,7 @@ export function ProjectDetailPage() {
   const [moveTaskMutation] = useMutation(MOVE_TASK_MUTATION);
   const [updateProjectMutation] = useMutation(UPDATE_PROJECT_MUTATION);
   const [createTaskMutation] = useMutation(CREATE_TASK_MUTATION);
+  const [updateTaskMutation] = useMutation(UPDATE_TASK_MUTATION);
   const [createProjectColumnMutation] = useMutation(
     CREATE_PROJECT_COLUMN_MUTATION,
   );
@@ -93,6 +109,7 @@ export function ProjectDetailPage() {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   // State for TaskModal
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [newColumnName, setNewColumnName] = useState("");
 
   const [tasksState, setTasksState] = useState([] as Task[]);
@@ -229,7 +246,7 @@ export function ProjectDetailPage() {
     }
   };
 
-  const handleCreateTask = async (taskData: Partial<Task>) => {
+  const handleCreateTask = async (taskData: Partial<TaskFormData>) => {
     try {
       await createTaskMutation({
         variables: { input: taskData },
@@ -245,6 +262,37 @@ export function ProjectDetailPage() {
     } catch (error) {
       console.error("Failed to create task", error);
     }
+  };
+
+  const handleSaveTask = async (taskData: Partial<TaskFormData>) => {
+    const input = {
+      title: taskData.title,
+      description: taskData.description,
+      priority: taskData.priority,
+      status: taskData.status,
+      dueDate: taskData.dueDate || null,
+      assigneeId: taskData.assigneeId ?? null,
+      tags: taskData.tags,
+      ...(!selectedTask && { projectId }),
+    };
+
+    if (selectedTask) {
+      await updateTaskMutation({
+        variables: { id: selectedTask.id, data: input },
+        refetchQueries: [
+          { query: PROJECT_DETAIL_QUERY, variables: { id: projectId } },
+        ],
+        awaitRefetchQueries: true,
+      });
+      return;
+    }
+
+    await handleCreateTask(input);
+  };
+
+  const closeTaskModal = () => {
+    setIsTaskModalOpen(false);
+    setSelectedTask(null);
   };
 
   if (projectLoading) return <div>Loading...</div>;
@@ -309,7 +357,10 @@ export function ProjectDetailPage() {
                 className="min-w-36"
                 variant="default"
                 aria-label="Add new task"
-                onClick={() => setIsTaskModalOpen(true)}
+                onClick={() => {
+                  setSelectedTask(null);
+                  setIsTaskModalOpen(true);
+                }}
               >
                 <Plus />
                 Add new task
@@ -328,6 +379,10 @@ export function ProjectDetailPage() {
           moveTask={handleMoveTask}
           moveColumn={handleMoveColumn}
           canEdit={canEdit}
+          onTaskClick={(task) => {
+            setSelectedTask(task as Task);
+            setIsTaskModalOpen(true);
+          }}
         />
       </DndProvider>
       <ProjectModal
@@ -337,11 +392,19 @@ export function ProjectDetailPage() {
         project={project}
       />
       <TaskModal
-        task={{ projectId: project.id }}
+        task={
+          selectedTask
+            ? {
+                ...selectedTask,
+                tags: selectedTask.tags?.map((tag) => tag.name),
+              }
+            : { projectId: project.id }
+        }
         isOpen={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
-        onSave={handleCreateTask}
+        onClose={closeTaskModal}
+        onSave={handleSaveTask}
         columns={columnsState}
+        members={project.members}
         availableTags={[]}
       />
     </div>

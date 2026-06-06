@@ -27,6 +27,7 @@ export class TasksService {
       data.projectId,
       data.status ?? 'todo',
     );
+    await this.ensureProjectMember(data.projectId, data.assigneeId);
     return this.taskRepo.create(userId, data);
   }
 
@@ -49,6 +50,7 @@ export class TasksService {
     if (data.status) {
       await this.ensureProjectColumn(userId, task.projectId, data.status);
     }
+    await this.ensureProjectMember(task.projectId, data.assigneeId);
     return this.taskRepo.update(userId, id, data);
   }
 
@@ -77,6 +79,18 @@ export class TasksService {
       throw new BadRequestException(
         `Column '${status}' does not exist in this project`,
       );
+    }
+  }
+
+  private async ensureProjectMember(
+    projectId: string,
+    assigneeId?: string | null,
+  ) {
+    if (!assigneeId) return;
+
+    const exists = await this.taskRepo.projectHasMember(projectId, assigneeId);
+    if (!exists) {
+      throw new BadRequestException('Assignee must be a project member');
     }
   }
 }

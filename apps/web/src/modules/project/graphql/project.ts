@@ -88,8 +88,18 @@ export const PROJECT_DETAIL_QUERY = gql`
       tasks {
         id
         title
+        description
         priority
         status
+        dueDate
+        projectId
+        assigneeId
+        assignee {
+          id
+          name
+          email
+          avatarUrl
+        }
         tags {
           id
           name

@@ -45,6 +45,11 @@ export class CreateTaskInput {
   @IsOptional()
   dueDate?: Date;
 
+  @Field(() => String, { nullable: true })
+  @IsUUID()
+  @IsOptional()
+  assigneeId?: string | null;
+
   @Field(() => [String], { nullable: true })
   @IsArray()
   @IsString({ each: true })
@@ -82,6 +87,11 @@ export class UpdateTaskInput {
   @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()
   dueDate?: Date;
+
+  @Field(() => String, { nullable: true })
+  @IsUUID()
+  @IsOptional()
+  assigneeId?: string | null;
 
   @Field(() => [String], { nullable: true })
   @IsArray()

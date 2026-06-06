@@ -7,6 +7,7 @@ import {
 } from '@nestjs/graphql';
 import { Priority } from '../../core/common/enum/enums';
 import { Project } from '../projects/project.model';
+import { User } from '../users/user.model';
 
 @ObjectType()
 export class Tag {
@@ -45,6 +46,12 @@ export class Task {
 
   @Field(() => GraphQLISODateTime, { nullable: true })
   dueDate?: Date | null;
+
+  @Field(() => ID, { nullable: true })
+  assigneeId?: string | null;
+
+  @Field(() => User, { nullable: true })
+  assignee?: User | null;
 
   @Field(() => GraphQLISODateTime)
   createdAt: Date;

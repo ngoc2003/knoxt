@@ -12,6 +12,7 @@ import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -27,6 +28,12 @@ interface TaskModalProps {
   task?: Partial<Task> | null;
   availableTags?: string[];
   columns?: { key: string; name: string }[];
+  members?: ProjectMember[];
+}
+
+interface ProjectMember {
+  userId: string;
+  user: { name: string; email: string; avatarUrl?: string | null };
 }
 
 interface Task {
@@ -37,6 +44,7 @@ interface Task {
   status: string;
   dueDate?: string;
   projectId: string;
+  assigneeId?: string | null;
   tags?: string[];
 }
 
@@ -46,12 +54,22 @@ const DEFAULT_COLUMNS = [
   { key: "done", name: "Done" },
 ];
 
+const getInitials = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+
 export function TaskModal({
   isOpen,
   onClose,
   onSave,
   task,
   columns = DEFAULT_COLUMNS,
+  members = [],
 }: TaskModalProps) {
   const [formData, setFormData] = useState<Partial<Task>>({
     title: "",
@@ -60,6 +78,7 @@ export function TaskModal({
     status: columns[0]?.key || "todo",
     dueDate: "",
     projectId: "",
+    assigneeId: null,
     tags: [],
   });
 
@@ -73,6 +92,7 @@ export function TaskModal({
     if (task) {
       setFormData({
         ...task,
+        dueDate: task.dueDate ? task.dueDate.slice(0, 10) : "",
       });
     } else {
       setFormData({
@@ -82,6 +102,7 @@ export function TaskModal({
         status: columns[0]?.key || "todo",
         dueDate: "",
         projectId: "",
+        assigneeId: null,
         tags: [],
       });
     }
@@ -116,7 +137,7 @@ export function TaskModal({
     onClose();
   };
 
-  const updateField = (field: keyof Task, value: string | string[]) => {
+  const updateField = (field: keyof Task, value: string | string[] | null) => {
     setFormData({ ...formData, [field]: value });
     if (errors[field as keyof typeof errors]) {
       setErrors({ ...errors, [field]: undefined });
@@ -124,7 +145,12 @@ export function TaskModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{task ? "Edit Task" : "Add New Task"}</DialogTitle>
@@ -204,6 +230,48 @@ export function TaskModal({
             </Select>
           </div>
 
+          {members.length > 0 && (
+            <div>
+              <Label className="text-gray-700 mb-2 block" htmlFor="assignee">
+                Assignee
+              </Label>
+              <Select
+                value={formData.assigneeId || "unassigned"}
+                onValueChange={(value) =>
+                  updateField(
+                    "assigneeId",
+                    value === "unassigned" ? null : value,
+                  )
+                }
+              >
+                <SelectTrigger id="assignee">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {members.map((member) => (
+                    <SelectItem key={member.userId} value={member.userId}>
+                      <span className="flex items-center gap-2">
+                        <Avatar className="size-6">
+                          <AvatarImage
+                            src={member.user.avatarUrl || undefined}
+                            alt={member.user.name}
+                          />
+                          <AvatarFallback className="bg-indigo-100 text-[10px] font-medium text-indigo-700">
+                            {getInitials(member.user.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>
+                          {member.user.name} ({member.user.email})
+                        </span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div>
             <Label className="text-gray-700 mb-2 block" htmlFor="dueDate">
               Due Date
@@ -245,7 +313,7 @@ export function TaskModal({
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit">Save</Button>

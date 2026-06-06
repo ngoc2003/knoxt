@@ -1,6 +1,7 @@
 import { useDrop, useDrag } from "react-dnd";
+import { useRef } from "react";
 import { Badge } from "../../../shared/ui/badge";
-import { Clock, Flag, GripVertical } from "lucide-react";
+import { Calendar, Flag, GripVertical, UserRound } from "lucide-react";
 
 type Priority = "low" | "medium" | "high";
 type Status = string;
@@ -15,10 +16,11 @@ interface ProjectColumn {
 interface Task {
   id: string;
   title: string;
-  tags: string[];
+  tags: { id: string; name: string }[];
   priority: Priority;
-  time: string;
   status: Status;
+  dueDate?: string;
+  assignee?: { id: string; name: string } | null;
 }
 export function KanbanBoard({
   tasks,
@@ -26,12 +28,14 @@ export function KanbanBoard({
   moveTask,
   moveColumn,
   canEdit,
+  onTaskClick,
 }: {
   tasks: any[];
   columns: ProjectColumn[];
   moveTask: (taskId: string, newStatus: string, newOrderIndex?: number) => void;
   moveColumn: (columnId: string, targetColumnId: string) => void;
   canEdit: boolean;
+  onTaskClick: (task: Task) => void;
 }) {
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
@@ -49,6 +53,7 @@ export function KanbanBoard({
             moveTask={moveTask}
             moveColumn={moveColumn}
             canEdit={canEdit}
+            onTaskClick={onTaskClick}
             badgeClass="bg-indigo-50 text-indigo-600"
           />
         );
@@ -67,6 +72,7 @@ interface ColumnProps {
   moveTask: (taskId: string, newStatus: Status) => void;
   moveColumn: (columnId: string, targetColumnId: string) => void;
   canEdit: boolean;
+  onTaskClick: (task: Task) => void;
   badgeClass: string;
 }
 
@@ -83,6 +89,7 @@ function Column({
   moveTask,
   moveColumn,
   canEdit,
+  onTaskClick,
   badgeClass,
 }: ColumnProps) {
   const [{ isOver }, drop] = useDrop({
@@ -150,8 +157,8 @@ function Column({
           <TaskCard
             key={task.id}
             task={task}
-            moveTask={moveTask}
             canEdit={canEdit}
+            onClick={onTaskClick}
           />
         ))}
       </div>
@@ -161,15 +168,22 @@ function Column({
 
 interface TaskCardProps {
   task: Task;
-  moveTask: (taskId: string, newStatus: Status) => void;
   canEdit: boolean;
+  onClick: (task: Task) => void;
 }
 
-function TaskCard({ task, moveTask, canEdit }: TaskCardProps) {
+function TaskCard({ task, canEdit, onClick }: TaskCardProps) {
+  const suppressClick = useRef(false);
   const [{ isDragging }, drag] = useDrag({
     type: ITEM_TYPE,
     item: { id: task.id },
     canDrag: canEdit,
+    end: () => {
+      suppressClick.current = true;
+      window.setTimeout(() => {
+        suppressClick.current = false;
+      }, 0);
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -193,7 +207,18 @@ function TaskCard({ task, moveTask, canEdit }: TaskCardProps) {
       ref={(node) => {
         drag(node as unknown as HTMLDivElement | null);
       }}
-      className={`p-4 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow ${canEdit ? "cursor-move" : ""} ${isDragging ? "opacity-50" : ""}`}
+      role={canEdit ? "button" : undefined}
+      tabIndex={canEdit ? 0 : undefined}
+      onClick={() => {
+        if (canEdit && !suppressClick.current) onClick(task);
+      }}
+      onKeyDown={(event) => {
+        if (canEdit && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          onClick(task);
+        }
+      }}
+      className={`p-4 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow ${canEdit ? "cursor-pointer" : ""} ${isDragging ? "opacity-50" : ""}`}
     >
       <div className="flex items-start gap-2 mb-3">
         <p className="text-sm font-medium text-gray-900 flex-1">{task.title}</p>
@@ -202,17 +227,19 @@ function TaskCard({ task, moveTask, canEdit }: TaskCardProps) {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-3">
-        {["1", "2", "3"].map((tag, idx) => (
-          <Badge
-            key={idx}
-            variant="secondary"
-            className={`text-xs ${tagColors[idx % tagColors.length]}`}
-          >
-            {tag}
-          </Badge>
-        ))}
-      </div>
+      {task.tags?.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {task.tags.map((tag, idx) => (
+            <Badge
+              key={tag.id}
+              variant="secondary"
+              className={`text-xs ${tagColors[idx % tagColors.length]}`}
+            >
+              {tag.name}
+            </Badge>
+          ))}
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <Badge
@@ -221,10 +248,20 @@ function TaskCard({ task, moveTask, canEdit }: TaskCardProps) {
         >
           {task.priority}
         </Badge>
-        <span className="text-xs text-gray-500 flex items-center gap-1">
-          <Clock className="w-3 h-3" />
-          {task.time}
-        </span>
+        <div className="flex items-center gap-3 text-xs text-gray-500">
+          {task.assignee && (
+            <span className="flex items-center gap-1">
+              <UserRound className="w-3 h-3" />
+              {task.assignee.name}
+            </span>
+          )}
+          {task.dueDate && (
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              {new Date(task.dueDate).toLocaleDateString()}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

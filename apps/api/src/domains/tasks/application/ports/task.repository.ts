@@ -29,4 +29,5 @@ export interface ITaskRepository {
     projectId: string,
     status: string,
   ): Promise<boolean>;
+  projectHasMember(projectId: string, memberId: string): Promise<boolean>;
 }

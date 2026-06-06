@@ -93,6 +93,8 @@ export interface Task {
   priority: Priority;
   orderIndex: number;
   projectId: string;
+  assigneeId?: string | null;
+  assignee?: User | null;
   dueDate?: Date | null;
   tags?: Tag[];
   createdAt: Date;
@@ -107,6 +109,7 @@ export interface CreateTaskInput {
   priority?: Priority;
   orderIndex?: number;
   dueDate?: Date;
+  assigneeId?: string | null;
   tags?: string[];
 }
 
@@ -117,6 +120,7 @@ export interface UpdateTaskInput {
   priority?: Priority;
   orderIndex?: number;
   dueDate?: Date;
+  assigneeId?: string | null;
   tags?: string[];
 }
 
