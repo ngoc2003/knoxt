@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@apollo/client/react";
 import {
   PROJECT_DETAIL_QUERY,
   CREATE_PROJECT_COLUMN_MUTATION,
+  REORDER_PROJECT_COLUMNS_MUTATION,
   UPDATE_PROJECT_MUTATION,
 } from "../graphql/project";
 
@@ -19,6 +20,8 @@ import { ProjectModal } from "./ProjectModal";
 import { Button } from "@/shared/ui/button";
 import { TaskModal } from "@/modules/task/components/TaskModal";
 import { Input } from "@/shared/ui/input";
+import { useAuth } from "@/modules/auth/context/AuthContext";
+import { ProjectMembersDialog } from "./ProjectMembersDialog";
 
 interface Task {
   id: string;
@@ -39,6 +42,7 @@ interface ProjectColumn {
 
 interface Project {
   id: string;
+  userId: string;
   name: string;
   description?: string;
   status: string;
@@ -47,11 +51,23 @@ interface Project {
   customerId: string;
   tasks: Task[];
   columns: ProjectColumn[];
+  members: {
+    id: string;
+    userId: string;
+    role: "viewer" | "editor" | "admin";
+    user: { name: string; email: string };
+  }[];
+  invitations: {
+    id: string;
+    email: string;
+    role: "viewer" | "editor" | "admin";
+  }[];
 }
 
 export function ProjectDetailPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const { data: projectData, loading: projectLoading } = useQuery(
     PROJECT_DETAIL_QUERY,
@@ -67,6 +83,9 @@ export function ProjectDetailPage() {
   const [createProjectColumnMutation] = useMutation(
     CREATE_PROJECT_COLUMN_MUTATION,
   );
+  const [reorderProjectColumnsMutation] = useMutation(
+    REORDER_PROJECT_COLUMNS_MUTATION,
+  );
 
   const project = (projectData as any)?.projectDetail;
 
@@ -77,11 +96,22 @@ export function ProjectDetailPage() {
   const [newColumnName, setNewColumnName] = useState("");
 
   const [tasksState, setTasksState] = useState([] as Task[]);
+  const [columnsState, setColumnsState] = useState([] as ProjectColumn[]);
 
   // Update tasks state when project data changes
   useEffect(() => {
     if (project?.tasks) {
       setTasksState(project.tasks);
+    }
+  }, [project]);
+
+  useEffect(() => {
+    if (project?.columns) {
+      setColumnsState(
+        [...project.columns].sort(
+          (a: ProjectColumn, b: ProjectColumn) => a.orderIndex - b.orderIndex,
+        ),
+      );
     }
   }, [project]);
 
@@ -157,6 +187,48 @@ export function ProjectDetailPage() {
     setNewColumnName("");
   };
 
+  const handleMoveColumn = async (columnId: string, targetColumnId: string) => {
+    const sourceIndex = columnsState.findIndex(
+      (column) => column.id === columnId,
+    );
+    const targetIndex = columnsState.findIndex(
+      (column) => column.id === targetColumnId,
+    );
+    if (
+      sourceIndex === -1 ||
+      targetIndex === -1 ||
+      sourceIndex === targetIndex
+    ) {
+      return;
+    }
+
+    const previousColumns = columnsState;
+    const reorderedColumns = [...columnsState];
+    const [movedColumn] = reorderedColumns.splice(sourceIndex, 1);
+    reorderedColumns.splice(targetIndex, 0, movedColumn);
+    const optimisticColumns = reorderedColumns.map((column, orderIndex) => ({
+      ...column,
+      orderIndex,
+    }));
+    setColumnsState(optimisticColumns);
+
+    try {
+      const { data } = await reorderProjectColumnsMutation({
+        variables: {
+          data: {
+            projectId,
+            columnIds: optimisticColumns.map((column) => column.id),
+          },
+        },
+      });
+      const savedColumns = (data as any)?.reorderProjectColumns;
+      if (savedColumns) setColumnsState(savedColumns);
+    } catch (error) {
+      setColumnsState(previousColumns);
+      console.error("Failed to reorder project columns", error);
+    }
+  };
+
   const handleCreateTask = async (taskData: Partial<Task>) => {
     try {
       await createTaskMutation({
@@ -178,6 +250,14 @@ export function ProjectDetailPage() {
   if (projectLoading) return <div>Loading...</div>;
   if (!project) return <div>Project not found.</div>;
 
+  const membership = project.members.find(
+    (member: Project["members"][number]) => member.userId === user?.id,
+  );
+  const isOwner = project.userId === user?.id;
+  const canEdit =
+    isOwner || membership?.role === "editor" || membership?.role === "admin";
+  const canManageMembers = isOwner || membership?.role === "admin";
+
   return (
     <div className="p-6">
       <nav className="mb-4 text-sm flex items-center justify-between">
@@ -188,43 +268,54 @@ export function ProjectDetailPage() {
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <Input
-            value={newColumnName}
-            onChange={(event) => setNewColumnName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") void handleCreateColumn();
-            }}
-            placeholder="New column name"
-            className="w-44"
-          />
-          <Button
-            variant="outline"
-            disabled={!newColumnName.trim()}
-            onClick={handleCreateColumn}
-          >
-            <Columns3 />
-            Add column
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="min-w-20"
-            aria-label="Edit project"
-            onClick={() => setIsProjectModalOpen(true)}
-          >
-            <Pencil />
-            Edit
-          </Button>
-          <Button
-            size="icon"
-            className="min-w-36"
-            variant="default"
-            aria-label="Add new task"
-            onClick={() => setIsTaskModalOpen(true)}
-          >
-            <Plus />
-            Add new task
-          </Button>
+          {canManageMembers && (
+            <ProjectMembersDialog
+              projectId={project.id}
+              members={project.members}
+              invitations={project.invitations}
+            />
+          )}
+          {canEdit && (
+            <>
+              <Input
+                value={newColumnName}
+                onChange={(event) => setNewColumnName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void handleCreateColumn();
+                }}
+                placeholder="New column name"
+                className="w-44"
+              />
+              <Button
+                variant="outline"
+                disabled={!newColumnName.trim()}
+                onClick={handleCreateColumn}
+              >
+                <Columns3 />
+                Add column
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="min-w-20"
+                aria-label="Edit project"
+                onClick={() => setIsProjectModalOpen(true)}
+              >
+                <Pencil />
+                Edit
+              </Button>
+              <Button
+                size="icon"
+                className="min-w-36"
+                variant="default"
+                aria-label="Add new task"
+                onClick={() => setIsTaskModalOpen(true)}
+              >
+                <Plus />
+                Add new task
+              </Button>
+            </>
+          )}
         </div>
       </nav>
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">
@@ -233,8 +324,10 @@ export function ProjectDetailPage() {
       <DndProvider backend={HTML5Backend}>
         <KanbanBoard
           tasks={tasksState}
-          columns={project.columns}
+          columns={columnsState}
           moveTask={handleMoveTask}
+          moveColumn={handleMoveColumn}
+          canEdit={canEdit}
         />
       </DndProvider>
       <ProjectModal
@@ -248,7 +341,7 @@ export function ProjectDetailPage() {
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
         onSave={handleCreateTask}
-        columns={project.columns}
+        columns={columnsState}
         availableTags={[]}
       />
     </div>

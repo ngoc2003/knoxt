@@ -28,8 +28,22 @@ export enum SortOrder {
   desc = 'desc',
 }
 
+export enum ProjectRole {
+  viewer = 'viewer',
+  editor = 'editor',
+  admin = 'admin',
+}
+
+export enum Permission {
+  projectRead = 'project.read',
+  projectEdit = 'project.edit',
+  projectManageMembers = 'project.manage-members',
+  projectDelete = 'project.delete',
+}
+
 registerEnumType(Priority, { name: 'Priority' });
 registerEnumType(CustomerStatus, { name: 'CustomerStatus' });
 registerEnumType(InvoiceStatus, { name: 'InvoiceStatus' });
 registerEnumType(IncomeStatus, { name: 'IncomeStatus' });
 registerEnumType(SortOrder, { name: 'SortOrder' });
+registerEnumType(ProjectRole, { name: 'ProjectRole' });

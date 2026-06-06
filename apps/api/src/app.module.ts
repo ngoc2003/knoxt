@@ -15,6 +15,8 @@ import { FinanceModule } from './domains/finance/finance.module';
 import { AiModule } from './domains/ai/ai.module';
 import { VoyagerController } from './infrastructure/graphql/voyager.controller';
 import { formatGraphQLError } from './infrastructure/graphql/format-error';
+import { AuthorizationModule } from './core/authorization/authorization.module';
+import { MailModule } from './infrastructure/mail/mail.module';
 
 @Module({
   controllers: [VoyagerController],
@@ -29,6 +31,8 @@ import { formatGraphQLError } from './infrastructure/graphql/format-error';
       formatError: formatGraphQLError,
     }),
     PrismaModule,
+    AuthorizationModule,
+    MailModule,
     AuthModule,
     UsersModule,
     CustomersModule,

@@ -11,6 +11,7 @@ export interface RegisterInput {
   email: string;
   name: string;
   password: string;
+  invitationToken?: string;
 }
 
 export interface LoginInput {

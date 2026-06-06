@@ -2,6 +2,12 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+input AddProjectMemberInput {
+  email: String!
+  projectId: String!
+  role: ProjectRole!
+}
+
 type AiMessage {
   content: String!
   createdAt: DateTime!
@@ -21,6 +27,11 @@ type AiSession {
 type AuthResponse {
   accessToken: String!
   user: User!
+}
+
+input CancelProjectInvitationInput {
+  invitationId: String!
+  projectId: String!
 }
 
 input CreateAiSessionInput {
@@ -259,6 +270,8 @@ input MoveTaskInput {
 }
 
 type Mutation {
+  addProjectMember(data: AddProjectMemberInput!): ProjectShareResult!
+  cancelProjectInvitation(data: CancelProjectInvitationInput!): ProjectInvitation!
   createAiSession(data: CreateAiSessionInput!): AiSession!
   createCustomer(data: CreateCustomerInput!): Customer!
   createExpense(data: CreateExpenseInput!): Expense!
@@ -279,6 +292,8 @@ type Mutation {
   login(data: LoginInput!): AuthResponse!
   moveTask(input: MoveTaskInput!): Task!
   register(data: RegisterInput!): AuthResponse!
+  removeProjectMember(data: RemoveProjectMemberInput!): ProjectMember!
+  reorderProjectColumns(data: ReorderProjectColumnsInput!): [ProjectColumn!]!
   sendAiMessage(input: SendAiMessageInput!): AiMessage!
   updateCustomer(data: UpdateCustomerInput!, id: String!): Customer!
   updateExpense(data: UpdateExpenseInput!, id: String!): Expense!
@@ -286,6 +301,7 @@ type Mutation {
   updateInvoice(data: UpdateInvoiceInput!, id: String!): Invoice!
   updateNote(data: UpdateNoteInput!, id: String!): Note!
   updateProject(data: UpdateProjectInput!, id: String!): Project!
+  updateProjectMemberRole(data: UpdateProjectMemberRoleInput!): ProjectMember!
   updateTask(data: UpdateTaskInput!, id: String!): Task!
 }
 
@@ -325,11 +341,14 @@ type Project {
   endDate: DateTime
   id: ID!
   incomes: [Income!]!
+  invitations: [ProjectInvitation!]
+  members: [ProjectMember!]
   name: String!
   startDate: DateTime!
   status: String!
   tasks: [Task!]!
   updatedAt: DateTime!
+  userId: ID!
 }
 
 type ProjectColumn {
@@ -339,11 +358,37 @@ type ProjectColumn {
   orderIndex: Int!
 }
 
+type ProjectInvitation {
+  email: String!
+  id: ID!
+  role: ProjectRole!
+}
+
+type ProjectMember {
+  id: ID!
+  role: ProjectRole!
+  user: User!
+  userId: ID!
+}
+
 type ProjectPage {
   items: [Project!]!
   skip: Int!
   take: Int!
   total: Int!
+}
+
+enum ProjectRole {
+  admin
+  editor
+  viewer
+}
+
+type ProjectShareResult {
+  emailSent: Boolean!
+  invitation: ProjectInvitation
+  member: ProjectMember
+  status: String!
 }
 
 type Query {
@@ -368,8 +413,19 @@ type Query {
 
 input RegisterInput {
   email: String!
+  invitationToken: String
   name: String!
   password: String!
+}
+
+input RemoveProjectMemberInput {
+  memberId: String!
+  projectId: String!
+}
+
+input ReorderProjectColumnsInput {
+  columnIds: [String!]!
+  projectId: String!
 }
 
 input SendAiMessageInput {
@@ -445,6 +501,12 @@ input UpdateProjectInput {
   name: String
   startDate: String
   status: String
+}
+
+input UpdateProjectMemberRoleInput {
+  memberId: String!
+  projectId: String!
+  role: ProjectRole!
 }
 
 input UpdateTaskInput {

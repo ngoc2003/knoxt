@@ -134,6 +134,27 @@ export interface Project {
   createdAt: Date;
   updatedAt: Date;
   columns?: ProjectColumn[];
+  members?: ProjectMember[];
+  invitations?: ProjectInvitation[];
+}
+
+export enum ProjectRole {
+  viewer = "viewer",
+  editor = "editor",
+  admin = "admin",
+}
+
+export interface ProjectMember {
+  id: string;
+  userId: string;
+  role: ProjectRole;
+  user: User;
+}
+
+export interface ProjectInvitation {
+  id: string;
+  email: string;
+  role: ProjectRole;
 }
 
 export interface ProjectColumn {
@@ -141,6 +162,11 @@ export interface ProjectColumn {
   key: string;
   name: string;
   orderIndex: number;
+}
+
+export interface ReorderProjectColumnsInput {
+  projectId: string;
+  columnIds: string[];
 }
 
 export interface CreateProjectInput {

@@ -8,6 +8,8 @@ import {
 import { Customer } from '../customers/customer.model';
 import { Income } from '../finance/models/finance.models';
 import { Task } from '../tasks/task.model';
+import { User } from '../users/user.model';
+import { ProjectRole } from '../../core/common/enum/enums';
 
 @ObjectType()
 export class ProjectColumn {
@@ -25,9 +27,54 @@ export class ProjectColumn {
 }
 
 @ObjectType()
+export class ProjectMember {
+  @Field(() => ID)
+  id: string;
+
+  @Field(() => ID)
+  userId: string;
+
+  @Field(() => ProjectRole)
+  role: ProjectRole;
+
+  @Field(() => User)
+  user: User;
+}
+
+@ObjectType()
+export class ProjectInvitation {
+  @Field(() => ID)
+  id: string;
+
+  @Field()
+  email: string;
+
+  @Field(() => ProjectRole)
+  role: ProjectRole;
+}
+
+@ObjectType()
+export class ProjectShareResult {
+  @Field()
+  status: string;
+
+  @Field(() => ProjectMember, { nullable: true })
+  member?: ProjectMember | null;
+
+  @Field(() => ProjectInvitation, { nullable: true })
+  invitation?: ProjectInvitation | null;
+
+  @Field()
+  emailSent: boolean;
+}
+
+@ObjectType()
 export class Project {
   @Field(() => ID)
   id: string;
+
+  @Field(() => ID)
+  userId: string;
 
   @Field()
   name: string;
@@ -64,4 +111,10 @@ export class Project {
 
   @Field(() => [ProjectColumn])
   columns: ProjectColumn[];
+
+  @Field(() => [ProjectMember], { nullable: true })
+  members?: ProjectMember[];
+
+  @Field(() => [ProjectInvitation], { nullable: true })
+  invitations?: ProjectInvitation[];
 }

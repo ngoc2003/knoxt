@@ -1,6 +1,9 @@
 import type {
   Project,
   ProjectColumn,
+  ProjectMember,
+  ProjectInvitation,
+  User,
   Customer,
   Income,
   Task,
@@ -12,14 +15,22 @@ import type {
 import type {
   CreateProjectInput,
   CreateProjectColumnInput,
+  AddProjectMemberInput,
+  CancelProjectInvitationInput,
+  RemoveProjectMemberInput,
+  ReorderProjectColumnsInput,
+  UpdateProjectMemberRoleInput,
   UpdateProjectInput,
 } from '../../dto/project.dto';
 
 export type ProjectWithRelations = Project & {
+  user: User;
   customer: Customer;
   incomes: Income[];
   tasks: Task[];
   columns: ProjectColumn[];
+  members: (ProjectMember & { user: User })[];
+  invitations: ProjectInvitation[];
 };
 
 export interface IProjectRepository {
@@ -43,4 +54,22 @@ export interface IProjectRepository {
     userId: string,
     data: CreateProjectColumnInput,
   ): Promise<ProjectColumn | null>;
+  reorderColumns(data: ReorderProjectColumnsInput): Promise<ProjectColumn[]>;
+  addMember(
+    data: AddProjectMemberInput,
+  ): Promise<(ProjectMember & { user: User }) | null>;
+  updateMemberRole(
+    data: UpdateProjectMemberRoleInput,
+  ): Promise<(ProjectMember & { user: User }) | null>;
+  removeMember(
+    data: RemoveProjectMemberInput,
+  ): Promise<(ProjectMember & { user: User }) | null>;
+  findUserByEmail(email: string): Promise<User | null>;
+  createInvitation(
+    invitedById: string,
+    data: AddProjectMemberInput,
+  ): Promise<ProjectInvitation>;
+  cancelInvitation(
+    data: CancelProjectInvitationInput,
+  ): Promise<ProjectInvitation | null>;
 }

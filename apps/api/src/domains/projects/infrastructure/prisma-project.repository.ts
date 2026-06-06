@@ -3,8 +3,13 @@ import { Prisma } from 'database/generated/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import type { PaginationInput } from '../../../core/common/dtos/pagination.dto';
 import type {
+  AddProjectMemberInput,
+  CancelProjectInvitationInput,
   CreateProjectColumnInput,
   CreateProjectInput,
+  RemoveProjectMemberInput,
+  ReorderProjectColumnsInput,
+  UpdateProjectMemberRoleInput,
   UpdateProjectInput,
 } from '../dto/project.dto';
 import type {
@@ -15,6 +20,12 @@ import type {
 @Injectable()
 export class PrismaProjectRepository implements IProjectRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  private accessibleBy(userId: string): Prisma.ProjectWhereInput {
+    return {
+      OR: [{ userId }, { members: { some: { userId } } }],
+    };
+  }
 
   private toCreateData(
     userId: string,
@@ -48,8 +59,8 @@ export class PrismaProjectRepository implements IProjectRepository {
     customerId?: string,
   ) {
     const where: Prisma.ProjectWhereInput = {
-      userId,
       deletedAt: null,
+      ...this.accessibleBy(userId),
       ...(customerId && { customerId }),
     };
 
@@ -61,9 +72,12 @@ export class PrismaProjectRepository implements IProjectRepository {
         orderBy: { createdAt: 'desc' },
         include: {
           customer: true,
+          user: true,
           incomes: true,
           columns: { orderBy: { orderIndex: 'asc' } },
           tasks: { where: { deletedAt: null }, orderBy: { orderIndex: 'asc' } },
+          members: { include: { user: true }, orderBy: { createdAt: 'asc' } },
+          invitations: { orderBy: { createdAt: 'asc' } },
         },
       }),
       this.prisma.project.count({ where }),
@@ -79,9 +93,10 @@ export class PrismaProjectRepository implements IProjectRepository {
 
   async findOne(userId: string, id: string) {
     const project = await this.prisma.project.findFirst({
-      where: { id, userId, deletedAt: null },
+      where: { id, deletedAt: null, ...this.accessibleBy(userId) },
       include: {
         customer: true,
+        user: true,
         tasks: {
           where: { deletedAt: null },
           orderBy: { orderIndex: 'asc' },
@@ -89,6 +104,8 @@ export class PrismaProjectRepository implements IProjectRepository {
         },
         incomes: true,
         columns: { orderBy: { orderIndex: 'asc' } },
+        members: { include: { user: true }, orderBy: { createdAt: 'asc' } },
+        invitations: { orderBy: { createdAt: 'asc' } },
       },
     });
 
@@ -131,7 +148,11 @@ export class PrismaProjectRepository implements IProjectRepository {
 
   async createColumn(userId: string, data: CreateProjectColumnInput) {
     const project = await this.prisma.project.findFirst({
-      where: { id: data.projectId, userId, deletedAt: null },
+      where: {
+        id: data.projectId,
+        deletedAt: null,
+        ...this.accessibleBy(userId),
+      },
       include: { columns: true },
     });
     if (!project) return null;
@@ -159,6 +180,108 @@ export class PrismaProjectRepository implements IProjectRepository {
         name,
         orderIndex: data.orderIndex ?? maxOrder + 1,
       },
+    });
+  }
+
+  async reorderColumns(data: ReorderProjectColumnsInput) {
+    await this.prisma.$transaction(
+      data.columnIds.map((id, orderIndex) =>
+        this.prisma.projectColumn.update({
+          where: { id },
+          data: { orderIndex },
+        }),
+      ),
+    );
+
+    return this.prisma.projectColumn.findMany({
+      where: { projectId: data.projectId },
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  async addMember(data: AddProjectMemberInput) {
+    const user = await this.findUserByEmail(data.email);
+    if (!user) return null;
+    const project = await this.prisma.project.findUnique({
+      where: { id: data.projectId },
+      select: { userId: true },
+    });
+    if (!project || project.userId === user.id) return null;
+
+    const [member] = await this.prisma.$transaction([
+      this.prisma.projectMember.upsert({
+        where: {
+          projectId_userId: { projectId: data.projectId, userId: user.id },
+        },
+        create: {
+          projectId: data.projectId,
+          userId: user.id,
+          role: data.role,
+        },
+        update: { role: data.role },
+        include: { user: true },
+      }),
+      this.prisma.projectInvitation.deleteMany({
+        where: {
+          projectId: data.projectId,
+          email: { equals: user.email, mode: 'insensitive' },
+        },
+      }),
+    ]);
+    return member;
+  }
+
+  async findUserByEmail(email: string) {
+    return this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+    });
+  }
+
+  async createInvitation(invitedById: string, data: AddProjectMemberInput) {
+    const email = data.email.toLowerCase();
+    return this.prisma.projectInvitation.upsert({
+      where: { projectId_email: { projectId: data.projectId, email } },
+      create: {
+        projectId: data.projectId,
+        invitedById,
+        email,
+        role: data.role,
+      },
+      update: { invitedById, role: data.role },
+    });
+  }
+
+  async updateMemberRole(data: UpdateProjectMemberRoleInput) {
+    const member = await this.prisma.projectMember.findFirst({
+      where: { id: data.memberId, projectId: data.projectId },
+    });
+    if (!member) return null;
+
+    return this.prisma.projectMember.update({
+      where: { id: member.id },
+      data: { role: data.role },
+      include: { user: true },
+    });
+  }
+
+  async removeMember(data: RemoveProjectMemberInput) {
+    const member = await this.prisma.projectMember.findFirst({
+      where: { id: data.memberId, projectId: data.projectId },
+    });
+    if (!member) return null;
+    return this.prisma.projectMember.delete({
+      where: { id: member.id },
+      include: { user: true },
+    });
+  }
+
+  async cancelInvitation(data: CancelProjectInvitationInput) {
+    const invitation = await this.prisma.projectInvitation.findFirst({
+      where: { id: data.invitationId, projectId: data.projectId },
+    });
+    if (!invitation) return null;
+    return this.prisma.projectInvitation.delete({
+      where: { id: invitation.id },
     });
   }
 }

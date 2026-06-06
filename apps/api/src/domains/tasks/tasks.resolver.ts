@@ -15,9 +15,12 @@ import {
   CurrentUser,
 } from '../../core/common/decorators/current-user.decorator';
 import { PaginationInput } from '../../core/common/dtos/pagination.dto';
+import { PermissionGuard } from '../../core/authorization/permission.guard';
+import { RequirePermission } from '../../core/authorization/require-permission.decorator';
+import { Permission } from '../../core/common/enum/enums';
 
 @Resolver(() => Task)
-@UseGuards(GqlAuthGuard)
+@UseGuards(GqlAuthGuard, PermissionGuard)
 export class TasksResolver {
   constructor(private readonly tasksService: TasksService) {}
 
@@ -31,11 +34,13 @@ export class TasksResolver {
   }
 
   @Query(() => Task)
+  @RequirePermission(Permission.projectRead, 'task', 'id')
   taskDetail(@CurrentUser() user: AuthUser, @Args('id') id: string) {
     return this.tasksService.findOne(user.id, id);
   }
 
   @Mutation(() => Task)
+  @RequirePermission(Permission.projectEdit, 'project', 'data.projectId')
   createTask(
     @CurrentUser() user: AuthUser,
     @Args('data') data: CreateTaskInput,
@@ -44,6 +49,7 @@ export class TasksResolver {
   }
 
   @Mutation(() => Task)
+  @RequirePermission(Permission.projectEdit, 'task', 'id')
   updateTask(
     @CurrentUser() user: AuthUser,
     @Args('id') id: string,
@@ -53,11 +59,13 @@ export class TasksResolver {
   }
 
   @Mutation(() => Task)
+  @RequirePermission(Permission.projectEdit, 'task', 'input.id')
   moveTask(@CurrentUser() user: AuthUser, @Args('input') input: MoveTaskInput) {
     return this.tasksService.moveTask(user.id, input);
   }
 
   @Mutation(() => Task)
+  @RequirePermission(Permission.projectEdit, 'task', 'id')
   deleteTask(@CurrentUser() user: AuthUser, @Args('id') id: string) {
     return this.tasksService.remove(user.id, id);
   }

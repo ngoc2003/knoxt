@@ -4,6 +4,7 @@ export const CREATE_PROJECT_MUTATION = gql`
   mutation CreateProject($data: CreateProjectInput!) {
     createProject(data: $data) {
       id
+      userId
       name
       description
       customerId
@@ -75,6 +76,7 @@ export const PROJECT_DETAIL_QUERY = gql`
   query ProjectDetail($id: String!) {
     projectDetail(id: $id) {
       id
+      userId
       name
       description
       customerId
@@ -108,6 +110,21 @@ export const PROJECT_DETAIL_QUERY = gql`
         id
         name
       }
+      members {
+        id
+        userId
+        role
+        user {
+          id
+          name
+          email
+        }
+      }
+      invitations {
+        id
+        email
+        role
+      }
     }
   }
 `;
@@ -119,6 +136,72 @@ export const CREATE_PROJECT_COLUMN_MUTATION = gql`
       key
       name
       orderIndex
+    }
+  }
+`;
+
+export const REORDER_PROJECT_COLUMNS_MUTATION = gql`
+  mutation ReorderProjectColumns($data: ReorderProjectColumnsInput!) {
+    reorderProjectColumns(data: $data) {
+      id
+      key
+      name
+      orderIndex
+    }
+  }
+`;
+
+export const ADD_PROJECT_MEMBER_MUTATION = gql`
+  mutation AddProjectMember($data: AddProjectMemberInput!) {
+    addProjectMember(data: $data) {
+      status
+      emailSent
+      member {
+        id
+        userId
+        role
+        user {
+          id
+          name
+          email
+        }
+      }
+      invitation {
+        id
+        email
+        role
+      }
+    }
+  }
+`;
+
+export const UPDATE_PROJECT_MEMBER_ROLE_MUTATION = gql`
+  mutation UpdateProjectMemberRole($data: UpdateProjectMemberRoleInput!) {
+    updateProjectMemberRole(data: $data) {
+      id
+      userId
+      role
+      user {
+        id
+        name
+        email
+      }
+    }
+  }
+`;
+
+export const REMOVE_PROJECT_MEMBER_MUTATION = gql`
+  mutation RemoveProjectMember($data: RemoveProjectMemberInput!) {
+    removeProjectMember(data: $data) {
+      id
+    }
+  }
+`;
+
+export const CANCEL_PROJECT_INVITATION_MUTATION = gql`
+  mutation CancelProjectInvitation($data: CancelProjectInvitationInput!) {
+    cancelProjectInvitation(data: $data) {
+      id
     }
   }
 `;

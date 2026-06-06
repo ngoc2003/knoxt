@@ -19,28 +19,37 @@ export class AuthService {
   ) {}
 
   async register(data: RegisterInput): Promise<AuthResponse> {
-    const existing = await this.authRepo.findByEmail(data.email);
+    const email = data.email.toLowerCase();
+    const existing = await this.authRepo.findByEmail(email);
     if (existing) {
       throw new ConflictException('Email already in use');
     }
 
     const passwordHash = await bcrypt.hash(data.password, 12);
     const user = await this.authRepo.createUser({
-      email: data.email,
+      email,
       name: data.name,
       passwordHash,
     });
+    await this.authRepo.claimProjectInvitations(
+      user.id,
+      user.email,
+      data.invitationToken,
+    );
 
     return this.buildAuthResponse(user);
   }
 
   async login(data: LoginInput): Promise<AuthResponse> {
-    const user = await this.authRepo.findByEmail(data.email);
+    const user = await this.authRepo.findByEmail(data.email.toLowerCase());
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const passwordValid = await bcrypt.compare(data.password, user.passwordHash);
+    const passwordValid = await bcrypt.compare(
+      data.password,
+      user.passwordHash,
+    );
     if (!passwordValid) {
       throw new UnauthorizedException('Invalid email or password');
     }

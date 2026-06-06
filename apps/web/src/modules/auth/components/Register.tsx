@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import {
   Eye,
   EyeOff,
@@ -22,11 +22,15 @@ export function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const invitedEmail = searchParams.get("email") || "";
+  const invitationToken = searchParams.get("invitation") || undefined;
+  const invitedProjectId = searchParams.get("project");
 
   const formik = useFormik({
     initialValues: {
       name: "",
-      email: "",
+      email: invitedEmail,
       password: "",
       confirmPassword: "",
     },
@@ -50,8 +54,11 @@ export function Register() {
           name: values.name,
           email: values.email,
           password: values.password,
+          invitationToken,
         });
-        navigate("/dashboard");
+        navigate(
+          invitedProjectId ? `/projects/${invitedProjectId}` : "/dashboard",
+        );
       } catch {
         // The Apollo error link shows the server-provided user message.
       } finally {

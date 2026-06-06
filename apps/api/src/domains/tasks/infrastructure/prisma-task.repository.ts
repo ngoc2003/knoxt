@@ -17,6 +17,13 @@ import type {
 export class PrismaTaskRepository implements ITaskRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  private projectAccessibleBy(userId: string): Prisma.ProjectWhereInput {
+    return {
+      deletedAt: null,
+      OR: [{ userId }, { members: { some: { userId } } }],
+    };
+  }
+
   async resolveTagIds(userId: string, tagNames: string[]): Promise<string[]> {
     const tagRecords = await Promise.all(
       tagNames.map(async (name) => {
@@ -33,7 +40,7 @@ export class PrismaTaskRepository implements ITaskRepository {
   async create(userId: string, data: CreateTaskInput) {
     const { tags, ...rest } = data;
     const lastTask = await this.prisma.task.findFirst({
-      where: { projectId: data.projectId, userId, deletedAt: null },
+      where: { projectId: data.projectId, deletedAt: null },
       orderBy: { orderIndex: 'desc' },
     });
     const orderIndex =
@@ -61,8 +68,8 @@ export class PrismaTaskRepository implements ITaskRepository {
     pagination: PaginationInput,
   ) {
     const where: Prisma.TaskWhereInput = {
-      userId,
       deletedAt: null,
+      project: this.projectAccessibleBy(userId),
       ...(filter.projectId && { projectId: filter.projectId }),
       ...(filter.status && { status: filter.status }),
       ...(filter.priority && { priority: filter.priority }),
@@ -95,7 +102,7 @@ export class PrismaTaskRepository implements ITaskRepository {
 
   async findOne(userId: string, id: string) {
     return this.prisma.task.findFirst({
-      where: { id, userId, deletedAt: null },
+      where: { id, deletedAt: null, project: this.projectAccessibleBy(userId) },
     });
   }
 
@@ -133,7 +140,7 @@ export class PrismaTaskRepository implements ITaskRepository {
       where: {
         projectId,
         key: status,
-        project: { userId, deletedAt: null },
+        project: this.projectAccessibleBy(userId),
       },
       select: { id: true },
     });

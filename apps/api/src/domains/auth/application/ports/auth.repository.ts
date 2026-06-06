@@ -7,4 +7,9 @@ export interface IAuthRepository {
     name: string;
     passwordHash: string;
   }): Promise<User>;
+  claimProjectInvitations(
+    userId: string,
+    email: string,
+    token?: string,
+  ): Promise<void>;
 }

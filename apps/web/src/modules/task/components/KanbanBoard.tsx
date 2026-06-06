@@ -1,6 +1,6 @@
 import { useDrop, useDrag } from "react-dnd";
 import { Badge } from "../../../shared/ui/badge";
-import { Clock, Flag } from "lucide-react";
+import { Clock, Flag, GripVertical } from "lucide-react";
 
 type Priority = "low" | "medium" | "high";
 type Status = string;
@@ -24,10 +24,14 @@ export function KanbanBoard({
   tasks,
   columns,
   moveTask,
+  moveColumn,
+  canEdit,
 }: {
   tasks: any[];
   columns: ProjectColumn[];
   moveTask: (taskId: string, newStatus: string, newOrderIndex?: number) => void;
+  moveColumn: (columnId: string, targetColumnId: string) => void;
+  canEdit: boolean;
 }) {
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
@@ -36,12 +40,15 @@ export function KanbanBoard({
         return (
           <Column
             key={column.id}
+            id={column.id}
             status={column.key}
             title={column.name}
             icon={null}
             tasks={columnTasks}
             count={columnTasks.length}
             moveTask={moveTask}
+            moveColumn={moveColumn}
+            canEdit={canEdit}
             badgeClass="bg-indigo-50 text-indigo-600"
           />
         );
@@ -51,39 +58,83 @@ export function KanbanBoard({
 }
 
 interface ColumnProps {
+  id: string;
   status: Status;
   title: string;
   icon: React.ReactNode;
   tasks: Task[];
   count: number;
   moveTask: (taskId: string, newStatus: Status) => void;
+  moveColumn: (columnId: string, targetColumnId: string) => void;
+  canEdit: boolean;
   badgeClass: string;
 }
 
 const ITEM_TYPE = "TASK";
+const COLUMN_TYPE = "COLUMN";
 
 function Column({
+  id,
   status,
   title,
   icon,
   tasks,
   count,
   moveTask,
+  moveColumn,
+  canEdit,
   badgeClass,
 }: ColumnProps) {
   const [{ isOver }, drop] = useDrop({
     accept: ITEM_TYPE,
+    canDrop: () => canEdit,
     drop: (item: { id: string }) => moveTask(item.id, status),
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
   });
+  const [{ isColumnOver }, columnDrop] = useDrop({
+    accept: COLUMN_TYPE,
+    canDrop: (item: { id: string }) => canEdit && item.id !== id,
+    drop: (item: { id: string }) => moveColumn(item.id, id),
+    collect: (monitor) => ({
+      isColumnOver: monitor.isOver() && monitor.canDrop(),
+    }),
+  });
+  const [{ isColumnDragging }, columnDrag] = useDrag({
+    type: COLUMN_TYPE,
+    item: { id },
+    canDrag: canEdit,
+    collect: (monitor) => ({
+      isColumnDragging: monitor.isDragging(),
+    }),
+  });
 
   return (
-    <div className="w-80 min-w-80">
-      <div className="flex items-center gap-2 mb-4">
-        {icon}
-        <span className="text-sm font-medium text-gray-700">{title}</span>
+    <div
+      ref={(node) => {
+        columnDrop(node as unknown as HTMLDivElement | null);
+      }}
+      className={`w-80 min-w-80 rounded-lg transition-opacity ${
+        isColumnDragging ? "opacity-50" : ""
+      } ${isColumnOver ? "ring-2 ring-indigo-300" : ""}`}
+    >
+      <div
+        ref={(node) => {
+          columnDrag(node as unknown as HTMLDivElement | null);
+        }}
+        className={`flex items-center gap-2 mb-4 ${canEdit ? "cursor-grab active:cursor-grabbing" : ""}`}
+      >
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label={`Drag ${title} column`}
+          className="flex items-center gap-2"
+        >
+          <GripVertical className="h-4 w-4 text-gray-400" />
+          {icon}
+          <span className="text-sm font-medium text-gray-700">{title}</span>
+        </div>
         <Badge variant="secondary" className={`ml-auto ${badgeClass}`}>
           {count}
         </Badge>
@@ -96,7 +147,12 @@ function Column({
         className={`space-y-3 min-h-[600px] p-3 rounded-lg transition-colors ${isOver ? "bg-indigo-50/50" : "bg-gray-50/50"}`}
       >
         {(tasks || []).map((task) => (
-          <TaskCard key={task.id} task={task} moveTask={moveTask} />
+          <TaskCard
+            key={task.id}
+            task={task}
+            moveTask={moveTask}
+            canEdit={canEdit}
+          />
         ))}
       </div>
     </div>
@@ -106,12 +162,14 @@ function Column({
 interface TaskCardProps {
   task: Task;
   moveTask: (taskId: string, newStatus: Status) => void;
+  canEdit: boolean;
 }
 
-function TaskCard({ task, moveTask }: TaskCardProps) {
+function TaskCard({ task, moveTask, canEdit }: TaskCardProps) {
   const [{ isDragging }, drag] = useDrag({
     type: ITEM_TYPE,
     item: { id: task.id },
+    canDrag: canEdit,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -135,7 +193,7 @@ function TaskCard({ task, moveTask }: TaskCardProps) {
       ref={(node) => {
         drag(node as unknown as HTMLDivElement | null);
       }}
-      className={`p-4 bg-white rounded-lg border border-gray-200 shadow-sm cursor-move hover:shadow-md transition-shadow ${isDragging ? "opacity-50" : ""}`}
+      className={`p-4 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow ${canEdit ? "cursor-move" : ""} ${isDragging ? "opacity-50" : ""}`}
     >
       <div className="flex items-start gap-2 mb-3">
         <p className="text-sm font-medium text-gray-900 flex-1">{task.title}</p>

@@ -1,5 +1,9 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
 import {
+  ArrayMinSize,
+  IsArray,
+  IsEmail,
+  IsEnum,
   IsInt,
   IsDateString,
   IsIn,
@@ -8,6 +12,7 @@ import {
   IsUUID,
   MaxLength,
 } from 'class-validator';
+import { ProjectRole } from '../../../core/common/enum/enums';
 
 @InputType()
 export class CreateProjectInput {
@@ -88,4 +93,69 @@ export class CreateProjectColumnInput {
   @IsInt()
   @IsOptional()
   orderIndex?: number;
+}
+
+@InputType()
+export class ReorderProjectColumnsInput {
+  @Field()
+  @IsUUID()
+  projectId: string;
+
+  @Field(() => [String])
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsUUID('4', { each: true })
+  columnIds: string[];
+}
+
+@InputType()
+export class AddProjectMemberInput {
+  @Field()
+  @IsUUID()
+  projectId: string;
+
+  @Field()
+  @IsEmail()
+  email: string;
+
+  @Field(() => ProjectRole)
+  @IsEnum(ProjectRole)
+  role: ProjectRole;
+}
+
+@InputType()
+export class UpdateProjectMemberRoleInput {
+  @Field()
+  @IsUUID()
+  projectId: string;
+
+  @Field()
+  @IsUUID()
+  memberId: string;
+
+  @Field(() => ProjectRole)
+  @IsEnum(ProjectRole)
+  role: ProjectRole;
+}
+
+@InputType()
+export class RemoveProjectMemberInput {
+  @Field()
+  @IsUUID()
+  projectId: string;
+
+  @Field()
+  @IsUUID()
+  memberId: string;
+}
+
+@InputType()
+export class CancelProjectInvitationInput {
+  @Field()
+  @IsUUID()
+  projectId: string;
+
+  @Field()
+  @IsUUID()
+  invitationId: string;
 }
