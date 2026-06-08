@@ -181,7 +181,7 @@ model Task {
   description String?
   status      String        @default("todo")
   priority    Priority      @default(medium)
-  orderIndex  Int           @default(0)
+  orderKey    String        @db.VarChar(16)
   dueDate     DateTime?
   tags        TaskTagMap[]
   timeLogs    TaskTimeLog[]
@@ -190,6 +190,7 @@ model Task {
   deletedAt   DateTime?
 
   @@index([assigneeId])
+  @@index([projectId, status, orderKey])
 }
 
 model TaskTag {

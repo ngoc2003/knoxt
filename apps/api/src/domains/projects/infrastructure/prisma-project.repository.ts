@@ -78,7 +78,7 @@ export class PrismaProjectRepository implements IProjectRepository {
           columns: { orderBy: { orderIndex: 'asc' } },
           tasks: {
             where: { deletedAt: null },
-            orderBy: { orderIndex: 'asc' },
+            orderBy: { orderKey: 'asc' },
             include: { assignee: true },
           },
           members: { include: { user: true }, orderBy: { createdAt: 'asc' } },
@@ -104,7 +104,7 @@ export class PrismaProjectRepository implements IProjectRepository {
         user: true,
         tasks: {
           where: { deletedAt: null },
-          orderBy: { orderIndex: 'asc' },
+          orderBy: { orderKey: 'asc' },
           include: { assignee: true, tags: { include: { tag: true } } },
         },
         incomes: true,

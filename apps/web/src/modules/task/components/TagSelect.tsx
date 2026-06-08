@@ -7,6 +7,7 @@ import {
   CommandItem,
   CommandEmpty,
 } from "../../../shared/ui/command";
+import { X } from "lucide-react";
 
 interface SelectComponentProps<T> {
   value: string[];
@@ -66,9 +67,38 @@ export function TagSelect<T>({
   const match = filteredData.find(
     (item) => (item as any).name.toLowerCase() === input.toLowerCase(),
   );
+  const removeValue = (itemName: string) => {
+    onChange(
+      value.filter((name) => name !== itemName),
+      data.filter(
+        (item) =>
+          value.includes((item as any).name) && (item as any).name !== itemName,
+      ),
+    );
+  };
 
   return (
     <div className="relative">
+      {value.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-2">
+          {value.map((itemName) => (
+            <span
+              key={itemName}
+              className="inline-flex items-center gap-1 rounded-sm bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700"
+            >
+              {itemName}
+              <button
+                type="button"
+                aria-label={`Remove ${itemName}`}
+                onClick={() => removeValue(itemName)}
+                className="rounded-sm p-0.5 text-indigo-500 hover:bg-indigo-100 hover:text-indigo-800"
+              >
+                <X className="size-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
       <Input
         value={input}
         onChange={handleInputChange}

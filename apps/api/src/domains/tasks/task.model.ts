@@ -2,7 +2,6 @@ import {
   Field,
   GraphQLISODateTime,
   ID,
-  Int,
   ObjectType,
 } from '@nestjs/graphql';
 import { Priority } from '../../core/common/enum/enums';
@@ -38,8 +37,8 @@ export class Task {
   @Field(() => Priority)
   priority: Priority;
 
-  @Field(() => Int)
-  orderIndex: number;
+  @Field()
+  orderKey: string;
 
   @Field(() => ID)
   projectId: string;

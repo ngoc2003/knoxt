@@ -68,6 +68,7 @@ export function TaskModal({
   onClose,
   onSave,
   task,
+  availableTags = [],
   columns = DEFAULT_COLUMNS,
   members = [],
 }: TaskModalProps) {
@@ -294,7 +295,9 @@ export function TaskModal({
               Tags
             </Label>
             <TagSelect
-              data={["1"].map((tag) => ({ id: tag, name: tag }))}
+              data={[
+                ...new Set([...(formData.tags || []), ...availableTags]),
+              ].map((tag) => ({ id: tag, name: tag }))}
               renderItem={(item, onSelect) => (
                 <div onClick={onSelect} className="flex items-center gap-2">
                   {item.name}
@@ -302,7 +305,7 @@ export function TaskModal({
               )}
               value={formData.tags || []}
               onChange={(tags) => updateField("tags", tags)}
-              onSubmit={async (input) => ({ id: input, name: input })} // Mock onSubmit for creating new tags
+              onSubmit={async (input) => ({ id: input, name: input })}
               placeholder="Add tags..."
               filterData={(data, input) =>
                 data.filter((item) =>

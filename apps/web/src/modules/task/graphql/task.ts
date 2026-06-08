@@ -9,6 +9,7 @@ export const TASKS_QUERY = gql`
         description
         priority
         status
+        orderKey
         dueDate
         projectId
         assigneeId
@@ -32,7 +33,7 @@ export const MOVE_TASK_MUTATION = gql`
     moveTask(input: $input) {
       id
       status
-      orderIndex
+      orderKey
     }
   }
 `;
@@ -45,6 +46,7 @@ export const CREATE_TASK_MUTATION = gql`
       description
       priority
       status
+      orderKey
       dueDate
       projectId
       assigneeId
@@ -65,6 +67,7 @@ export const UPDATE_TASK_MUTATION = gql`
       description
       priority
       status
+      orderKey
       dueDate
       projectId
       assigneeId

@@ -36,11 +36,6 @@ export class CreateTaskInput {
   @IsOptional()
   priority?: Priority;
 
-  @Field(() => Int, { nullable: true })
-  @IsInt()
-  @IsOptional()
-  orderIndex?: number;
-
   @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()
   dueDate?: Date;
@@ -78,11 +73,6 @@ export class UpdateTaskInput {
   @IsEnum(Priority)
   @IsOptional()
   priority?: Priority;
-
-  @Field(() => Int, { nullable: true })
-  @IsInt()
-  @IsOptional()
-  orderIndex?: number;
 
   @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()

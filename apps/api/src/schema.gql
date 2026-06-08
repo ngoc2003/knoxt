@@ -113,7 +113,6 @@ input CreateTaskInput {
   assigneeId: String
   description: String
   dueDate: DateTime
-  orderIndex: Int
   priority: Priority
   projectId: String!
   status: String
@@ -591,7 +590,7 @@ type Task {
   description: String
   dueDate: DateTime
   id: ID!
-  orderIndex: Int!
+  orderKey: String!
   priority: Priority!
   project: Project!
   projectId: ID!
@@ -661,7 +660,6 @@ input UpdateTaskInput {
   assigneeId: String
   description: String
   dueDate: DateTime
-  orderIndex: Int
   priority: Priority
   status: String
   tags: [String!]

@@ -45,6 +45,7 @@ interface Task {
   description?: string;
   priority: "low" | "medium" | "high";
   status: string;
+  orderKey: string;
   dueDate?: string;
   projectId: string;
   assigneeId?: string | null;
@@ -169,11 +170,17 @@ export function ProjectDetailPage() {
           `Task status has been updated to '${updatedTask.status}' on the server. Please try again with the new status card.`,
         );
       } else {
-        // Update the task locally
-        const updatedTasks = tasksState.map((task: Task) =>
-          task.id === taskId ? { ...task, status: newStatus } : task,
+        setTasksState((currentTasks) =>
+          currentTasks.map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  status: updatedTask.status,
+                  orderKey: updatedTask.orderKey,
+                }
+              : task,
+          ),
         );
-        setTasksState(updatedTasks);
       }
     } catch (error) {
       console.error("Failed to move task", error);
@@ -412,7 +419,13 @@ export function ProjectDetailPage() {
         onSave={handleSaveTask}
         columns={columnsState}
         members={project.members}
-        availableTags={[]}
+        availableTags={[
+          ...new Set(
+            tasksState.flatMap(
+              (task) => task.tags?.map((tag) => tag.name) ?? [],
+            ),
+          ),
+        ]}
       />
       <ManageProjectColumnsDialog
         isOpen={isManageColumnsOpen}

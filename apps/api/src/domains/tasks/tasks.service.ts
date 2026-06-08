@@ -51,7 +51,16 @@ export class TasksService {
       await this.ensureProjectColumn(userId, task.projectId, data.status);
     }
     await this.ensureProjectMember(task.projectId, data.assigneeId);
-    return this.taskRepo.update(userId, id, data);
+
+    const { status, ...taskData } = data;
+    const updatedTask = await this.taskRepo.update(userId, id, taskData);
+    if (status === undefined || status === task.status) return updatedTask;
+
+    return this.taskRepo.moveTask(userId, {
+      id,
+      status,
+      orderIndex: Number.MAX_SAFE_INTEGER,
+    });
   }
 
   async moveTask(userId: string, input: MoveTaskInput) {

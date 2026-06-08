@@ -91,6 +91,7 @@ export const PROJECT_DETAIL_QUERY = gql`
         description
         priority
         status
+        orderKey
         dueDate
         projectId
         assigneeId
