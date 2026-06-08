@@ -20,6 +20,7 @@ import { MailModule } from './infrastructure/mail/mail.module';
 import { NotificationsModule } from './domains/notifications/notifications.module';
 import { validateEnvironment } from './config/env.validation';
 import { HealthModule } from './infrastructure/health/health.module';
+import { LoggingModule } from './infrastructure/logging/logging.module';
 
 @Module({
   controllers: [VoyagerController],
@@ -28,6 +29,7 @@ import { HealthModule } from './infrastructure/health/health.module';
       isGlobal: true,
       validate: validateEnvironment,
     }),
+    LoggingModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),

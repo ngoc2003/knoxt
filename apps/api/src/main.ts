@@ -1,12 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const config = app.get(ConfigService);
+  const logger = app.get(Logger);
 
+  app.useLogger(logger);
   app.enableShutdownHooks();
 
   app.enableCors({
@@ -24,6 +27,6 @@ async function bootstrap() {
 
   const port = config.get<number>('PORT', 3000);
   await app.listen(port);
-  console.log(`🚀 API running at http://localhost:${port}/graphql`);
+  logger.log(`API running at http://localhost:${port}/graphql`);
 }
 void bootstrap();

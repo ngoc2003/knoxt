@@ -5,6 +5,7 @@
   "scripts": {
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "studio": "prisma studio"
   },
   "dependencies": {
