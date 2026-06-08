@@ -1,11 +1,17 @@
-import { useCallback, useRef, useState } from "react";
-import { Columns2, Eye, Pencil } from "lucide-react";
+import { lazy, Suspense, useState } from "react";
+import { Braces, Columns2, Eye, Type } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import { NotePreview } from "./NotePreview";
 import { useNoteAutosave } from "../hooks/useNoteAutosave";
 import type { EditorMode, NoteDetail } from "../types/note";
+
+const RichTextEditor = lazy(() =>
+  import("./RichTextEditor").then((module) => ({
+    default: module.RichTextEditor,
+  })),
+);
 
 export function NoteEditor({
   note,
@@ -14,36 +20,10 @@ export function NoteEditor({
   note: NoteDetail;
   onSaved: (note: NoteDetail) => void;
 }) {
-  const [mode, setMode] = useState<EditorMode>("edit");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [mode, setMode] = useState<EditorMode>("rich");
   const { title, setTitle, content, setContent, status } = useNoteAutosave(
     note,
     onSaved,
-  );
-
-  const insertMarkdown = useCallback(
-    (before: string, after = "", fallback = "text") => {
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selected = content.slice(start, end) || fallback;
-      const next =
-        content.slice(0, start) +
-        before +
-        selected +
-        after +
-        content.slice(end);
-      setContent(next);
-      window.requestAnimationFrame(() => {
-        textarea.focus();
-        textarea.setSelectionRange(
-          start + before.length,
-          start + before.length + selected.length,
-        );
-      });
-    },
-    [content, setContent],
   );
 
   const statusText = {
@@ -79,7 +59,8 @@ export function NoteEditor({
           <div className="ml-auto flex rounded-md border bg-gray-50 p-0.5">
             {(
               [
-                ["edit", Pencil, "Edit"],
+                ["rich", Type, "Rich text"],
+                ["edit", Braces, "Markdown"],
                 ["preview", Eye, "Preview"],
                 ["split", Columns2, "Split"],
               ] as const
@@ -104,10 +85,20 @@ export function NoteEditor({
           mode === "split" ? "grid-cols-2 divide-x" : "grid-cols-1"
         }`}
       >
-        {mode !== "preview" && (
+        {mode === "rich" && (
+          <Suspense
+            fallback={
+              <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
+                Loading rich text editor...
+              </div>
+            }
+          >
+            <RichTextEditor content={content} onChange={setContent} />
+          </Suspense>
+        )}
+        {(mode === "edit" || mode === "split") && (
           <div className="min-h-0 overflow-auto p-6">
             <Textarea
-              ref={textareaRef}
               value={content}
               onChange={(event) => setContent(event.target.value)}
               className="h-full min-h-0 field-sizing-fixed overflow-y-auto resize-none border-none bg-transparent font-mono text-sm leading-7 shadow-none focus-visible:ring-0"
@@ -116,7 +107,7 @@ export function NoteEditor({
             />
           </div>
         )}
-        {mode !== "edit" && (
+        {(mode === "preview" || mode === "split") && (
           <div className="min-h-0 overflow-auto p-8">
             <NotePreview content={content} />
           </div>

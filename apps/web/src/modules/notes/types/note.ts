@@ -25,7 +25,7 @@ export interface NoteTreeNode extends NoteTreeItem {
   children: NoteTreeNode[];
 }
 
-export type EditorMode = "edit" | "preview" | "split";
+export type EditorMode = "rich" | "edit" | "preview" | "split";
 
 export interface NoteTag {
   id: string;

@@ -97,3 +97,55 @@
 .note-markdown input[type="checkbox"] {
   margin-right: 0.4rem;
 }
+
+.rich-text-editor .ProseMirror {
+  min-height: 100%;
+}
+
+.rich-text-editor .ProseMirror:focus {
+  outline: none;
+}
+
+.rich-text-editor ul[data-type="taskList"] {
+  margin: 0.75em 0;
+  list-style: none;
+  padding-left: 0;
+}
+
+.rich-text-editor ul[data-type="taskList"] > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin: 0.35rem 0;
+}
+
+.rich-text-editor ul[data-type="taskList"] > li > label {
+  display: flex;
+  height: 1.75rem;
+  flex: 0 0 1rem;
+  align-items: center;
+}
+
+.rich-text-editor ul[data-type="taskList"] > li > label input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+}
+
+.rich-text-editor ul[data-type="taskList"] > li > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.rich-text-editor ul[data-type="taskList"] > li > div > p:first-child {
+  margin-top: 0;
+}
+
+.rich-text-editor ul[data-type="taskList"] > li > div > p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-editor ul[data-type="taskList"] ul[data-type="taskList"] {
+  margin: 0.35rem 0 0;
+  padding-left: 1.5rem;
+}
