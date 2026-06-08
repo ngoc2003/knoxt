@@ -167,7 +167,7 @@ export function Layout() {
           </div>
         </header>
         {/* Page Content */}
-        <main className="flex-1 overflow-scroll">
+        <main className="min-h-0 flex-1 overflow-auto">
           <Outlet />
         </main>
       </div>

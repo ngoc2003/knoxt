@@ -6,6 +6,8 @@ import {
   FilePlus2,
   Info,
   LoaderCircle,
+  Maximize2,
+  Minimize2,
   Pin,
   PinOff,
   Share2,
@@ -40,6 +42,7 @@ export function Notes() {
   const [shareOpen, setShareOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(
@@ -48,6 +51,17 @@ export function Notes() {
     );
     return () => window.clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    if (!isFullScreen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsFullScreen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFullScreen]);
 
   const treeQuery = useQuery(NOTE_TREE_QUERY, {
     variables: { search: debouncedSearch || undefined },
@@ -156,25 +170,27 @@ export function Notes() {
   return (
     <>
       <DndProvider backend={HTML5Backend}>
-        <div className="flex h-[calc(100vh-4rem)] min-w-0 bg-white">
-          <NoteTreeSidebar
-            notes={notes}
-            selectedId={noteId}
-            search={search}
-            onSearchChange={setSearch}
-            onSelect={(id) => navigate(`/notes/${id}`)}
-            onCreate={(parentId) => void handleCreate(parentId)}
-            onDelete={setNoteToDelete}
-            onSetPinned={(note, isPinned) =>
-              void handleSetPinned(note.id, isPinned)
-            }
-            onMove={(id, parentId, orderedIds) =>
-              void handleMove(id, parentId, orderedIds)
-            }
-            onOpenTrash={() => setTrashOpen(true)}
-          />
+        <div className="flex h-full min-h-0 min-w-0 overflow-hidden bg-white">
+          {!isFullScreen && (
+            <NoteTreeSidebar
+              notes={notes}
+              selectedId={noteId}
+              search={search}
+              onSearchChange={setSearch}
+              onSelect={(id) => navigate(`/notes/${id}`)}
+              onCreate={(parentId) => void handleCreate(parentId)}
+              onDelete={setNoteToDelete}
+              onSetPinned={(note, isPinned) =>
+                void handleSetPinned(note.id, isPinned)
+              }
+              onMove={(id, parentId, orderedIds) =>
+                void handleMove(id, parentId, orderedIds)
+              }
+              onOpenTrash={() => setTrashOpen(true)}
+            />
+          )}
 
-          <main className="flex min-w-0 flex-1 flex-col">
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white">
             {noteId && (
               <div className="flex h-12 items-center border-b px-5">
                 <NoteBreadcrumb noteId={noteId} notes={notes} />
@@ -207,6 +223,18 @@ export function Notes() {
                   >
                     <Share2 />
                     Share
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsFullScreen((current) => !current)}
+                    aria-label={
+                      isFullScreen ? "Exit full screen" : "Open full screen"
+                    }
+                    aria-pressed={isFullScreen}
+                  >
+                    {isFullScreen ? <Minimize2 /> : <Maximize2 />}
+                    {isFullScreen ? "Exit full screen" : "Full screen"}
                   </Button>
                 </div>
                 {(creating || moving || pinning || deleting) && (

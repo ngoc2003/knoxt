@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { Bold, Columns2, Eye, Italic, Link2, List, Pencil } from "lucide-react";
+import { Columns2, Eye, Pencil } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -55,7 +55,7 @@ export function NoteEditor({
   }[status];
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col bg-white">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white">
       <div className="border-b border-gray-200 px-5 py-4">
         <div className="flex items-center gap-3">
           <Input
@@ -110,7 +110,7 @@ export function NoteEditor({
               ref={textareaRef}
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              className="min-h-full resize-none border-none bg-transparent font-mono text-sm leading-7 shadow-none focus-visible:ring-0"
+              className="h-full min-h-0 field-sizing-fixed overflow-y-auto resize-none border-none bg-transparent font-mono text-sm leading-7 shadow-none focus-visible:ring-0"
               placeholder="Write Markdown..."
               aria-label="Note content"
             />
