@@ -37,6 +37,8 @@ A comprehensive SaaS platform for freelancers to manage their business operation
 
 - **Turborepo** - Monorepo build system
 - **pnpm** - Fast package manager
+- **Docker** - Multi-stage production images
+- **Nginx** - Production static web server with SPA fallback
 - **ESLint & Prettier** - Code quality and formatting
 
 ## Project Structure
@@ -56,6 +58,7 @@ A comprehensive SaaS platform for freelancers to manage their business operation
 
 - Node.js 18+ and pnpm
 - PostgreSQL database
+- Docker Desktop or another Docker-compatible runtime for container deployment
 - Git
 
 ### Installation
@@ -323,16 +326,108 @@ pnpm build --filter=web
 
 ### Production deployment
 
+The API and Web Dockerfiles use the repository root as their build context.
+Run all Docker build commands from the repository root.
+
+#### Apply database migrations
+
+Apply committed migrations before starting a new API release:
+
 ```bash
-# Build for production
-pnpm build
-
-# Start API server
-cd apps/api && pnpm start:prod
-
-# Serve web app (after build)
-cd apps/web && pnpm preview
+DATABASE_URL="postgresql://username:password@host:5432/freelancer_notebook" \
+  pnpm db:migrate:deploy
 ```
+
+Production must use `prisma migrate deploy`, not `prisma migrate dev`.
+
+#### Build production images
+
+```bash
+# API
+docker build \
+  -f apps/api/Dockerfile \
+  -t freelancer-api \
+  .
+
+# Web: VITE_API_URL is embedded into the static assets at build time
+docker build \
+  -f apps/web/Dockerfile \
+  --build-arg VITE_API_URL=https://api.example.com \
+  -t freelancer-web \
+  .
+```
+
+The API image contains compiled JavaScript, the generated Prisma client, and
+production dependencies. The Web image contains static Vite assets served by
+Nginx; it does not run `vite preview`. `VITE_API_URL` must be an API URL that
+users' browsers can reach.
+
+#### Run production containers
+
+Create an API runtime environment file outside the image:
+
+```env
+NODE_ENV=production
+PORT=3000
+DATABASE_URL=postgresql://username:password@host:5432/freelancer_notebook
+JWT_SECRET=replace_with_a_strong_secret
+CORS_ORIGIN=http://localhost:8080
+WEB_URL=http://localhost:8080
+```
+
+Set the `DATABASE_URL` host to a PostgreSQL server reachable from the API
+container. When connecting to PostgreSQL running on Docker Desktop's host, use
+`host.docker.internal` instead of `localhost`.
+
+Then start both containers:
+
+```bash
+docker run --rm \
+  --name freelancer-api \
+  --env-file apps/api/.env \
+  -p 3000:3000 \
+  freelancer-api
+
+docker run --rm \
+  --name freelancer-web \
+  -p 8080:8080 \
+  freelancer-web
+```
+
+Open the Web application at http://localhost:8080. The Web container serves
+SPA routes through Nginx and falls back to `index.html`.
+
+Do not copy `.env` files into images. The root `.dockerignore` excludes them;
+API secrets must be supplied at runtime.
+
+#### Verify production images
+
+```bash
+# Health and request ID
+curl -i http://localhost:3000/health/live
+curl -i http://localhost:3000/health/ready
+
+# Containers must run as non-root users
+docker run --rm freelancer-api id
+docker run --rm freelancer-web id
+
+# Inspect final image layers
+docker image history freelancer-api
+docker image history freelancer-web
+
+# Verify that the Web server supports SPA fallback
+curl -i http://localhost:8080/projects/example
+```
+
+Expected container users:
+
+- API: `node`
+- Web: `nginx` (`uid=101`)
+
+The production ports are:
+
+- API: `3000`
+- Web: `8080`
 
 ## Testing
 

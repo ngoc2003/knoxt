@@ -1,26 +1,33 @@
-# Use the official Node.js image as the base image
-FROM node:18-alpine
+# syntax=docker/dockerfile:1
 
-# Set the working directory inside the container
-WORKDIR /usr/src/app
+ARG NODE_VERSION=22.18.0
+ARG PNPM_VERSION=9.0.0
 
-# Copy package.json and pnpm-lock.yaml to the working directory
-COPY package.json pnpm-lock.yaml ./
+FROM node:${NODE_VERSION}-alpine AS base
+ARG PNPM_VERSION
+ENV PNPM_HOME="/pnpm"
+ENV PATH="${PNPM_HOME}:${PATH}"
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+WORKDIR /app
 
-# Install pnpm globally
-RUN npm install -g pnpm
+FROM base AS dependencies
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/package.json
+COPY packages/database/package.json packages/database/package.json
+RUN pnpm install --frozen-lockfile --filter api...
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+FROM dependencies AS builder
+COPY apps/api apps/api
+COPY packages/database packages/database
+RUN DATABASE_URL=postgresql://build:build@localhost:5432/build pnpm --filter database generate
+RUN pnpm --filter api build
+RUN find apps/api/dist -type f \( -name "*.d.ts" -o -name "*.js.map" -o -name "*.tsbuildinfo" \) -delete
+RUN pnpm --filter api --prod deploy /prod/api
 
-# Copy the rest of the application code
-COPY . .
-
-# Build the application
-RUN pnpm build
-
-# Expose the port the app runs on
+FROM node:${NODE_VERSION}-alpine AS runner
+ENV NODE_ENV=production
+WORKDIR /app
+COPY --from=builder --chown=node:node /prod/api ./
+USER node
 EXPOSE 3000
-
-# Define the command to run the application
-CMD ["pnpm", "start:prod"]
+CMD ["node", "dist/main.js"]

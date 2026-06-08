@@ -82,6 +82,7 @@
     "yup": "^1.7.1"
   },
   "devDependencies": {
+    "@repo/config": "workspace:*",
     "@tailwindcss/vite": "4.1.12",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",

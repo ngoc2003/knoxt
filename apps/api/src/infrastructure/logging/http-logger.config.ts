@@ -4,12 +4,6 @@ import { Options } from 'pino-http';
 
 const REDACTED_VALUE = '[REDACTED]';
 
-function getRequestId(request: IncomingMessage): string {
-  if (typeof request.id === 'string') return request.id;
-  if (typeof request.id === 'number') return request.id.toString();
-  return JSON.stringify(request.id) ?? '';
-}
-
 function getPath(request: IncomingMessage): string {
   return request.url?.split('?')[0] ?? '';
 }
@@ -33,7 +27,6 @@ function getRequestLog(
   duration: number,
 ) {
   return {
-    requestId: getRequestId(request),
     method: request.method,
     path: getPath(request),
     statusCode: response.statusCode,

@@ -1,26 +1,32 @@
-# Use the official Node.js image as the base image
-FROM node:18-alpine
+# syntax=docker/dockerfile:1
 
-# Set the working directory inside the container
-WORKDIR /usr/src/app
+ARG NODE_VERSION=22.18.0
+ARG PNPM_VERSION=9.0.0
 
-# Copy package.json and pnpm-lock.yaml to the working directory
-COPY package.json pnpm-lock.yaml ./
+FROM node:${NODE_VERSION}-alpine AS base
+ARG PNPM_VERSION
+ENV PNPM_HOME="/pnpm"
+ENV PATH="${PNPM_HOME}:${PATH}"
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+WORKDIR /app
 
-# Install pnpm globally
-RUN npm install -g pnpm
+FROM base AS dependencies
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/config/package.json packages/config/package.json
+COPY packages/types/package.json packages/types/package.json
+RUN pnpm install --frozen-lockfile --filter web...
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+FROM dependencies AS builder
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+COPY apps/web apps/web
+COPY packages/config packages/config
+COPY packages/types packages/types
+RUN pnpm --filter web build
 
-# Copy the rest of the application code
-COPY . .
-
-# Build the application
-RUN pnpm build
-
-# Expose the port the app runs on
-EXPOSE 5173
-
-# Define the command to run the application
-CMD ["pnpm", "preview"]
+FROM nginxinc/nginx-unprivileged:1.27.5-alpine AS runner
+COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder --chown=101:101 /app/apps/web/dist /usr/share/nginx/html
+USER 101
+EXPOSE 8080
