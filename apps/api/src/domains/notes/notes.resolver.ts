@@ -1,11 +1,12 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { NotesService } from './notes.service';
-import { Note } from './note.model';
+import { Note, NoteTreeItem } from './note.model';
 import { NotePage } from './note-page.model';
 import {
   CreateNoteInput,
   ListNotesInput,
+  MoveNoteInput,
   UpdateNoteInput,
 } from './dto/note.dto';
 import { GqlAuthGuard } from '../../core/common/guards/gql-auth.guard';
@@ -29,6 +30,14 @@ export class NotesResolver {
     return this.notesService.findAll(user.id, filter ?? {}, pagination ?? {});
   }
 
+  @Query(() => [NoteTreeItem])
+  noteTree(
+    @CurrentUser() user: AuthUser,
+    @Args('search', { nullable: true }) search?: string,
+  ) {
+    return this.notesService.findTree(user.id, search);
+  }
+
   @Query(() => Note)
   noteDetail(@CurrentUser() user: AuthUser, @Args('id') id: string) {
     return this.notesService.findOne(user.id, id);
@@ -49,6 +58,20 @@ export class NotesResolver {
     @Args('data') data: UpdateNoteInput,
   ) {
     return this.notesService.update(user.id, id, data);
+  }
+
+  @Mutation(() => Boolean)
+  setNotePinned(
+    @CurrentUser() user: AuthUser,
+    @Args('id') id: string,
+    @Args('isPinned') isPinned: boolean,
+  ) {
+    return this.notesService.setPinned(user.id, id, isPinned);
+  }
+
+  @Mutation(() => Note)
+  moveNote(@CurrentUser() user: AuthUser, @Args('data') data: MoveNoteInput) {
+    return this.notesService.move(user.id, data);
   }
 
   @Mutation(() => Note)

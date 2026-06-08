@@ -34,6 +34,11 @@ export enum ProjectRole {
   admin = 'admin',
 }
 
+export enum NotePermission {
+  viewer = 'viewer',
+  editor = 'editor',
+}
+
 export enum Permission {
   projectRead = 'project.read',
   projectEdit = 'project.edit',
@@ -53,4 +58,5 @@ registerEnumType(InvoiceStatus, { name: 'InvoiceStatus' });
 registerEnumType(IncomeStatus, { name: 'IncomeStatus' });
 registerEnumType(SortOrder, { name: 'SortOrder' });
 registerEnumType(ProjectRole, { name: 'ProjectRole' });
+registerEnumType(NotePermission, { name: 'NotePermission' });
 registerEnumType(NotificationType, { name: 'NotificationType' });

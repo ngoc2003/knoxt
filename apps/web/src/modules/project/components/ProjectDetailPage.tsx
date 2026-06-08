@@ -310,7 +310,6 @@ export function ProjectDetailPage() {
   const isOwner = project.userId === user?.id;
   const canEdit =
     isOwner || membership?.role === "editor" || membership?.role === "admin";
-  const canManageMembers = isOwner || membership?.role === "admin";
 
   return (
     <div className="p-6">
@@ -322,7 +321,7 @@ export function ProjectDetailPage() {
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          {canManageMembers && (
+          {isOwner && (
             <ProjectMembersDialog
               projectId={project.id}
               members={project.members}
@@ -331,16 +330,6 @@ export function ProjectDetailPage() {
           )}
           {canEdit && (
             <>
-              <Button
-                variant="outline"
-                size="icon"
-                className="min-w-20"
-                aria-label="Edit project"
-                onClick={() => setIsProjectModalOpen(true)}
-              >
-                <Pencil />
-                Edit
-              </Button>
               <Button
                 size="icon"
                 className="min-w-36"
@@ -364,6 +353,11 @@ export function ProjectDetailPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => setIsProjectModalOpen(true)}>
+                  <Pencil />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => setIsManageColumnsOpen(true)}>
                   <Columns3 />
                   Manage columns

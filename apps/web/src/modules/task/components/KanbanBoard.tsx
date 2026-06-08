@@ -1,7 +1,13 @@
 import { useDrop, useDrag } from "react-dnd";
 import { useRef } from "react";
 import { Badge } from "../../../shared/ui/badge";
-import { Calendar, Flag, GripVertical, UserRound } from "lucide-react";
+import {
+  Calendar,
+  ClipboardList,
+  Flag,
+  GripVertical,
+  UserRound,
+} from "lucide-react";
 
 type Priority = "low" | "medium" | "high";
 type Status = string;
@@ -127,7 +133,7 @@ function Column({
       ref={(node) => {
         columnDrop(node as unknown as HTMLDivElement | null);
       }}
-      className={`w-80 min-w-80 rounded-lg transition-opacity ${
+      className={`w-80 min-w-80 rounded-lg transition-opacity bg-white p-3 ${
         isColumnDragging ? "opacity-50" : ""
       } ${isColumnOver ? "ring-2 ring-indigo-300" : ""}`}
     >
@@ -158,9 +164,9 @@ function Column({
         ref={(node) => {
           drop(node as unknown as HTMLDivElement | null);
         }}
-        className={`space-y-3 min-h-[600px] p-3 rounded-lg transition-colors ${isOver ? "bg-indigo-50/50" : "bg-gray-50/50"}`}
+        className={`space-y-3 min-h-[500px] p-3 rounded-lg transition-colors ${isOver ? "bg-indigo-50/50" : "bg-gray-50/50"}`}
       >
-        {(tasks || []).map((task) => (
+        {tasks.map((task) => (
           <TaskCard
             key={task.id}
             task={task}
@@ -168,6 +174,31 @@ function Column({
             onClick={onTaskClick}
           />
         ))}
+
+        {tasks.length === 0 && (
+          <div
+            className={`flex min-h-44 flex-col items-center justify-center rounded-lg border border-dashed px-6 text-center transition-colors ${
+              isOver
+                ? "border-indigo-300 bg-white"
+                : "border-gray-200 bg-white/60"
+            }`}
+          >
+            <div className="relative mb-4">
+              <div className="absolute inset-0 rotate-6 rounded-xl bg-indigo-100" />
+              <div className="relative rounded-xl border border-indigo-100 bg-white p-3">
+                <ClipboardList className="h-6 w-6 text-indigo-500" />
+              </div>
+            </div>
+            <p className="text-sm font-medium text-gray-700">
+              {isOver ? "Drop task here" : "No tasks yet"}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-gray-400">
+              {canEdit
+                ? "Drag a task here to get things moving."
+                : "Tasks added to this stage will appear here."}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

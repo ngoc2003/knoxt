@@ -1,3 +1,99 @@
-@import './fonts.css';
-@import './tailwind.css';
-@import './theme.css';
+@import "./fonts.css";
+@import "./tailwind.css";
+@import "./theme.css";
+
+.note-markdown {
+  color: #1f2937;
+  font-size: 0.95rem;
+  line-height: 1.75;
+}
+
+.note-markdown h1,
+.note-markdown h2,
+.note-markdown h3 {
+  margin: 1.5em 0 0.6em;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.note-markdown h1 {
+  font-size: 2rem;
+}
+
+.note-markdown h2 {
+  font-size: 1.5rem;
+}
+
+.note-markdown h3 {
+  font-size: 1.2rem;
+}
+
+.note-markdown p,
+.note-markdown ul,
+.note-markdown ol,
+.note-markdown blockquote,
+.note-markdown pre,
+.note-markdown table {
+  margin: 0.9em 0;
+}
+
+.note-markdown ul,
+.note-markdown ol {
+  padding-left: 1.5rem;
+}
+
+.note-markdown ul {
+  list-style: disc;
+}
+
+.note-markdown ol {
+  list-style: decimal;
+}
+
+.note-markdown a {
+  color: #4f46e5;
+  text-decoration: underline;
+}
+
+.note-markdown blockquote {
+  border-left: 3px solid #c7d2fe;
+  padding-left: 1rem;
+  color: #6b7280;
+}
+
+.note-markdown code {
+  border-radius: 0.25rem;
+  background: #f3f4f6;
+  padding: 0.15rem 0.3rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+}
+
+.note-markdown pre {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: #111827;
+  padding: 1rem;
+  color: #f9fafb;
+}
+
+.note-markdown pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.note-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.note-markdown th,
+.note-markdown td {
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.note-markdown input[type="checkbox"] {
+  margin-right: 0.4rem;
+}

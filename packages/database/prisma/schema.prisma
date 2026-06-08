@@ -38,6 +38,11 @@ enum ProjectRole {
   admin
 }
 
+enum NotePermission {
+  viewer
+  editor
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
@@ -54,6 +59,9 @@ model User {
   tasks                  Task[]              @relation("CreatedTasks")
   assignedTasks          Task[]              @relation("AssignedTasks")
   notes                  Note[]
+  sharedNotes            NoteShare[]
+  notePins               NotePin[]
+  noteTags               NoteTag[]
   incomes                Income[]
   expenses               Expense[]
   taxConfigs             TaxConfig[]
@@ -216,28 +224,81 @@ model TaskTimeLog {
 }
 
 model Note {
-  id          String       @id @default(uuid())
+  id          String          @id @default(uuid())
   userId      String
   customerId  String?
-  user        User         @relation(fields: [userId], references: [id])
-  customer    Customer?    @relation(fields: [customerId], references: [id])
+  parentId    String?
+  user        User            @relation(fields: [userId], references: [id])
+  customer    Customer?       @relation(fields: [customerId], references: [id])
+  parent      Note?           @relation("NoteTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Note[]          @relation("NoteTree")
   title       String
   content     String
+  position    Int             @default(0)
+  version     Int             @default(1)
   tags        NoteTagMap[]
   attachments Attachment[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  shares      NoteShare[]
+  pins        NotePin[]
+  publicLink  NotePublicLink?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   deletedAt   DateTime?
+
+  @@index([userId, parentId, position])
+}
+
+model NotePin {
+  noteId    String
+  userId    String
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([noteId, userId])
+  @@index([userId, createdAt])
+}
+
+model NoteShare {
+  id              String         @id @default(uuid())
+  noteId          String
+  userId          String
+  sourceNoteId    String
+  permission      NotePermission @default(viewer)
+  includeChildren Boolean        @default(false)
+  note            Note           @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([noteId, userId, sourceNoteId])
+  @@index([userId])
+  @@index([sourceNoteId, userId])
+}
+
+model NotePublicLink {
+  id              String    @id @default(uuid())
+  noteId          String    @unique
+  note            Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tokenHash       String    @unique
+  includeChildren Boolean   @default(false)
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model NoteTag {
   id        String       @id @default(uuid())
   userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
   color     String?
   notes     NoteTagMap[]
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
+
+  @@unique([userId, name])
 }
 
 model NoteTagMap {

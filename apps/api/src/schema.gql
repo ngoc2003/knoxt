@@ -2,6 +2,14 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+input AddNoteAttachmentInput {
+  filename: String!
+  mimeType: String
+  noteId: String!
+  size: Int
+  url: String!
+}
+
 input AddProjectMemberInput {
   email: String!
   projectId: String!
@@ -73,9 +81,16 @@ input CreateInvoiceInput {
 }
 
 input CreateNoteInput {
-  content: String!
+  content: String = ""
   customerId: String
+  parentId: String
   title: String!
+}
+
+input CreateNotePublicLinkInput {
+  expiresAt: DateTime
+  includeChildren: Boolean = false
+  noteId: String!
 }
 
 input CreateProjectColumnInput {
@@ -269,6 +284,12 @@ input LoginInput {
   password: String!
 }
 
+input MoveNoteInput {
+  id: String!
+  orderedSiblingIds: [String!]!
+  parentId: String
+}
+
 input MoveTaskInput {
   id: String!
   orderIndex: Int!
@@ -276,6 +297,7 @@ input MoveTaskInput {
 }
 
 type Mutation {
+  addNoteAttachment(data: AddNoteAttachmentInput!): NoteAttachment!
   addProjectMember(data: AddProjectMemberInput!): ProjectShareResult!
   cancelProjectInvitation(data: CancelProjectInvitationInput!): ProjectInvitation!
   createAiSession(data: CreateAiSessionInput!): AiSession!
@@ -284,6 +306,7 @@ type Mutation {
   createIncome(data: CreateIncomeInput!): Income!
   createInvoice(data: CreateInvoiceInput!): Invoice!
   createNote(data: CreateNoteInput!): Note!
+  createNotePublicLink(data: CreateNotePublicLinkInput!): NotePublicLinkResult!
   createProject(data: CreateProjectInput!): Project!
   createProjectColumn(data: CreateProjectColumnInput!): ProjectColumn!
   createTask(data: CreateTaskInput!): Task!
@@ -298,11 +321,19 @@ type Mutation {
   deleteTask(id: String!): Task!
   login(data: LoginInput!): AuthResponse!
   markAllNotificationsRead: Boolean!
+  moveNote(data: MoveNoteInput!): Note!
   moveTask(input: MoveTaskInput!): Task!
   register(data: RegisterInput!): AuthResponse!
+  removeNoteAttachment(id: String!): NoteAttachment!
+  removeNoteShare(noteId: String!, userId: String!): Boolean!
   removeProjectMember(data: RemoveProjectMemberInput!): ProjectMember!
   reorderProjectColumns(data: ReorderProjectColumnsInput!): [ProjectColumn!]!
+  restoreNote(id: String!): Note!
+  revokeNotePublicLink(noteId: String!): Boolean!
   sendAiMessage(input: SendAiMessageInput!): AiMessage!
+  setNotePinned(id: String!, isPinned: Boolean!): Boolean!
+  setNoteTags(data: SetNoteTagsInput!): [NoteTag!]!
+  shareNoteWithUser(data: ShareNoteInput!): NoteShare!
   updateCustomer(data: UpdateCustomerInput!, id: String!): Customer!
   updateExpense(data: UpdateExpenseInput!, id: String!): Expense!
   updateIncome(data: UpdateIncomeInput!, id: String!): Income!
@@ -317,9 +348,21 @@ type Note {
   content: String!
   createdAt: DateTime!
   customerId: ID
+  deletedAt: DateTime
   id: ID!
+  parentId: ID
+  position: Int!
   title: String!
   updatedAt: DateTime!
+  version: Int!
+}
+
+type NoteAttachment {
+  filename: String!
+  id: ID!
+  mimeType: String
+  size: Int
+  url: String!
 }
 
 type NotePage {
@@ -327,6 +370,55 @@ type NotePage {
   skip: Int!
   take: Int!
   total: Int!
+}
+
+enum NotePermission {
+  editor
+  viewer
+}
+
+type NotePublicLink {
+  expiresAt: DateTime
+  id: ID!
+  includeChildren: Boolean!
+  revokedAt: DateTime
+}
+
+type NotePublicLinkResult {
+  link: NotePublicLink!
+  token: String!
+}
+
+type NoteShare {
+  id: ID!
+  includeChildren: Boolean!
+  noteId: ID!
+  permission: NotePermission!
+  user: User!
+  userId: ID!
+}
+
+type NoteTag {
+  color: String
+  id: ID!
+  name: String!
+}
+
+type NoteTreeItem {
+  hasChildren: Boolean!
+  id: ID!
+  isPinned: Boolean!
+  parentId: ID
+  position: Int!
+  title: String!
+  updatedAt: DateTime!
+}
+
+type NoteWorkspaceMeta {
+  attachments: [NoteAttachment!]!
+  publicLink: NotePublicLink
+  shares: [NoteShare!]!
+  tags: [NoteTag!]!
 }
 
 type Notification {
@@ -413,6 +505,20 @@ type ProjectShareResult {
   status: String!
 }
 
+type PublicNote {
+  content: String!
+  id: ID!
+  parentId: ID
+  position: Int!
+  title: String!
+  updatedAt: DateTime!
+}
+
+type PublicNoteResult {
+  children: [PublicNote!]!
+  note: PublicNote!
+}
+
 type Query {
   aiSession(id: String!): AiSession!
   aiSessions: [AiSession!]!
@@ -425,11 +531,15 @@ type Query {
   listCustomers(filter: ListCustomersInput, pagination: PaginationInput): CustomerPage!
   me: User!
   noteDetail(id: String!): Note!
+  noteTrash: [Note!]!
+  noteTree(search: String): [NoteTreeItem!]!
+  noteWorkspaceMeta(noteId: String!): NoteWorkspaceMeta!
   notes(filter: ListNotesInput, pagination: PaginationInput): NotePage!
   notifications: [Notification!]!
   projectDetail(id: String!): Project!
   projects(customerId: String, pagination: PaginationInput): ProjectPage!
   projectsByCustomer(customerId: String!, pagination: PaginationInput): ProjectPage!
+  publicNote(token: String!): PublicNoteResult!
   taskDetail(id: String!): Task!
   tasks(filter: ListTasksInput, pagination: PaginationInput): TaskPage!
 }
@@ -454,6 +564,18 @@ input ReorderProjectColumnsInput {
 input SendAiMessageInput {
   content: String!
   sessionId: String!
+}
+
+input SetNoteTagsInput {
+  noteId: String!
+  tags: [String!]!
+}
+
+input ShareNoteInput {
+  email: String!
+  includeChildren: Boolean = false
+  noteId: String!
+  permission: NotePermission!
 }
 
 type Tag {
@@ -517,6 +639,7 @@ input UpdateInvoiceInput {
 input UpdateNoteInput {
   content: String
   customerId: String
+  expectedVersion: Int!
   title: String
 }
 
