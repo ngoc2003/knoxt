@@ -1,12 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const config = app.get(ConfigService);
 
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ?? '*',
+    origin: config.get<string>('CORS_ORIGIN', '*'),
     credentials: true,
   });
 
@@ -18,8 +20,8 @@ async function bootstrap() {
     }),
   );
 
-  const port = process.env.PORT ?? 3000;
+  const port = config.get<number>('PORT', 3000);
   await app.listen(port);
   console.log(`🚀 API running at http://localhost:${port}/graphql`);
 }
-bootstrap();
+void bootstrap();

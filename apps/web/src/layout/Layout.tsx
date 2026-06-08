@@ -25,8 +25,8 @@ const navigation = [
   { name: "Projects", path: "/projects", icon: FolderKanban },
   { name: "Customers", path: "/customers", icon: Users },
   { name: "Notes", path: "/notes", icon: FileText },
-  { name: "Finance", path: "/finance", icon: Wallet },
-  { name: "AI Assistant", path: "/ai-assistant", icon: Sparkles },
+  // { name: "Finance", path: "/finance", icon: Wallet },
+  // { name: "AI Assistant", path: "/ai-assistant", icon: Sparkles },
   { name: "Settings", path: "/settings", icon: Settings },
 ];
 

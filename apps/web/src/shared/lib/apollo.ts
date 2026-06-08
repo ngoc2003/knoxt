@@ -8,9 +8,10 @@ import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { CombinedGraphQLErrors } from "@apollo/client/errors";
 import { toast } from "sonner";
+import { GRAPHQL_URL } from "@/configs/common";
 
 const httpLink = createHttpLink({
-  uri: "http://localhost:3000/graphql",
+  uri: GRAPHQL_URL,
 });
 
 const authLink = setContext((_, { headers }) => {

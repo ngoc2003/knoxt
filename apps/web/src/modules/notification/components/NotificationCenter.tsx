@@ -11,12 +11,13 @@ import {
   MARK_ALL_NOTIFICATIONS_READ_MUTATION,
   NOTIFICATIONS_QUERY,
 } from "../graphql/notification";
+import { API_BASE_URL } from "@/configs";
 
 interface NotificationsData {
   notifications: Notification[];
 }
 
-const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+const apiUrl = API_BASE_URL;
 
 export function NotificationCenter() {
   const [notifications, setNotifications] = useState<Notification[]>([]);

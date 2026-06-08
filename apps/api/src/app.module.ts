@@ -18,11 +18,15 @@ import { formatGraphQLError } from './infrastructure/graphql/format-error';
 import { AuthorizationModule } from './core/authorization/authorization.module';
 import { MailModule } from './infrastructure/mail/mail.module';
 import { NotificationsModule } from './domains/notifications/notifications.module';
+import { validateEnvironment } from './config/env.validation';
 
 @Module({
   controllers: [VoyagerController],
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: validateEnvironment,
+    }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
