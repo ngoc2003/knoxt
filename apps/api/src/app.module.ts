@@ -19,6 +19,7 @@ import { AuthorizationModule } from './core/authorization/authorization.module';
 import { MailModule } from './infrastructure/mail/mail.module';
 import { NotificationsModule } from './domains/notifications/notifications.module';
 import { validateEnvironment } from './config/env.validation';
+import { HealthModule } from './infrastructure/health/health.module';
 
 @Module({
   controllers: [VoyagerController],
@@ -36,6 +37,7 @@ import { validateEnvironment } from './config/env.validation';
       formatError: formatGraphQLError,
     }),
     PrismaModule,
+    HealthModule,
     AuthorizationModule,
     MailModule,
     NotificationsModule,
