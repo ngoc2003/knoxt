@@ -329,6 +329,49 @@ pnpm build --filter=web
 The API and Web Dockerfiles use the repository root as their build context.
 Run all Docker build commands from the repository root.
 
+#### Run the Docker Compose stack
+
+The Compose stack includes PostgreSQL, an API migration init job, the API, and
+the Web application. Copy the example configuration and replace its secrets:
+
+```bash
+cp .env.example .env
+```
+
+Then build and start the stack:
+
+```bash
+docker compose up --build -d --wait
+docker compose ps
+```
+
+Compose uses the internal hostname `db` for API-to-PostgreSQL traffic. The Web
+bundle uses `VITE_API_URL=http://localhost:3000` because the browser must reach
+the API through its published host port.
+
+Startup order is enforced:
+
+1. PostgreSQL becomes healthy through `pg_isready`.
+2. The one-shot `migrate` service runs `prisma migrate deploy`.
+3. The API starts and becomes healthy through `/health/ready`.
+4. The Web container starts.
+
+PostgreSQL data is persisted in the named volume `postgres_data`.
+The `migrate` init job is expected to show `Exited (0)` after completing.
+Changing `VITE_API_URL` requires rebuilding the Web image.
+
+```bash
+curl -i http://localhost:3000/health/live
+curl -i http://localhost:3000/health/ready
+curl -i http://localhost:8080
+
+# Stop containers while preserving PostgreSQL data
+docker compose down
+
+# Also remove the PostgreSQL volume
+docker compose down --volumes
+```
+
 #### Apply database migrations
 
 Apply committed migrations before starting a new API release:

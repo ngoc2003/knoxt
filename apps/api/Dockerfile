@@ -16,9 +16,15 @@ COPY apps/api/package.json apps/api/package.json
 COPY packages/database/package.json packages/database/package.json
 RUN pnpm install --frozen-lockfile --filter api...
 
-FROM dependencies AS builder
-COPY apps/api apps/api
+FROM dependencies AS migrator
 COPY packages/database packages/database
+
+FROM migrator AS migration-runner
+USER node
+CMD ["pnpm", "--filter", "database", "db:migrate:deploy"]
+
+FROM migrator AS builder
+COPY apps/api apps/api
 RUN DATABASE_URL=postgresql://build:build@localhost:5432/build pnpm --filter database generate
 RUN pnpm --filter api build
 RUN find apps/api/dist -type f \( -name "*.d.ts" -o -name "*.js.map" -o -name "*.tsbuildinfo" \) -delete
