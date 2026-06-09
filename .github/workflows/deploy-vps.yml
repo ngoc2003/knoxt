@@ -1,0 +1,71 @@
+name: Deploy VPS
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-vps-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy production over SSH
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment:
+      name: production
+
+    steps:
+      - name: Deploy main branch on VPS
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_SSH_HOST }}
+          username: ${{ secrets.VPS_SSH_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          fingerprint: ${{ secrets.VPS_SSH_FINGERPRINT }}
+          port: ${{ vars.VPS_SSH_PORT || 22 }}
+          command_timeout: 30m
+          script: |
+            set -eu
+
+            APP_DIR='${{ vars.VPS_APP_DIR }}'
+            BRANCH='main'
+            EXPECTED_SHA='${{ github.event.workflow_run.head_sha }}'
+
+            if [ -z "$APP_DIR" ]; then
+              echo "VPS_APP_DIR GitHub variable is required."
+              exit 1
+            fi
+
+            cd "$APP_DIR"
+
+            if [ -n "$(git status --porcelain --untracked-files=normal)" ]; then
+              echo "Refusing to deploy: VPS repository contains local changes."
+              git status --short
+              exit 1
+            fi
+
+            git fetch origin "$BRANCH"
+            git checkout "$BRANCH"
+            git pull --ff-only origin "$BRANCH"
+
+            ACTUAL_SHA="$(git rev-parse HEAD)"
+            if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+              echo "Refusing to deploy: main HEAD $ACTUAL_SHA does not match tested SHA $EXPECTED_SHA."
+              exit 1
+            fi
+
+            docker compose up -d --build --remove-orphans --wait
+            docker compose ps
