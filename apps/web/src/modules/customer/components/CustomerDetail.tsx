@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   ArrowLeft,
   Edit2,
@@ -133,7 +133,6 @@ const mockIncome: Income[] = [
 ];
 
 export function CustomerDetail() {
-  const { id } = useParams();
   const navigate = useNavigate();
   const [customer, setCustomer] = useState<Customer>(mockCustomer);
   const [projects] = useState<Project[]>(mockProjects);

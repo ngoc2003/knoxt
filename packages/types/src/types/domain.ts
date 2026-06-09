@@ -1,29 +1,4 @@
-// ─── Auth ─────────────────────────────────────────────────────────────────────
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  avatarUrl?: string | null;
-  createdAt: string | Date;
-  updatedAt: string | Date;
-}
-
-export interface RegisterInput {
-  email: string;
-  name: string;
-  password: string;
-}
-
-export interface LoginInput {
-  email: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  accessToken: string;
-  user: User;
-}
+import type { User } from "./auth";
 
 // ─── Common ───────────────────────────────────────────────────────────────────
 

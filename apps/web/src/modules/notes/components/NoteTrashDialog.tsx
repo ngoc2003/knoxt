@@ -32,7 +32,7 @@ function buildTrashTree(notes: NoteDetail[]) {
 
   for (const node of nodes.values()) {
     const parent = node.parentId ? nodes.get(node.parentId) : undefined;
-    if (parent?.deletedAt === node.deletedAt) parent.children.push(node);
+    if (parent && parent.deletedAt === node.deletedAt) parent.children.push(node);
     else roots.push(node);
   }
 

@@ -13,7 +13,6 @@ export default defineConfig({
   resolve: {
     alias: {
       // Alias @ to the src directory
-      // eslint-disable-next-line no-undef
       "@": path.resolve(__dirname, "./src"),
       "@/modules": path.resolve(__dirname, "./src/modules"),
       "@/shared": path.resolve(__dirname, "./src/shared"),

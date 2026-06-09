@@ -24,8 +24,6 @@ describe('task order keys', () => {
   });
 
   it('returns null when adjacent keys need rebalancing', () => {
-    expect(
-      orderKeyBetween('0000000000000001', '0000000000000002'),
-    ).toBeNull();
+    expect(orderKeyBetween('0000000000000001', '0000000000000002')).toBeNull();
   });
 });

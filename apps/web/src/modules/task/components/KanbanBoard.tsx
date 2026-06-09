@@ -319,9 +319,9 @@ function TaskCard({
           )}
         </div>
 
-        {task.tags?.length > 0 && (
+        {(task.tags?.length ?? 0) > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
-            {task.tags.map((tag, idx) => (
+            {task.tags?.map((tag, idx) => (
               <Badge
                 key={tag.id}
                 variant="secondary"

@@ -1,9 +1,4 @@
-import {
-  Field,
-  GraphQLISODateTime,
-  ID,
-  ObjectType,
-} from '@nestjs/graphql';
+import { Field, GraphQLISODateTime, ID, ObjectType } from '@nestjs/graphql';
 import { Priority } from '../../core/common/enum/enums';
 import { Project } from '../projects/project.model';
 import { User } from '../users/user.model';

@@ -3,6 +3,7 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "noUncheckedIndexedAccess": false,
     "noEmit": true,
     "paths": {
       "@/*": ["./src/*"]

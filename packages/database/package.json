@@ -8,6 +8,7 @@
   "scripts": {
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
+    "db:validate": "prisma validate",
     "db:migrate:deploy": "prisma migrate deploy",
     "studio": "prisma studio"
   },

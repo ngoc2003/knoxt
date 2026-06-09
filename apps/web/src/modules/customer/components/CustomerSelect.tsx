@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
   LIST_CUSTOMERS_QUERY,
@@ -27,6 +27,16 @@ interface CustomerSelectProps {
   placeholder?: string;
 }
 
+interface ListCustomersData {
+  listCustomers: {
+    items: Customer[];
+  };
+}
+
+interface CreateCustomerData {
+  createCustomer: Customer;
+}
+
 export function CustomerSelect({
   value,
   onChange,
@@ -34,11 +44,12 @@ export function CustomerSelect({
 }: CustomerSelectProps) {
   const [input, setInput] = useState(value);
   const [showList, setShowList] = useState(false);
-  const { data } = useQuery(LIST_CUSTOMERS_QUERY, {
+  const { data } = useQuery<ListCustomersData>(LIST_CUSTOMERS_QUERY, {
     variables: { filter: { search: input }, pagination: { skip: 0, take: 10 } },
     fetchPolicy: "network-only",
   });
-  const [createCustomer] = useMutation(CREATE_CUSTOMER_MUTATION);
+  const [createCustomer] =
+    useMutation<CreateCustomerData>(CREATE_CUSTOMER_MUTATION);
   const customers: Customer[] = data?.listCustomers?.items || [];
 
   useEffect(() => {

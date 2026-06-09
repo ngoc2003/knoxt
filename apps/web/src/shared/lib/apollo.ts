@@ -30,7 +30,7 @@ const errorLink = onError(({ error, operation }) => {
   if (CombinedGraphQLErrors.is(error)) {
     for (const err of error.errors) {
       const isAuthMutation = ["Login", "Register"].includes(
-        operation.operationName,
+        operation.operationName ?? "",
       );
       const hasAuthenticatedSession = Boolean(
         localStorage.getItem("accessToken"),

@@ -26,7 +26,11 @@ export class FinanceService {
     return this.financeRepo.createIncome(userId, data);
   }
 
-  async findAllIncome(userId: string, filter: ListIncomeInput, pagination: PaginationInput) {
+  async findAllIncome(
+    userId: string,
+    filter: ListIncomeInput,
+    pagination: PaginationInput,
+  ) {
     return this.financeRepo.findAllIncome(userId, filter, pagination);
   }
 
@@ -70,7 +74,11 @@ export class FinanceService {
     return this.financeRepo.createInvoice(userId, data);
   }
 
-  async findAllInvoices(userId: string, filter: ListInvoiceInput, pagination: PaginationInput) {
+  async findAllInvoices(
+    userId: string,
+    filter: ListInvoiceInput,
+    pagination: PaginationInput,
+  ) {
     return this.financeRepo.findAllInvoices(userId, filter, pagination);
   }
 

@@ -153,13 +153,14 @@ export function ProjectDetailPage() {
     newOrderIndex = 0,
   ) => {
     try {
-      const { data }: { data?: { moveTask: Task } } = await moveTaskMutation({
+      const result = await moveTaskMutation({
         variables: {
           input: { id: taskId, status: newStatus, orderIndex: newOrderIndex },
         },
       });
 
-      const updatedTask = data?.moveTask;
+      const updatedTask = (result.data as { moveTask?: Task } | undefined)
+        ?.moveTask;
 
       if (!updatedTask) {
         throw new Error("The server did not return the moved task");
@@ -277,7 +278,7 @@ export function ProjectDetailPage() {
       description: taskData.description,
       priority: taskData.priority,
       status: taskData.status,
-      dueDate: taskData.dueDate || null,
+      dueDate: taskData.dueDate || undefined,
       assigneeId: taskData.assigneeId ?? null,
       tags: taskData.tags,
       ...(!selectedTask && { projectId }),

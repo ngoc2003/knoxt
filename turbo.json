@@ -10,8 +10,20 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
+    "lint:fix": {
+      "dependsOn": ["^lint:fix"],
+      "cache": false
+    },
     "check-types": {
       "dependsOn": ["^check-types"]
+    },
+    "test": {
+      "dependsOn": ["^test"],
+      "outputs": ["coverage/**"]
+    },
+    "test:ci": {
+      "dependsOn": ["^test:ci"],
+      "outputs": ["coverage/**"]
     },
     "dev": {
       "cache": false,

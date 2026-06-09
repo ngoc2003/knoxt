@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
   LIST_CUSTOMERS_QUERY,
@@ -48,7 +48,7 @@ import {
   TableRow,
 } from "../../../shared/ui/table";
 
-import { debounce, set } from "lodash";
+import { debounce } from "lodash";
 import { CustomerModal } from "./CustomerModal";
 import { DeleteConfirmDialog } from "@/shared/components/DeleteConfirmDialog";
 

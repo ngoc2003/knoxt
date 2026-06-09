@@ -23,6 +23,18 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
+interface CurrentUserData {
+  me: User;
+}
+
+interface LoginData {
+  login: AuthResponse;
+}
+
+interface RegisterData {
+  register: AuthResponse;
+}
+
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const useAuth = () => {
@@ -41,15 +53,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
-  const [loginMutation] = useMutation(LOGIN_MUTATION);
-  const [registerMutation] = useMutation(REGISTER_MUTATION);
+  const [loginMutation] = useMutation<LoginData>(LOGIN_MUTATION);
+  const [registerMutation] = useMutation<RegisterData>(REGISTER_MUTATION);
 
   // Modern Apollo useQuery: Handle results in useEffect or via 'data'
   const {
     data,
     loading: queryLoading,
     error,
-  } = useQuery(GET_CURRENT_USER_QUERY, {
+  } = useQuery<CurrentUserData>(GET_CURRENT_USER_QUERY, {
     skip: typeof window !== "undefined" && !localStorage.getItem("accessToken"),
   });
 

@@ -303,7 +303,9 @@ export function NoteTreeSidebar({
       </div>
 
       <div
-        ref={(node) => rootDrop(node as unknown as HTMLDivElement | null)}
+        ref={(node) => {
+          rootDrop(node);
+        }}
         className="min-h-0 flex-1 overflow-y-auto p-2"
       >
         {tree.map((note) => (
