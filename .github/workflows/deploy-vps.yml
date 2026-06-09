@@ -8,6 +8,7 @@ on:
       - completed
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -20,21 +21,30 @@ jobs:
   deploy:
     name: Deploy production over SSH
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push'
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push'
+      ) || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     environment:
       name: production
 
     steps:
+      - name: Debug fingerprint
+        run: |
+          echo "Fingerprint length: ${#VPS_SSH_FINGERPRINT}"
+        env:
+          VPS_SSH_FINGERPRINT: ${{ secrets.VPS_SSH_FINGERPRINT }}
+
       - name: Deploy main branch on VPS
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_SSH_HOST }}
           username: ${{ secrets.VPS_SSH_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-          fingerprint: ${{ secrets.VPS_SSH_FINGERPRINT }}
+          # fingerprint: ${{ secrets.VPS_SSH_FINGERPRINT }}
           port: ${{ vars.VPS_SSH_PORT || 22 }}
           command_timeout: 30m
           script: |

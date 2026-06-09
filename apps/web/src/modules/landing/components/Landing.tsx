@@ -128,7 +128,7 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <div>
-              <p className="text-4xl font-bold mb-2">10K+</p>
+              <p className="text-4xl font-bold mb-2">5K+</p>
               <p className="text-gray-400">Active Freelancers</p>
             </div>
             <div>
