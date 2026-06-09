@@ -23,6 +23,8 @@ jobs:
     name: Quality gates
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/freelancer_notebook_ci
 
     steps:
       - name: Checkout repository

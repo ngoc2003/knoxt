@@ -79,7 +79,7 @@ export function Landing() {
           <div className="text-center max-w-4xl mx-auto">
             <Badge className="mb-6 bg-indigo-100 text-indigo-700 px-4 py-1">
               <Sparkles className="w-3 h-3 mr-1" />
-              AI-Powered Freelancer Assistant
+              Freelancer Assistant
             </Badge>
 
             <h1 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
