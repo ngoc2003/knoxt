@@ -3,12 +3,6 @@ import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Landing } from "./Landing";
 
-const useAuth = vi.fn();
-
-vi.mock("@/modules/auth/context/AuthContext", () => ({
-  useAuth: () => useAuth(),
-}));
-
 vi.mock("@/shared/components/PageTransitionProvider", () => ({
   usePageTransitionLink: () => ({
     isTransitioning: false,
@@ -20,12 +14,10 @@ describe("Landing", () => {
   afterEach(cleanup);
 
   beforeEach(() => {
-    useAuth.mockReset();
+    localStorage.clear();
   });
 
   it("sends guests to registration", () => {
-    useAuth.mockReturnValue({ isAuthenticated: false, loading: false });
-
     render(
       <MemoryRouter>
         <Landing />
@@ -39,10 +31,16 @@ describe("Landing", () => {
       "href",
       "/login",
     );
+    expect(
+      screen.getByRole("link", { name: /skip to main content/i }),
+    ).toHaveAttribute("href", "#main-content");
+    expect(
+      screen.getByRole("button", { name: /open navigation menu/i }),
+    ).toBeInTheDocument();
   });
 
   it("sends authenticated users to their dashboard", () => {
-    useAuth.mockReturnValue({ isAuthenticated: true, loading: false });
+    localStorage.setItem("accessToken", "test-token");
 
     render(
       <MemoryRouter>
@@ -59,7 +57,7 @@ describe("Landing", () => {
   });
 
   it("uses auth-aware links in pricing", () => {
-    useAuth.mockReturnValue({ isAuthenticated: true, loading: false });
+    localStorage.setItem("accessToken", "test-token");
 
     render(
       <MemoryRouter>
@@ -81,8 +79,6 @@ describe("Landing", () => {
   });
 
   it("submits and resets the contact form", () => {
-    useAuth.mockReturnValue({ isAuthenticated: false, loading: false });
-
     render(
       <MemoryRouter>
         <Landing />
@@ -96,7 +92,7 @@ describe("Landing", () => {
       target: { value: "mina@example.com" },
     });
     fireEvent.change(screen.getByLabelText("Message"), {
-      target: { value: "I want to roll Taskio out to my team." },
+      target: { value: "I want to roll Knot.io out to my team." },
     });
     fireEvent.click(screen.getByRole("button", { name: /send message/i }));
 

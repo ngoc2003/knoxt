@@ -15,12 +15,19 @@ export function LandingHeader({
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
-        <Link to="/" className="flex items-center gap-2.5">
-          <LogoSquare className="size-9 rounded-lg" />
-          <span className="text-lg font-semibold tracking-tight">Taskio</span>
+        <Link
+          to="/"
+          className="flex items-center gap-2.5"
+          aria-label="Knoxt.io home"
+        >
+          <LogoSquare alt="" className="size-9 rounded-lg" />
+          <span className="text-lg font-semibold tracking-tight">Knoxt.io</span>
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav
+          aria-label="Landing page sections"
+          className="hidden items-center gap-8 md:flex"
+        >
           {[
             ["Features", "#features"],
             ["Workflow", "#workflow"],
@@ -58,7 +65,13 @@ export function LandingHeader({
               </Link>
             )}
           </Button>
-          <Button variant="ghost" size="icon" className="md:hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            aria-label="Open navigation menu"
+          >
             <Menu className="size-5" />
           </Button>
         </div>
@@ -71,14 +84,18 @@ export function LandingFooter() {
   return (
     <footer className="border-t border-slate-200 bg-white px-5 py-8 sm:px-8">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
-        <Link to="/" className="flex items-center gap-2">
-          <LogoSquare className="size-8 rounded-lg" />
-          <span className="font-semibold">Taskio</span>
+        <Link
+          to="/"
+          className="flex items-center gap-2"
+          aria-label="Knoxt.io home"
+        >
+          <LogoSquare alt="" className="size-8 rounded-lg" />
+          <span className="font-semibold">Knoxt.io</span>
         </Link>
         <p className="text-sm text-slate-500">
           Project knowledge, preserved and discoverable.
         </p>
-        <p className="text-sm text-slate-500">© 2026 Taskio</p>
+        <p className="text-sm text-slate-500">© 2026 Knoxt.io</p>
       </div>
     </footer>
   );

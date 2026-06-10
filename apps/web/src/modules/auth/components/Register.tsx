@@ -93,7 +93,7 @@ export function Register() {
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">
               Create an account
             </h2>
-            <p className="text-gray-600">Get started with Taskio</p>
+            <p className="text-gray-600">Get started with Knoxt.io</p>
           </div>
 
           <form onSubmit={formik.handleSubmit} className="space-y-5">

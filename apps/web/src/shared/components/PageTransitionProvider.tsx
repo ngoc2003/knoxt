@@ -1,8 +1,8 @@
 import {
   createContext,
-  MouseEvent as ReactMouseEvent,
-  MouseEventHandler,
-  ReactNode,
+  type MouseEvent as ReactMouseEvent,
+  type MouseEventHandler,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -125,14 +125,14 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const value: PageTransitionContextValue = {
-    startTransition,
-    notifyArrival,
-    isTransitioning: phase !== "idle",
-  };
-
   return (
-    <PageTransitionContext.Provider value={value}>
+    <PageTransitionContext.Provider
+      value={{
+        startTransition,
+        notifyArrival,
+        isTransitioning: phase !== "idle",
+      }}
+    >
       {children}
       {phase !== "idle" && (
         <div aria-hidden="true" className="fixed inset-0 z-[9999] cursor-wait">
@@ -167,10 +167,8 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
                 : { delay: 0.28, duration: 0.22, ease: "easeOut" }
             }
           >
-            <div className="flex flex-col items-center gap-4">
-              <div className="rounded-2xl bg-white p-3 shadow-2xl shadow-black/20">
-                <LogoSquare className="size-14 rounded-xl sm:size-16" />
-              </div>
+            <div className="rounded-2xl bg-white p-3 shadow-2xl shadow-black/20">
+              <LogoSquare alt="" className="size-14 rounded-xl sm:size-16" />
             </div>
           </motion.div>
         </div>

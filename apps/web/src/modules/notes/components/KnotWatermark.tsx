@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export function TaskioWatermark({
+export function KnoxtWatermark({
   label,
   badge,
   mode = "absolute",
@@ -20,7 +20,7 @@ export function TaskioWatermark({
         aria-hidden="true"
       >
         <div className="-rotate-12 select-none text-center text-indigo-500/[0.08]">
-          <p className="text-8xl font-black tracking-[0.18em]">TASKIO</p>
+          <p className="text-8xl font-black tracking-[0.18em]">knoxt.IO</p>
           <p className="mt-3 text-xl font-semibold tracking-[0.3em]">{label}</p>
         </div>
       </div>

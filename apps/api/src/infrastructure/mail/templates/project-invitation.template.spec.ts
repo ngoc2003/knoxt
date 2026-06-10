@@ -6,7 +6,7 @@ describe('renderProjectInvitationTemplate', () => {
       inviterName: '<script>alert("inviter")</script>',
       projectName: 'Website & Mobile',
       registerUrl:
-        'https://taskio.test/register?email=user@example.com&role=member',
+        'https://knoxt.test/register?email=user@example.com&role=member',
       role: 'Editor',
     });
 
@@ -15,7 +15,7 @@ describe('renderProjectInvitationTemplate', () => {
     );
     expect(html).toContain('Website &amp; Mobile');
     expect(html).toContain(
-      'https://taskio.test/register?email=user@example.com&amp;role=member',
+      'https://knoxt.test/register?email=user@example.com&amp;role=member',
     );
     expect(html).toContain('Editor');
     expect(html).not.toContain('<script>alert("inviter")</script>');

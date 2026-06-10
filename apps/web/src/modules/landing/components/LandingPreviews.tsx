@@ -19,7 +19,7 @@ export function ProductPreview() {
           <span className="size-2.5 rounded-full bg-amber-400" />
           <span className="size-2.5 rounded-full bg-emerald-400" />
           <div className="mx-auto flex h-7 w-64 items-center justify-center rounded-md bg-slate-100 text-[11px] text-slate-500">
-            workspace.taskio.app
+            workspace.knoxt.io
           </div>
         </div>
         <div className="grid min-h-[430px] grid-cols-[180px_1fr] sm:grid-cols-[230px_1fr]">
@@ -40,7 +40,7 @@ export function ProductPreview() {
             </div>
           </aside>
           <div className="min-w-0 p-6 sm:p-10">
-            <div className="mb-8 flex items-center gap-2 text-xs text-slate-400">
+            <div className="mb-8 flex items-center gap-2 text-xs text-slate-500">
               Projects <ChevronRight className="size-3" /> Atlas redesign{" "}
               <ChevronRight className="size-3" /> Requirements
             </div>
@@ -56,9 +56,9 @@ export function ProductPreview() {
                   updated today
                 </Badge>
               </div>
-              <h3 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+              <p className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
                 Authentication requirements
-              </h3>
+              </p>
               <p className="mt-4 text-sm leading-7 text-slate-600">
                 The platform must support secure account access and preserve the
                 context behind each permission decision.

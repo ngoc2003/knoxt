@@ -10,7 +10,7 @@ import { useParams } from "react-router";
 import { PUBLIC_NOTE_QUERY } from "../graphql/note";
 import type { NoteDetail } from "../types/note";
 import { NotePreview } from "./NotePreview";
-import { TaskioWatermark } from "./TaskioWatermark";
+import { KnoxtWatermark } from "./KnotWatermark";
 
 interface SharedTreeNode extends NoteDetail {
   children: SharedTreeNode[];
@@ -175,16 +175,12 @@ export function PublicSharedNotePage() {
             </h1>
           </div>
           <div className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-            Shared via Taskio
+            Shared via Knoxt.io
           </div>
         </header>
-        <TaskioWatermark
-          label="SHARED NOTE"
-          mode="fixed"
-          contentClassName="p-8"
-        >
+        <KnoxtWatermark label="SHARED NOTE" mode="fixed" contentClassName="p-8">
           <NotePreview content={selected?.content ?? ""} />
-        </TaskioWatermark>
+        </KnoxtWatermark>
       </main>
     </div>
   );

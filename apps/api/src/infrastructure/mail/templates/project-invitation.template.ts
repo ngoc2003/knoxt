@@ -32,7 +32,7 @@ export function renderProjectInvitationTemplate(
                 <tr>
                   <td align="center" style="padding-bottom: 24px;">
                     <span style="display: inline-block; color: #4f46e5; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">
-                      Taskio
+                      Knoxt.io
                     </span>
                   </td>
                 </tr>
@@ -90,7 +90,7 @@ export function renderProjectInvitationTemplate(
                 </tr>
                 <tr>
                   <td align="center" style="padding: 24px 20px 0; color: #94a3b8; font-size: 12px; line-height: 1.6;">
-                    You received this email because ${inviterName} invited you to a project on Taskio.
+                    You received this email because ${inviterName} invited you to a project on Knoxt.io.
                   </td>
                 </tr>
               </table>

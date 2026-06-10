@@ -8,19 +8,11 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Link } from "react-router";
-import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 import { Textarea } from "@/shared/ui/textarea";
 import { features, plans, steps } from "../data/landing";
 import { PrimaryActionProps } from "../types/landing";
@@ -232,7 +224,11 @@ export function PricingSection(props: ActionSectionProps) {
                     {plan.price}
                   </span>
                   {plan.cadence && (
-                    <span className="ml-2 text-xs text-slate-400">
+                    <span
+                      className={`ml-2 text-xs ${
+                        plan.featured ? "text-slate-200" : "text-slate-500"
+                      }`}
+                    >
                       {plan.cadence}
                     </span>
                   )}
@@ -304,7 +300,6 @@ export function ContactSection() {
     event.currentTarget.reset();
     setContactTopic("product");
     setContactSent(true);
-    toast.success("Thanks! Your message has been received.");
   };
 
   return (
@@ -316,11 +311,11 @@ export function ContactSection() {
             Tell us what your team needs to remember.
           </h2>
           <p className="mt-5 text-sm leading-7 text-slate-300">
-            Ask about the product, team rollout, or how Taskio can fit your
+            Ask about the product, team rollout, or how Knoxt.io can fit your
             project knowledge workflow.
           </p>
           <div className="mt-10 space-y-5">
-            <ContactDetail icon={Mail}>hello@taskio.app</ContactDetail>
+            <ContactDetail icon={Mail}>hello@knoxt.io</ContactDetail>
             <ContactDetail icon={MessageSquareText}>
               Product questions, team rollout, and partnerships
             </ContactDetail>
@@ -346,17 +341,18 @@ export function ContactSection() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="contact-topic">How can we help?</Label>
-            <Select value={contactTopic} onValueChange={setContactTopic}>
-              <SelectTrigger id="contact-topic" aria-label="How can we help?">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="product">Product question</SelectItem>
-                <SelectItem value="team">Team rollout</SelectItem>
-                <SelectItem value="partnership">Partnership</SelectItem>
-                <SelectItem value="other">Something else</SelectItem>
-              </SelectContent>
-            </Select>
+            <select
+              id="contact-topic"
+              name="topic"
+              value={contactTopic}
+              onChange={(event) => setContactTopic(event.target.value)}
+              className="h-9 w-full rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-[#4f2fdf] focus-visible:ring-2 focus-visible:ring-[#4f2fdf]/30"
+            >
+              <option value="product">Product question</option>
+              <option value="team">Team rollout</option>
+              <option value="partnership">Partnership</option>
+              <option value="other">Something else</option>
+            </select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="contact-message">Message</Label>
