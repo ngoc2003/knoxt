@@ -140,7 +140,7 @@ Invitation persistence must happen before email delivery.
 ## Known Baseline
 
 - Auth stores `accessToken` and `currentUser` in `localStorage`.
-- Dashboard, finance, and some detail screens still contain mock/static data.
+- Dashboard and some detail screens still contain mock/static data.
 - Web currently has no test runner or component tests.
 - Vite build succeeds but does not provide a dedicated component test suite.
 - Apollo hooks generally rely on `ApolloProvider`; stay consistent within the

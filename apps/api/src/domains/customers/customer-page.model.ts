@@ -1,12 +1,8 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Customer } from './customer.model';
-import { Income } from '../finance/models/finance.models';
 
 @ObjectType()
-export class CustomerPageItem extends Customer {
-  @Field(() => [Income])
-  incomes: Income[];
-}
+export class CustomerPageItem extends Customer {}
 
 @ObjectType()
 export class CustomerPage {

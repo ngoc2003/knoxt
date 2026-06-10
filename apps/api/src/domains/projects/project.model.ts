@@ -6,7 +6,6 @@ import {
   ObjectType,
 } from '@nestjs/graphql';
 import { Customer } from '../customers/customer.model';
-import { Income } from '../finance/models/finance.models';
 import { Task } from '../tasks/task.model';
 import { User } from '../users/user.model';
 import { ProjectRole } from '../../core/common/enum/enums';
@@ -90,9 +89,6 @@ export class Project {
 
   @Field(() => GraphQLISODateTime)
   updatedAt: Date;
-
-  @Field(() => [Income])
-  incomes: Income[];
 
   @Field(() => Customer)
   customer: Customer;

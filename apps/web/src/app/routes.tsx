@@ -1,72 +1,125 @@
-import { AIAssistant } from "@/modules/ai-assistant/components/AIAssistant";
-import { ForgotPassword } from "@/modules/auth/components/ForgotPassword";
-import { Login } from "@/modules/auth/components/Login";
-import { Register } from "@/modules/auth/components/Register";
-import { Customers } from "@/modules/customer/components/Customer";
-import { CustomerDetail } from "@/modules/customer/components/CustomerDetail";
-import { Dashboard } from "@/modules/dashboard/components/Dashboard";
-import { Finance } from "@/modules/finance/components/Finance";
-import { Landing } from "@/modules/landing/components/Landing";
-import { Notes } from "@/modules/notes/components/Notes";
-import { PublicSharedNotePage } from "@/modules/notes/components/PublicSharedNotePage";
-import { ProjectDetailPage } from "@/modules/project/components/ProjectDetailPage";
-import { ProjectListPage } from "@/modules/project/components/ProjectListPage";
-import { Settings } from "@/modules/settings/components/Settings";
-import { ProtectedRoute, PublicRoute } from "@/shared/components/RouteGuards";
-import { Layout } from "@/layout/Layout";
 import { createBrowserRouter } from "react-router";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    Component: Landing,
+    lazy: async () => ({
+      Component: (await import("@/modules/landing/Landing")).Landing,
+    }),
   },
   {
-    path: "/login",
-    element: (
-      <PublicRoute>
-        <Login />
-      </PublicRoute>
-    ),
+    lazy: async () => ({
+      Component: (await import("./shells/PublicAuthShell")).PublicAuthShell,
+    }),
+    children: [
+      {
+        path: "/login",
+        lazy: async () => ({
+          Component: (await import("@/modules/auth/components/Login")).Login,
+        }),
+      },
+      {
+        path: "/register",
+        lazy: async () => ({
+          Component: (await import("@/modules/auth/components/Register"))
+            .Register,
+        }),
+      },
+      {
+        path: "/forgot-password",
+        lazy: async () => ({
+          Component: (await import("@/modules/auth/components/ForgotPassword"))
+            .ForgotPassword,
+        }),
+      },
+    ],
   },
   {
-    path: "/register",
-    element: (
-      <PublicRoute>
-        <Register />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/forgot-password",
-    element: (
-      <PublicRoute>
-        <ForgotPassword />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/shared/notes/:token",
-    Component: PublicSharedNotePage,
+    lazy: async () => ({
+      Component: (await import("./shells/GraphQLShell")).GraphQLShell,
+    }),
+    children: [
+      {
+        path: "/shared/notes/:token",
+        lazy: async () => ({
+          Component: (
+            await import("@/modules/notes/components/PublicSharedNotePage")
+          ).PublicSharedNotePage,
+        }),
+      },
+    ],
   },
   {
     path: "/",
-    element: (
-      <ProtectedRoute>
-        <Layout />
-      </ProtectedRoute>
-    ),
+    lazy: async () => ({
+      Component: (await import("./shells/ProtectedAppShell")).ProtectedAppShell,
+    }),
     children: [
-      { path: "dashboard", Component: Dashboard },
-      { path: "projects", Component: ProjectListPage },
-      { path: "projects/:projectId", Component: ProjectDetailPage },
-      { path: "customers", Component: Customers },
-      { path: "customers/:id", Component: CustomerDetail },
-      { path: "notes", Component: Notes },
-      { path: "notes/:noteId", Component: Notes },
-      { path: "finance", Component: Finance },
-      { path: "ai-assistant", Component: AIAssistant },
-      { path: "settings", Component: Settings },
+      {
+        path: "dashboard",
+        lazy: async () => ({
+          Component: (await import("@/modules/dashboard/components/Dashboard"))
+            .Dashboard,
+        }),
+      },
+      {
+        path: "projects",
+        lazy: async () => ({
+          Component: (
+            await import("@/modules/project/components/ProjectListPage")
+          ).ProjectListPage,
+        }),
+      },
+      {
+        path: "projects/:projectId",
+        lazy: async () => ({
+          Component: (
+            await import("@/modules/project/components/ProjectDetailPage")
+          ).ProjectDetailPage,
+        }),
+      },
+      {
+        path: "customers",
+        lazy: async () => ({
+          Component: (await import("@/modules/customer/components/Customer"))
+            .Customers,
+        }),
+      },
+      {
+        path: "customers/:id",
+        lazy: async () => ({
+          Component: (
+            await import("@/modules/customer/components/CustomerDetail")
+          ).CustomerDetail,
+        }),
+      },
+      {
+        path: "notes",
+        lazy: async () => ({
+          Component: (await import("@/modules/notes/components/Notes")).Notes,
+        }),
+      },
+      {
+        path: "notes/:noteId",
+        lazy: async () => ({
+          Component: (await import("@/modules/notes/components/Notes")).Notes,
+        }),
+      },
+      {
+        path: "ai-assistant",
+        lazy: async () => ({
+          Component: (
+            await import("@/modules/ai-assistant/components/AIAssistant")
+          ).AIAssistant,
+        }),
+      },
+      {
+        path: "settings",
+        lazy: async () => ({
+          Component: (await import("@/modules/settings/components/Settings"))
+            .Settings,
+        }),
+      },
     ],
   },
 ]);

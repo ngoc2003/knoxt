@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /ai-assistant
+Disallow: /customers
+Disallow: /dashboard
+Disallow: /notes
+Disallow: /projects
+Disallow: /settings
+
+Sitemap: https://knoxt.io/sitemap.xml

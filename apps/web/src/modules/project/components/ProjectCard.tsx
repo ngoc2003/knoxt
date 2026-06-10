@@ -7,12 +7,6 @@ export function ProjectCard({ project }: { project: any }) {
   const clientName = project.customer?.name || "Unknown Client";
   const columns = project.columns || [];
 
-  const totalIncomes =
-    project.incomes?.reduce(
-      (sum: number, income: any) => sum + income.amount,
-      0,
-    ) || 0;
-
   return (
     <Card
       className="p-4 cursor-pointer hover:shadow-lg transition-shadow border border-gray-200"
@@ -36,10 +30,6 @@ export function ProjectCard({ project }: { project: any }) {
             {project.status}
           </Badge>
         </div>
-
-        <span className="text-sm font-medium text-green-600">
-          ${totalIncomes.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-        </span>
       </div>
       <div className="text-sm text-gray-600 mb-2">{clientName}</div>
       <div className="flex flex-wrap gap-2 text-xs">

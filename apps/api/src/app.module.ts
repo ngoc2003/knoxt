@@ -11,7 +11,6 @@ import { CustomersModule } from './domains/customers/customers.module';
 import { ProjectsModule } from './domains/projects/projects.module';
 import { TasksModule } from './domains/tasks/tasks.module';
 import { NotesModule } from './domains/notes/notes.module';
-import { FinanceModule } from './domains/finance/finance.module';
 import { AiModule } from './domains/ai/ai.module';
 import { VoyagerController } from './infrastructure/graphql/voyager.controller';
 import { formatGraphQLError } from './infrastructure/graphql/format-error';
@@ -52,7 +51,6 @@ import { LoggingModule } from './infrastructure/logging/logging.module';
     ProjectsModule,
     TasksModule,
     NotesModule,
-    FinanceModule,
     AiModule,
   ],
 })

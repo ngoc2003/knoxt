@@ -5,7 +5,6 @@ import type {
   ProjectInvitation,
   User,
   Customer,
-  Income,
   Task,
 } from 'database/generated/client';
 import type {
@@ -27,7 +26,6 @@ import type {
 export type ProjectWithRelations = Project & {
   user: User;
   customer: Customer;
-  incomes: Income[];
   tasks: Task[];
   columns: ProjectColumn[];
   members: (ProjectMember & { user: User })[];
@@ -35,10 +33,7 @@ export type ProjectWithRelations = Project & {
 };
 
 export interface IProjectRepository {
-  create(
-    userId: string,
-    data: Omit<CreateProjectInput, 'budget'>,
-  ): Promise<Project>;
+  create(userId: string, data: CreateProjectInput): Promise<Project>;
   findAll(
     userId: string,
     pagination: PaginationInput,

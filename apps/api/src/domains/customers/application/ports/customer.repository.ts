@@ -1,4 +1,4 @@
-import type { Customer, Project, Income } from 'database/generated/client';
+import type { Customer, Project } from 'database/generated/client';
 import type {
   PaginationInput,
   PageResult,
@@ -11,7 +11,6 @@ import type {
 
 export type CustomerWithRelations = Customer & {
   projects: Project[];
-  incomes: Income[];
 };
 
 export interface ICustomerRepository {

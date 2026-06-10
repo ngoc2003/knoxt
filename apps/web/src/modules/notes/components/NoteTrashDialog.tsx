@@ -18,7 +18,6 @@ import {
 import { NOTE_TRASH_QUERY, RESTORE_NOTE_MUTATION } from "../graphql/note";
 import type { NoteDetail } from "../types/note";
 import { NotePreview } from "./NotePreview";
-import { TaskioWatermark } from "./TaskioWatermark";
 
 interface TrashNode extends NoteDetail {
   children: TrashNode[];

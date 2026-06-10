@@ -1,4 +1,4 @@
-# Project: Taskio
+# Project: Knoxt.io
 
 ## Monorepo Rules
 

@@ -3,8 +3,6 @@ import {
   LayoutDashboard,
   FolderKanban,
   FileText,
-  Wallet,
-  Sparkles,
   Settings,
   Search,
   User,
@@ -17,7 +15,14 @@ import { Input } from "@/shared/ui/input";
 
 import { Button } from "@/shared/ui/button";
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 import { NotificationCenter } from "@/modules/notification/components/NotificationCenter";
 
 const navigation = [
@@ -25,8 +30,6 @@ const navigation = [
   { name: "Projects", path: "/projects", icon: FolderKanban },
   { name: "Customers", path: "/customers", icon: Users },
   { name: "Notes", path: "/notes", icon: FileText },
-  // { name: "Finance", path: "/finance", icon: Wallet },
-  // { name: "AI Assistant", path: "/ai-assistant", icon: Sparkles },
   { name: "Settings", path: "/settings", icon: Settings },
 ];
 

@@ -3,11 +3,10 @@ import { ProjectsService } from './projects.service';
 import { ProjectsResolver } from './projects.resolver';
 import { PrismaProjectRepository } from './infrastructure/prisma-project.repository';
 import { PROJECT_REPOSITORY } from '../../core/constants/repository.tokens';
-import { FinanceModule } from '../finance/finance.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [FinanceModule, NotificationsModule],
+  imports: [NotificationsModule],
   providers: [
     ProjectsResolver,
     ProjectsService,

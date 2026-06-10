@@ -46,12 +46,8 @@ export function ForgotPassword() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="text-center mb-8">
-            <img
-              src="/assets/logo-square.png"
-              alt="Taskio Logo"
-              className="mx-auto mb-4 w-16 h-16"
-            />
-            <h1 className="text-3xl font-bold text-gray-900">Taskio</h1>
+            <LogoSquare className="mx-auto mb-4 h-16 w-16" />
+            <h1 className="text-3xl font-bold text-gray-900">Knoxt.io</h1>
           </div>
 
           {/* Success Card */}
