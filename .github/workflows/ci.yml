@@ -91,11 +91,47 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  security:
+    name: Security scans
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level high
+
+      - name: Scan repository for secrets
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: secret
+          format: table
+          exit-code: "1"
+
   docker:
-    name: Build production images
+    name: Build and scan production images
     needs: quality
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -112,8 +148,29 @@ jobs:
           target: runner
           push: false
           tags: freelancer-notebook-api:ci
+          load: true
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
+
+      - name: Scan API image vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: freelancer-notebook-api:ci
+          scanners: vuln
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: "1"
+
+      - name: Scan API image for secrets
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: freelancer-notebook-api:ci
+          scanners: secret
+          format: table
+          exit-code: "1"
+          skip-setup-trivy: true
 
       - name: Build web production image
         uses: docker/build-push-action@v6
@@ -123,7 +180,29 @@ jobs:
           target: runner
           push: false
           tags: freelancer-notebook-web:ci
+          load: true
           build-args: |
             VITE_API_URL=http://localhost:3000
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
+
+      - name: Scan web image vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: freelancer-notebook-web:ci
+          scanners: vuln
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: "1"
+          skip-setup-trivy: true
+
+      - name: Scan web image for secrets
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: freelancer-notebook-web:ci
+          scanners: secret
+          format: table
+          exit-code: "1"
+          skip-setup-trivy: true
