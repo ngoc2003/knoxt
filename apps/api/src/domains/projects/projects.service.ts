@@ -19,7 +19,6 @@ import {
   UpdateProjectInput,
 } from './dto/project.dto';
 import { PaginationInput } from '../../core/common/dtos/pagination.dto';
-import { FinanceService } from '../finance/finance.service';
 import { MailService } from '../../infrastructure/mail/mail.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../../core/common/enum/enums';
@@ -29,26 +28,12 @@ export class ProjectsService {
   constructor(
     @Inject(PROJECT_REPOSITORY)
     private readonly projectRepo: IProjectRepository,
-    private readonly financeService: FinanceService,
     private readonly mailService: MailService,
     private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(userId: string, data: CreateProjectInput) {
-    const { budget, ...projectData } = data;
-    const project = await this.projectRepo.create(userId, projectData);
-
-    if (budget && !isNaN(Number(budget))) {
-      await this.financeService.createIncome(userId, {
-        amount: Number(budget),
-        customerId: data.customerId,
-        currency: 'USD',
-        projectId: project.id,
-        note: `Initial project budget for ${project.name}`,
-      });
-    }
-
-    return project;
+    return this.projectRepo.create(userId, data);
   }
 
   async findAll(

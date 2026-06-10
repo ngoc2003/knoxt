@@ -1,7 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { IProjectRepository } from './application/ports/project.repository';
-import { FinanceService } from '../finance/finance.service';
 import { MailService } from '../../infrastructure/mail/mail.service';
 import { NotificationType, ProjectRole } from '../../core/common/enum/enums';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -23,7 +22,6 @@ describe('ProjectsService invitations', () => {
   } as unknown as jest.Mocked<NotificationsService>;
   const service = new ProjectsService(
     projectRepo,
-    {} as FinanceService,
     mailService,
     notificationsService,
   );

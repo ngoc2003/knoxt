@@ -15,8 +15,8 @@
   --popover-foreground: oklch(0.145 0 0);
 
   /* 🔵 PRIMARY (blue-500) */
-  --primary: oklch(62.3% 0.214 259.815);
-  --primary-hover: oklch(55.2% 0.214 259.815); /* blue-600 */
+  --primary: #4f2fdf;
+  --primary-hover: #3a1fcf; /* blue-600 */
   --primary-foreground: #fff;
 
   /* Secondary */

@@ -45,7 +45,6 @@ export class PrismaCustomerRepository implements ICustomerRepository {
         where,
         include: {
           projects: { where: { deletedAt: null } },
-          incomes: true,
         },
         skip: pagination.skip ?? 0,
         take: pagination.take ?? 20,
@@ -67,7 +66,6 @@ export class PrismaCustomerRepository implements ICustomerRepository {
       where: { id, userId, deletedAt: null },
       include: {
         projects: { where: { deletedAt: null } },
-        incomes: true,
       },
     });
     return customer as CustomerWithRelations | null;

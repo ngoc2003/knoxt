@@ -11,18 +11,6 @@ export enum CustomerStatus {
   inactive = 'inactive',
 }
 
-export enum InvoiceStatus {
-  draft = 'draft',
-  sent = 'sent',
-  paid = 'paid',
-  overdue = 'overdue',
-}
-
-export enum IncomeStatus {
-  pending = 'pending',
-  received = 'received',
-}
-
 export enum SortOrder {
   asc = 'asc',
   desc = 'desc',
@@ -54,8 +42,6 @@ export enum NotificationType {
 
 registerEnumType(Priority, { name: 'Priority' });
 registerEnumType(CustomerStatus, { name: 'CustomerStatus' });
-registerEnumType(InvoiceStatus, { name: 'InvoiceStatus' });
-registerEnumType(IncomeStatus, { name: 'IncomeStatus' });
 registerEnumType(SortOrder, { name: 'SortOrder' });
 registerEnumType(ProjectRole, { name: 'ProjectRole' });
 registerEnumType(NotePermission, { name: 'NotePermission' });

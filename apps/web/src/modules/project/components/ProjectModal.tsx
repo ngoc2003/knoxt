@@ -28,11 +28,9 @@ interface Project {
   status: "active" | "completed" | "on-hold";
   startDate: string;
   endDate?: string;
-  budget: string;
   description?: string;
   customerObj?: any;
   customer: any;
-  incomes?: { amount: number }[];
 }
 
 interface ProjectModalProps {
@@ -66,7 +64,6 @@ export function ProjectModal({
     status: "active",
     startDate: "",
     endDate: "",
-    budget: "",
     description: "",
     customerObj: undefined,
   });
@@ -75,15 +72,10 @@ export function ProjectModal({
     name?: string;
     customerId?: string;
     startDate?: string;
-    budget?: string;
   }>({});
 
   useEffect(() => {
     if (project) {
-      const budget = project.incomes?.reduce(
-        (acc, income) => acc + income.amount,
-        0,
-      );
       setFormData({
         ...project,
         customerId: project.customerId,
@@ -91,7 +83,6 @@ export function ProjectModal({
         startDate: toDateInputValue(project.startDate),
         endDate: toDateInputValue(project.endDate),
         customerObj: project.customer || undefined,
-        budget: budget ? budget.toString() : "",
       });
     } else {
       setFormData({
@@ -101,7 +92,6 @@ export function ProjectModal({
         status: "active",
         startDate: "",
         endDate: "",
-        budget: "",
         description: "",
         customerObj: undefined,
       });
@@ -115,8 +105,6 @@ export function ProjectModal({
       name?: string;
       customerId?: string;
       startDate?: string;
-
-      budget?: string;
     } = {};
 
     if (!formData.name?.trim()) {
@@ -129,12 +117,6 @@ export function ProjectModal({
 
     if (!formData.startDate) {
       newErrors.startDate = "Start date is required";
-    }
-
-    if (!formData.budget?.trim()) {
-      newErrors.budget = "Budget is required";
-    } else if (isNaN(Number(formData.budget))) {
-      newErrors.budget = "Please enter a valid number";
     }
 
     setErrors(newErrors);
@@ -278,33 +260,6 @@ export function ProjectModal({
                 className="border-gray-300 focus-visible:ring-blue-500"
               />
             </div>
-          </div>
-
-          {/* Budget */}
-          <div>
-            <Label htmlFor="budget" className="text-gray-700 mb-2 block">
-              Budget <span className="text-red-500">*</span>
-            </Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                $
-              </span>
-              <Input
-                id="budget"
-                type="text"
-                placeholder="10000"
-                value={formData.budget}
-                onChange={(e) => updateField("budget", e.target.value)}
-                className={`pl-7 ${
-                  errors.budget
-                    ? "border-red-500 focus-visible:ring-red-500"
-                    : "border-gray-300 focus-visible:ring-blue-500"
-                }`}
-              />
-            </div>
-            {errors.budget && (
-              <p className="text-red-500 text-sm mt-1.5">{errors.budget}</p>
-            )}
           </div>
 
           {/* Description */}

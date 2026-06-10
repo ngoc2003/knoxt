@@ -21,7 +21,6 @@ export function ProjectListPage() {
           name: projectData.name,
           description: projectData.description,
           customerId: projectData.customerId,
-          budget: projectData.budget,
           status: projectData.status,
           startDate: projectData.startDate,
           endDate: projectData.endDate,

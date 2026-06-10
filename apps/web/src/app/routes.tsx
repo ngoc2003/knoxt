@@ -5,8 +5,7 @@ import { Register } from "@/modules/auth/components/Register";
 import { Customers } from "@/modules/customer/components/Customer";
 import { CustomerDetail } from "@/modules/customer/components/CustomerDetail";
 import { Dashboard } from "@/modules/dashboard/components/Dashboard";
-import { Finance } from "@/modules/finance/components/Finance";
-import { Landing } from "@/modules/landing/components/Landing";
+import { Landing } from "@/modules/landing/Landing";
 import { Notes } from "@/modules/notes/components/Notes";
 import { PublicSharedNotePage } from "@/modules/notes/components/PublicSharedNotePage";
 import { ProjectDetailPage } from "@/modules/project/components/ProjectDetailPage";
@@ -64,7 +63,6 @@ export const router = createBrowserRouter([
       { path: "customers/:id", Component: CustomerDetail },
       { path: "notes", Component: Notes },
       { path: "notes/:noteId", Component: Notes },
-      { path: "finance", Component: Finance },
       { path: "ai-assistant", Component: AIAssistant },
       { path: "settings", Component: Settings },
     ],

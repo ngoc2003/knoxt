@@ -30,10 +30,6 @@ export class CreateProjectInput {
   @IsUUID()
   customerId: string;
 
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  budget?: string;
-
   @Field(() => String)
   @IsString()
   @IsIn(['active', 'completed', 'on-hold'])

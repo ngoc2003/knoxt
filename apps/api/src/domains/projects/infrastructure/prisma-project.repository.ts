@@ -28,10 +28,7 @@ export class PrismaProjectRepository implements IProjectRepository {
     };
   }
 
-  private toCreateData(
-    userId: string,
-    data: Omit<CreateProjectInput, 'budget'>,
-  ) {
+  private toCreateData(userId: string, data: CreateProjectInput) {
     const { endDate, startDate, ...rest } = data;
     return {
       ...rest,
@@ -48,7 +45,7 @@ export class PrismaProjectRepository implements IProjectRepository {
     };
   }
 
-  async create(userId: string, data: Omit<CreateProjectInput, 'budget'>) {
+  async create(userId: string, data: CreateProjectInput) {
     return this.prisma.project.create({
       data: this.toCreateData(userId, data),
     });
@@ -74,7 +71,6 @@ export class PrismaProjectRepository implements IProjectRepository {
         include: {
           customer: true,
           user: true,
-          incomes: true,
           columns: { orderBy: { orderIndex: 'asc' } },
           tasks: {
             where: { deletedAt: null },
@@ -107,7 +103,6 @@ export class PrismaProjectRepository implements IProjectRepository {
           orderBy: { orderKey: 'asc' },
           include: { assignee: true, tags: { include: { tag: true } } },
         },
-        incomes: true,
         columns: { orderBy: { orderIndex: 'asc' } },
         members: { include: { user: true }, orderBy: { createdAt: 'asc' } },
         invitations: { orderBy: { createdAt: 'asc' } },

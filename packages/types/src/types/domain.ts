@@ -27,18 +27,6 @@ export enum CustomerStatus {
   inactive = "inactive",
 }
 
-export enum InvoiceStatus {
-  draft = "draft",
-  sent = "sent",
-  paid = "paid",
-  overdue = "overdue",
-}
-
-export enum IncomeStatus {
-  pending = "pending",
-  received = "received",
-}
-
 export enum NotificationType {
   welcome = "welcome",
   projectMemberAdded = "project-member-added",
@@ -171,7 +159,6 @@ export interface CreateProjectInput {
   name: string;
   description?: string;
   customerId: string;
-  budget?: string;
   status: string;
   startDate: string;
   endDate?: string;
@@ -244,53 +231,4 @@ export interface UpdateNoteInput {
 export interface ListNotesInput {
   search?: string;
   customerId?: string;
-}
-
-// ─── Finance ──────────────────────────────────────────────────────────────────
-
-export interface Income {
-  id: string;
-  amount: number;
-  currency: string;
-  status: IncomeStatus;
-  customerId: string;
-  invoiceId?: string | null;
-  note?: string | null;
-  receivedAt?: Date | null;
-  projectId?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Expense {
-  id: string;
-  amount: number;
-  currency: string;
-  category?: string | null;
-  note?: string | null;
-  date: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface InvoiceItem {
-  id: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  total: number;
-}
-
-export interface Invoice {
-  id: string;
-  customerId: string;
-  total: number;
-  status: InvoiceStatus;
-  notes?: string | null;
-  issuedAt?: Date | null;
-  dueAt?: Date | null;
-  paidAt?: Date | null;
-  items: InvoiceItem[];
-  createdAt: Date;
-  updatedAt: Date;
 }

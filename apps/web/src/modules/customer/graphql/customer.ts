@@ -53,10 +53,6 @@ export const LIST_CUSTOMERS_QUERY = gql`
         status
         createdAt
         updatedAt
-        incomes {
-          id
-          amount
-        }
       }
       total
       skip

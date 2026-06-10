@@ -7,7 +7,6 @@ A comprehensive SaaS platform for freelancers to manage their business operation
 - **Client Management**: Track customers, projects, and communications
 - **Project & Task Management**: Organize work with projects, tasks, and priorities
 - **Project Collaboration**: Share projects with role-based permissions and email invitations
-- **Financial Tracking**: Manage income, expenses, invoices, and tax configurations
 - **Note-Taking**: Attach notes to customers, projects, or tasks
 - **AI Assistant**: Integrated AI chat for business assistance
 - **Real-time GraphQL API**: Type-safe, efficient data operations
@@ -164,7 +163,6 @@ Visit http://localhost:3000/voyager for a visual representation of your schema
 - **Projects**: Project management with customer relationships
 - **Tasks**: Task management with projects, priorities, and status tracking
 - **Notes**: Note-taking system with customer/project associations
-- **Finance**: Income, expense, invoice, and tax management
 - **AI**: Chat sessions with AI assistant
 
 ### Example Queries

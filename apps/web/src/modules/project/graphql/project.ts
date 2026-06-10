@@ -50,10 +50,6 @@ export const PROJECTS_QUERY = gql`
           id
           name
         }
-        incomes {
-          id
-          amount
-        }
         columns {
           id
           key
@@ -112,10 +108,6 @@ export const PROJECT_DETAIL_QUERY = gql`
         key
         name
         orderIndex
-      }
-      incomes {
-        id
-        amount
       }
       customer {
         id
