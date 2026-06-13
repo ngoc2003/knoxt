@@ -41,7 +41,7 @@ export function ProjectCard({ project }: { project: any }) {
       }}
     >
       <div className="h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-400" />
-      <div className="p-5">
+      <div className="p-5 pt-0">
         <div className="mb-5 flex items-start gap-3">
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-2">

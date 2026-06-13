@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import {
   BriefcaseBusiness,
@@ -23,29 +23,45 @@ import {
 
 export function ProjectListPage() {
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [ownership, setOwnership] = useState("all");
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
-  const { data, loading, refetch } = useQuery(PROJECTS_QUERY, {
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setDebouncedSearch(search.trim()),
+      300,
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  const { data, loading, previousData, refetch } = useQuery(PROJECTS_QUERY, {
     variables: {
       pagination: { skip: 0, take: 50 },
       filter: {
-        search: search.trim() || undefined,
+        search: debouncedSearch || undefined,
         status: status === "all" ? undefined : status,
         ownership,
       },
     },
   });
   const [createProject] = useMutation(CREATE_PROJECT_MUTATION);
+  const displayedData = data ?? previousData;
   const projects = useMemo(
-    () => (data as any)?.projects?.items ?? [],
-    [data],
+    () => (displayedData as any)?.projects?.items ?? [],
+    [displayedData],
   );
+  const isInitialLoading = loading && !displayedData;
   const stats = useMemo(
     () => ({
       total: projects.length,
-      active: projects.filter((project: any) => project.status === "active").length,
-      completed: projects.filter((project: any) => project.status === "completed").length,
+      active: projects.filter((project: any) => project.status === "active")
+        .length,
+      completed: projects.filter(
+        (project: any) => project.status === "completed",
+      ).length,
       documents: projects.reduce(
         (total: number, project: any) => total + (project.noteCount ?? 0),
         0,
@@ -76,7 +92,9 @@ export function ProjectListPage() {
       <div className="mx-auto max-w-7xl">
         <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-950">Projects</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-950">
+              Projects
+            </h1>
             <p className="mt-2 text-sm text-gray-500">
               Track delivery, documents, and client work in one place.
             </p>
@@ -92,77 +110,103 @@ export function ProjectListPage() {
         </header>
 
         <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard icon={<FolderKanban />} label="Projects shown" value={stats.total} />
-          <StatCard icon={<BriefcaseBusiness />} label="Active" value={stats.active} />
-          <StatCard icon={<CheckCircle2 />} label="Completed" value={stats.completed} />
-          <StatCard icon={<Sparkles />} label="Documents" value={stats.documents} />
+          <StatCard
+            icon={<FolderKanban />}
+            label="Projects shown"
+            value={stats.total}
+          />
+          <StatCard
+            icon={<BriefcaseBusiness />}
+            label="Active"
+            value={stats.active}
+          />
+          <StatCard
+            icon={<CheckCircle2 />}
+            label="Completed"
+            value={stats.completed}
+          />
+          <StatCard
+            icon={<Sparkles />}
+            label="Documents"
+            value={stats.documents}
+          />
         </section>
 
-        <div className="mb-6 flex flex-col gap-3 rounded-xl border border-gray-200/80 bg-white p-3 shadow-sm md:flex-row">
-          <div className="relative min-w-0 flex-1">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
-            <Input
-              className="h-10 border-0 bg-gray-50 pl-9 shadow-none focus-visible:ring-indigo-200"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search projects by name or description..."
-            />
-          </div>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-10 w-full bg-white md:w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="on_hold">On hold</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={ownership} onValueChange={setOwnership}>
-            <SelectTrigger className="h-10 w-full bg-white md:w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All access</SelectItem>
-              <SelectItem value="owned">Owned by me</SelectItem>
-              <SelectItem value="member">Shared with me</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {loading && (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {[0, 1, 2].map((item) => (
-              <div key={item} className="h-80 animate-pulse rounded-xl border bg-white" />
-            ))}
-          </div>
-        )}
-
-        {!loading && projects.length > 0 && (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {projects.map((project: any) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        )}
-
-        {!loading && projects.length === 0 && (
-          <div className="rounded-2xl border border-dashed bg-white px-6 py-20 text-center">
-            <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-              <FolderKanban className="size-8" />
+        <div className="bg-white p-3 shadow-sm rounded-xl">
+          <div className="mb-6 flex flex-col gap-3 rounded-xl md:flex-row">
+            <div className="relative min-w-0 flex-1">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                className="h-10 border-0 bg-gray-50 pl-9 shadow-none focus-visible:ring-indigo-200"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search projects by name or description..."
+              />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">No matching projects</h3>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
-              Create a project or adjust the current search and filters.
-            </p>
-            <Button className="mt-6" onClick={() => setIsProjectModalOpen(true)}>
-              <Plus />
-              Create project
-            </Button>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="h-10 w-full bg-white md:w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="on_hold">On hold</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={ownership} onValueChange={setOwnership}>
+              <SelectTrigger className="h-10 w-full bg-white md:w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All access</SelectItem>
+                <SelectItem value="owned">Owned by me</SelectItem>
+                <SelectItem value="member">Shared with me</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
+
+          {isInitialLoading && (
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {[0, 1, 2].map((item) => (
+                <div
+                  key={item}
+                  className="h-80 animate-pulse rounded-xl border bg-white"
+                />
+              ))}
+            </div>
+          )}
+
+          {!isInitialLoading && projects.length > 0 && (
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {projects.map((project: any) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          )}
+
+          {!isInitialLoading && projects.length === 0 && (
+            <div className="rounded-2xl border border-dashed bg-white px-6 py-20 text-center">
+              <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                <FolderKanban className="size-8" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                No matching projects
+              </h3>
+              <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
+                Create a project or adjust the current search and filters.
+              </p>
+              <Button
+                className="mt-6"
+                onClick={() => setIsProjectModalOpen(true)}
+              >
+                <Plus />
+                Create project
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       <ProjectModal
