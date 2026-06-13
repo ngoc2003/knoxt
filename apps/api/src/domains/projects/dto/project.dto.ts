@@ -6,13 +6,36 @@ import {
   IsEnum,
   IsInt,
   IsDateString,
-  IsIn,
   IsOptional,
   IsString,
   IsUUID,
   MaxLength,
+  IsIn,
 } from 'class-validator';
-import { ProjectRole } from '../../../core/common/enum/enums';
+import { ProjectRole, ProjectStatus } from '../../../core/common/enum/enums';
+
+@InputType()
+export class ProjectListFilterInput {
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @Field(() => ProjectStatus, { nullable: true })
+  @IsOptional()
+  @IsEnum(ProjectStatus)
+  status?: ProjectStatus;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsIn(['all', 'owned', 'member'])
+  ownership?: 'all' | 'owned' | 'member';
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsUUID()
+  customerId?: string;
+}
 
 @InputType()
 export class CreateProjectInput {
@@ -26,18 +49,23 @@ export class CreateProjectInput {
   @IsOptional()
   description?: string;
 
-  @Field()
+  @Field(() => String, { nullable: true })
   @IsUUID()
-  customerId: string;
+  @IsOptional()
+  customerId?: string;
 
-  @Field(() => String)
-  @IsString()
-  @IsIn(['active', 'completed', 'on-hold'])
-  status: string;
+  @Field(() => ProjectStatus, {
+    nullable: true,
+    defaultValue: ProjectStatus.active,
+  })
+  @IsEnum(ProjectStatus)
+  @IsOptional()
+  status?: ProjectStatus = ProjectStatus.active;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
+  @IsOptional()
   @IsDateString()
-  startDate: string;
+  startDate?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
@@ -57,16 +85,20 @@ export class UpdateProjectInput {
   @IsOptional()
   description?: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => ProjectStatus, { nullable: true })
   @IsOptional()
-  @IsString()
-  @IsIn(['active', 'completed', 'on-hold'])
-  status?: string;
+  @IsEnum(ProjectStatus)
+  status?: ProjectStatus;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsDateString()
   startDate?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsUUID()
+  customerId?: string | null;
 
   @Field(() => String, { nullable: true })
   @IsOptional()

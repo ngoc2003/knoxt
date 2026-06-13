@@ -1,10 +1,11 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { NotesService } from './notes.service';
-import { Note, NoteTreeItem } from './note.model';
+import { Note, NoteAccess, NoteTreeItem } from './note.model';
 import { NotePage } from './note-page.model';
 import {
   CreateNoteInput,
+  AssignNoteProjectInput,
   ListNotesInput,
   MoveNoteInput,
   UpdateNoteInput,
@@ -33,14 +34,28 @@ export class NotesResolver {
   @Query(() => [NoteTreeItem])
   noteTree(
     @CurrentUser() user: AuthUser,
+    @Args('projectId', { nullable: true }) projectId?: string,
+    @Args('standaloneOnly', { nullable: true }) standaloneOnly?: boolean,
     @Args('search', { nullable: true }) search?: string,
+    @Args('tagIds', { type: () => [String], nullable: true }) tagIds?: string[],
   ) {
-    return this.notesService.findTree(user.id, search);
+    return this.notesService.findTree(
+      user.id,
+      projectId,
+      standaloneOnly,
+      search,
+      tagIds,
+    );
   }
 
   @Query(() => Note)
   noteDetail(@CurrentUser() user: AuthUser, @Args('id') id: string) {
     return this.notesService.findOne(user.id, id);
+  }
+
+  @Query(() => NoteAccess)
+  noteAccess(@CurrentUser() user: AuthUser, @Args('id') id: string) {
+    return this.notesService.access(user.id, id);
   }
 
   @Mutation(() => Note)
@@ -49,6 +64,14 @@ export class NotesResolver {
     @Args('data') data: CreateNoteInput,
   ) {
     return this.notesService.create(user.id, data);
+  }
+
+  @Mutation(() => Note)
+  assignNoteToProject(
+    @CurrentUser() user: AuthUser,
+    @Args('data') data: AssignNoteProjectInput,
+  ) {
+    return this.notesService.assignProject(user.id, data);
   }
 
   @Mutation(() => Note)

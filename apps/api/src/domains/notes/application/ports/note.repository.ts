@@ -5,6 +5,7 @@ import type {
 } from '../../../../core/common/dtos/pagination.dto';
 import type {
   CreateNoteInput,
+  AssignNoteProjectInput,
   ListNotesInput,
   MoveNoteInput,
   UpdateNoteInput,
@@ -12,7 +13,7 @@ import type {
 
 export type NoteTreeRecord = Pick<
   Note,
-  'id' | 'parentId' | 'title' | 'position' | 'updatedAt'
+  'id' | 'projectId' | 'parentId' | 'title' | 'position' | 'updatedAt'
 > & {
   isPinned: boolean;
   hasChildren: boolean;
@@ -25,13 +26,28 @@ export interface INoteRepository {
     filter: ListNotesInput,
     pagination: PaginationInput,
   ): Promise<PageResult<Note>>;
-  findTree(userId: string, search?: string): Promise<NoteTreeRecord[]>;
-  findOne(userId: string, id: string): Promise<Note | null>;
-  findOwnedOne(userId: string, id: string): Promise<Note | null>;
-  customerExists(userId: string, id: string): Promise<boolean>;
-  findSiblings(userId: string, parentId?: string | null): Promise<Note[]>;
-  isDescendant(
+  findTree(
     userId: string,
+    projectId?: string | null,
+    standaloneOnly?: boolean,
+    search?: string,
+    tagIds?: string[],
+  ): Promise<NoteTreeRecord[]>;
+  findOne(userId: string, id: string): Promise<Note | null>;
+  findInScope(
+    userId: string,
+    projectId: string | null,
+    id: string,
+  ): Promise<Note | null>;
+  findStandaloneEditable(userId: string, id: string): Promise<Note | null>;
+  customerExists(userId: string, id: string): Promise<boolean>;
+  findSiblings(
+    userId: string,
+    projectId: string | null,
+    parentId?: string | null,
+  ): Promise<Note[]>;
+  isDescendant(
+    projectId: string | null,
     noteId: string,
     candidateId: string,
   ): Promise<boolean>;
@@ -40,7 +56,12 @@ export interface INoteRepository {
     id: string,
     data: UpdateNoteInput,
   ): Promise<Note | null>;
+  assignProject(userId: string, data: AssignNoteProjectInput): Promise<Note>;
   setPinned(userId: string, id: string, isPinned: boolean): Promise<boolean>;
-  move(userId: string, data: MoveNoteInput): Promise<Note>;
-  remove(userId: string, id: string): Promise<Note>;
+  move(
+    userId: string,
+    projectId: string | null,
+    data: MoveNoteInput,
+  ): Promise<Note>;
+  remove(userId: string, projectId: string | null, id: string): Promise<Note>;
 }

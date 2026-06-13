@@ -3,6 +3,7 @@ import { Prisma } from 'database/generated/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import type { PaginationInput } from '../../../core/common/dtos/pagination.dto';
 import type {
+  BulkMoveTasksInput,
   CreateTaskInput,
   ListTasksInput,
   MoveTaskInput,
@@ -130,6 +131,16 @@ export class PrismaTaskRepository implements ITaskRepository {
     });
   }
 
+  async findByIds(userId: string, ids: string[]) {
+    return this.prisma.task.findMany({
+      where: {
+        id: { in: ids },
+        deletedAt: null,
+        project: this.projectAccessibleBy(userId),
+      },
+    });
+  }
+
   async update(userId: string, id: string, data: UpdateTaskInput) {
     const { assigneeId, tags, ...rest } = data;
     const updateData: Prisma.TaskUpdateInput = { ...rest };
@@ -216,6 +227,59 @@ export class PrismaTaskRepository implements ITaskRepository {
         data: { status: input.status, orderKey: orderKey! },
         include: { assignee: true },
       });
+    });
+  }
+
+  async bulkMoveTasks(userId: string, input: BulkMoveTasksInput) {
+    return this.prisma.$transaction(async (tx) => {
+      const selectedTasks = await tx.task.findMany({
+        where: {
+          id: { in: input.taskIds },
+          projectId: input.projectId,
+          deletedAt: null,
+          project: this.projectAccessibleBy(userId),
+        },
+        select: { id: true },
+      });
+      if (selectedTasks.length !== input.taskIds.length) {
+        throw new Error(
+          'Selected tasks changed before the bulk move completed',
+        );
+      }
+
+      const destinationTasks = await tx.task.findMany({
+        where: {
+          projectId: input.projectId,
+          status: input.status,
+          deletedAt: null,
+          id: { notIn: input.taskIds },
+        },
+        orderBy: [{ orderKey: 'asc' }, { createdAt: 'asc' }],
+        select: { id: true },
+      });
+      const orderedIds = [
+        ...destinationTasks.map(({ id }) => id),
+        ...input.taskIds,
+      ];
+
+      await Promise.all(
+        orderedIds.map((id, index) =>
+          tx.task.update({
+            where: { id },
+            data: {
+              status: input.status,
+              orderKey: orderKeyForIndex(index),
+            },
+          }),
+        ),
+      );
+
+      const movedTasks = await tx.task.findMany({
+        where: { id: { in: input.taskIds } },
+        include: { assignee: true },
+      });
+      const taskById = new Map(movedTasks.map((task) => [task.id, task]));
+      return input.taskIds.map((id) => taskById.get(id)!);
     });
   }
 

@@ -8,7 +8,7 @@ import {
 import { Customer } from '../customers/customer.model';
 import { Task } from '../tasks/task.model';
 import { User } from '../users/user.model';
-import { ProjectRole } from '../../core/common/enum/enums';
+import { ProjectRole, ProjectStatus } from '../../core/common/enum/enums';
 
 @ObjectType()
 export class ProjectColumn {
@@ -81,8 +81,8 @@ export class Project {
   @Field(() => String, { nullable: true })
   description?: string | null;
 
-  @Field(() => ID)
-  customerId: string;
+  @Field(() => ID, { nullable: true })
+  customerId?: string | null;
 
   @Field(() => GraphQLISODateTime)
   createdAt: Date;
@@ -90,14 +90,14 @@ export class Project {
   @Field(() => GraphQLISODateTime)
   updatedAt: Date;
 
-  @Field(() => Customer)
-  customer: Customer;
+  @Field(() => Customer, { nullable: true })
+  customer?: Customer | null;
 
-  @Field(() => String)
-  status: string;
+  @Field(() => ProjectStatus)
+  status: ProjectStatus;
 
-  @Field(() => GraphQLISODateTime)
-  startDate: Date;
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  startDate?: Date | null;
 
   @Field(() => GraphQLISODateTime, { nullable: true })
   endDate?: Date;
@@ -113,4 +113,32 @@ export class Project {
 
   @Field(() => [ProjectInvitation], { nullable: true })
   invitations?: ProjectInvitation[];
+
+  @Field(() => Int, { nullable: true })
+  noteCount?: number;
+}
+
+@ObjectType()
+export class ProjectOverviewNote {
+  @Field(() => ID) id: string;
+  @Field() title: string;
+  @Field(() => GraphQLISODateTime) updatedAt: Date;
+}
+
+@ObjectType()
+export class ProjectOverviewAttachment {
+  @Field(() => ID) id: string;
+  @Field(() => ID) noteId: string;
+  @Field() noteTitle: string;
+  @Field() filename: string;
+  @Field() url: string;
+  @Field(() => GraphQLISODateTime) createdAt: Date;
+}
+
+@ObjectType()
+export class ProjectOverview {
+  @Field(() => [ProjectOverviewNote]) recentNotes: ProjectOverviewNote[];
+  @Field(() => [ProjectOverviewNote]) pinnedNotes: ProjectOverviewNote[];
+  @Field(() => [ProjectOverviewAttachment])
+  recentAttachments: ProjectOverviewAttachment[];
 }

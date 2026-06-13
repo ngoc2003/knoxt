@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Landing } from "./Landing";
 
 vi.mock("@/shared/components/PageTransitionProvider", () => ({
+  usePageTransitionArrival: vi.fn(),
   usePageTransitionLink: () => ({
     isTransitioning: false,
     linkProps: {},

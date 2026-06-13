@@ -27,6 +27,11 @@ import {
 export class NoteSharingResolver {
   constructor(private readonly sharingService: NoteSharingService) {}
 
+  @Query(() => [NoteTag])
+  noteTags(@CurrentUser() user: AuthUser) {
+    return this.sharingService.tags(user.id);
+  }
+
   @Query(() => NoteWorkspaceMeta)
   noteWorkspaceMeta(
     @CurrentUser() user: AuthUser,
@@ -36,8 +41,12 @@ export class NoteSharingResolver {
   }
 
   @Query(() => [Note])
-  noteTrash(@CurrentUser() user: AuthUser) {
-    return this.sharingService.trash(user.id);
+  noteTrash(
+    @CurrentUser() user: AuthUser,
+    @Args('projectId', { nullable: true }) projectId?: string,
+    @Args('standaloneOnly', { nullable: true }) standaloneOnly?: boolean,
+  ) {
+    return this.sharingService.trash(user.id, projectId, standaloneOnly);
   }
 
   @Mutation(() => NotePublicLinkResult)

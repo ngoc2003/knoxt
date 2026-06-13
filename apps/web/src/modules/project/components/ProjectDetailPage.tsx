@@ -13,6 +13,8 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import {
   ArrowLeft,
   Columns3,
+  FileText,
+  ListChecks,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -20,6 +22,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
+  BULK_MOVE_TASKS_MUTATION,
   MOVE_TASK_MUTATION,
   CREATE_TASK_MUTATION,
   UPDATE_TASK_MUTATION,
@@ -31,6 +34,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { ProjectMembersDialog } from "./ProjectMembersDialog";
 import { ManageProjectColumnsDialog } from "./ManageProjectColumnsDialog";
 import { DeleteConfirmDialog } from "@/shared/components/DeleteConfirmDialog";
+import { ProjectNotesDialog } from "./ProjectNotesDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +42,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
+import { ProjectOverview } from "./ProjectOverview";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 
 interface Task {
   id: string;
@@ -77,9 +89,9 @@ interface Project {
   name: string;
   description?: string;
   status: string;
-  startDate: string;
+  startDate?: string;
   endDate?: string;
-  customerId: string;
+  customerId?: string;
   tasks: Task[];
   columns: ProjectColumn[];
   members: {
@@ -109,6 +121,9 @@ export function ProjectDetailPage() {
   );
 
   const [moveTaskMutation] = useMutation(MOVE_TASK_MUTATION);
+  const [bulkMoveTasksMutation, { loading: bulkMoveLoading }] = useMutation(
+    BULK_MOVE_TASKS_MUTATION,
+  );
   const [updateProjectMutation] = useMutation(UPDATE_PROJECT_MUTATION);
   const [createTaskMutation] = useMutation(CREATE_TASK_MUTATION);
   const [updateTaskMutation] = useMutation(UPDATE_TASK_MUTATION);
@@ -126,6 +141,13 @@ export function ProjectDetailPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
   const [isDeleteProjectOpen, setIsDeleteProjectOpen] = useState(false);
+  const [isProjectNotesOpen, setIsProjectNotesOpen] = useState(false);
+  const [focusedProjectNoteId, setFocusedProjectNoteId] = useState<string>();
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [bulkStatus, setBulkStatus] = useState("");
 
   const [tasksState, setTasksState] = useState([] as Task[]);
   const [columnsState, setColumnsState] = useState([] as ProjectColumn[]);
@@ -136,6 +158,15 @@ export function ProjectDetailPage() {
       setTasksState(project.tasks);
     }
   }, [project]);
+
+  useEffect(() => {
+    if (
+      columnsState[0] &&
+      !columnsState.some((column) => column.key === bulkStatus)
+    ) {
+      setBulkStatus(columnsState[0].key);
+    }
+  }, [bulkStatus, columnsState]);
 
   useEffect(() => {
     if (project?.columns) {
@@ -188,6 +219,62 @@ export function ProjectDetailPage() {
     }
   };
 
+  const handleTaskSelectionChange = (taskId: string, selected: boolean) => {
+    setSelectedTaskIds((current) => {
+      const next = new Set(current);
+      if (selected) next.add(taskId);
+      else next.delete(taskId);
+      return next;
+    });
+  };
+
+  const exitSelectionMode = () => {
+    setSelectedTaskIds(new Set());
+    setSelectionMode(false);
+  };
+
+  const handleBulkMoveTasks = async () => {
+    if (!projectId || !bulkStatus || selectedTaskIds.size === 0) return;
+
+    const columnOrder = new Map(
+      columnsState.map((column, index) => [column.key, index]),
+    );
+    const orderedTaskIds = tasksState
+      .filter((task) => selectedTaskIds.has(task.id))
+      .sort((a, b) => {
+        const statusOrder =
+          (columnOrder.get(a.status) ?? 0) - (columnOrder.get(b.status) ?? 0);
+        if (statusOrder !== 0) return statusOrder;
+        return a.orderKey.localeCompare(b.orderKey);
+      })
+      .map((task) => task.id);
+
+    try {
+      const { data } = await bulkMoveTasksMutation({
+        variables: {
+          input: { projectId, taskIds: orderedTaskIds, status: bulkStatus },
+        },
+      });
+      const movedTasks = (
+        data as { bulkMoveTasks?: Pick<Task, "id" | "status" | "orderKey">[] }
+      )?.bulkMoveTasks;
+      if (!movedTasks) {
+        throw new Error("The server did not return the moved tasks");
+      }
+
+      const movedById = new Map(movedTasks.map((task) => [task.id, task]));
+      setTasksState((currentTasks) =>
+        currentTasks.map((task) => ({
+          ...task,
+          ...(movedById.get(task.id) ?? {}),
+        })),
+      );
+      exitSelectionMode();
+    } catch (error) {
+      console.error("Failed to bulk move tasks", error);
+    }
+  };
+
   const handleSaveProject = async (projectData: any) => {
     if (!projectId) return;
 
@@ -198,7 +285,8 @@ export function ProjectDetailPage() {
           name: projectData.name,
           description: projectData.description,
           status: projectData.status,
-          startDate: projectData.startDate,
+          customerId: projectData.customerId || null,
+          startDate: projectData.startDate || null,
           endDate: projectData.endDate || null,
         },
       },
@@ -321,7 +409,7 @@ export function ProjectDetailPage() {
 
   return (
     <div className="p-6">
-      <nav className="mb-4 text-sm flex items-center justify-between">
+      <nav className="sticky top-0 z-20 -mx-6 -mt-6 mb-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 text-sm shadow-sm">
         <div>
           <Button variant="ghost" onClick={() => navigate("/projects")}>
             <ArrowLeft />
@@ -329,6 +417,16 @@ export function ProjectDetailPage() {
           </Button>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setFocusedProjectNoteId(undefined);
+              setIsProjectNotesOpen(true);
+            }}
+          >
+            <FileText />
+            Documents
+          </Button>
           {isOwner && (
             <ProjectMembersDialog
               projectId={project.id}
@@ -338,6 +436,16 @@ export function ProjectDetailPage() {
           )}
           {canEdit && (
             <>
+              <Button
+                variant={selectionMode ? "secondary" : "outline"}
+                onClick={() => {
+                  if (selectionMode) exitSelectionMode();
+                  else setSelectionMode(true);
+                }}
+              >
+                <ListChecks />
+                {selectionMode ? "Cancel selection" : "Select tasks"}
+              </Button>
               <Button
                 size="icon"
                 className="min-w-36"
@@ -386,6 +494,43 @@ export function ProjectDetailPage() {
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">
         {project.name}
       </h1>
+      <ProjectOverview
+        projectId={project.id}
+        onOpenDocument={(noteId) => {
+          setFocusedProjectNoteId(noteId);
+          setIsProjectNotesOpen(true);
+        }}
+      />
+      {selectionMode && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md border border-indigo-100 bg-indigo-50 p-3">
+          <span className="text-sm font-medium text-indigo-900">
+            {selectedTaskIds.size} selected
+          </span>
+          <Select value={bulkStatus} onValueChange={setBulkStatus}>
+            <SelectTrigger className="w-48 bg-white">
+              <SelectValue placeholder="Move to status" />
+            </SelectTrigger>
+            <SelectContent>
+              {columnsState.map((column) => (
+                <SelectItem key={column.id} value={column.key}>
+                  {column.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={() => void handleBulkMoveTasks()}
+            disabled={
+              selectedTaskIds.size === 0 || !bulkStatus || bulkMoveLoading
+            }
+          >
+            {bulkMoveLoading ? "Applying..." : "Apply"}
+          </Button>
+          <Button variant="ghost" onClick={exitSelectionMode}>
+            Cancel
+          </Button>
+        </div>
+      )}
       <DndProvider backend={HTML5Backend}>
         <KanbanBoard
           tasks={tasksState}
@@ -394,6 +539,9 @@ export function ProjectDetailPage() {
           moveColumn={handleMoveColumn}
           canEdit={canEdit}
           canManageColumns={isOwner}
+          selectionMode={selectionMode}
+          selectedTaskIds={selectedTaskIds}
+          onTaskSelectionChange={handleTaskSelectionChange}
           onTaskClick={(task) => {
             setSelectedTask(task as Task);
             setIsTaskModalOpen(true);
@@ -447,6 +595,13 @@ export function ProjectDetailPage() {
         onConfirm={() => void handleDeleteProject()}
         title="Delete project?"
         description={`This will delete "${project.name}" and remove it for every project member.`}
+      />
+      <ProjectNotesDialog
+        projectId={project.id}
+        projectName={project.name}
+        focusedNoteId={focusedProjectNoteId}
+        open={isProjectNotesOpen}
+        onOpenChange={setIsProjectNotesOpen}
       />
     </div>
   );

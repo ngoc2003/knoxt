@@ -22,6 +22,13 @@ export enum ProjectRole {
   admin = 'admin',
 }
 
+export enum ProjectStatus {
+  active = 'active',
+  on_hold = 'on_hold',
+  completed = 'completed',
+  archived = 'archived',
+}
+
 export enum NotePermission {
   viewer = 'viewer',
   editor = 'editor',
@@ -44,5 +51,6 @@ registerEnumType(Priority, { name: 'Priority' });
 registerEnumType(CustomerStatus, { name: 'CustomerStatus' });
 registerEnumType(SortOrder, { name: 'SortOrder' });
 registerEnumType(ProjectRole, { name: 'ProjectRole' });
+registerEnumType(ProjectStatus, { name: 'ProjectStatus' });
 registerEnumType(NotePermission, { name: 'NotePermission' });
 registerEnumType(NotificationType, { name: 'NotificationType' });

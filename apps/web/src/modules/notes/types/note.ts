@@ -1,5 +1,6 @@
 export interface NoteTreeItem {
   id: string;
+  projectId?: string | null;
   parentId?: string | null;
   title: string;
   position: number;
@@ -10,6 +11,7 @@ export interface NoteTreeItem {
 
 export interface NoteDetail {
   id: string;
+  projectId?: string | null;
   title: string;
   content: string;
   customerId?: string | null;
@@ -60,4 +62,15 @@ export interface NoteWorkspaceMeta {
     expiresAt?: string | null;
     revokedAt?: string | null;
   } | null;
+}
+
+export interface NoteSearchResult {
+  id: string;
+  projectId?: string | null;
+  projectName?: string | null;
+  title: string;
+  snippet: string;
+  tags: NoteTag[];
+  score: number;
+  updatedAt: string;
 }

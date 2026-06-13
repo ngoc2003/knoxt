@@ -18,6 +18,9 @@ export class Note {
   content: string;
 
   @Field(() => ID, { nullable: true })
+  projectId?: string | null;
+
+  @Field(() => ID, { nullable: true })
   customerId?: string | null;
 
   @Field(() => ID, { nullable: true })
@@ -45,6 +48,9 @@ export class NoteTreeItem {
   id: string;
 
   @Field(() => ID, { nullable: true })
+  projectId?: string | null;
+
+  @Field(() => ID, { nullable: true })
   parentId?: string | null;
 
   @Field()
@@ -61,4 +67,13 @@ export class NoteTreeItem {
 
   @Field(() => GraphQLISODateTime)
   updatedAt: Date;
+}
+
+@ObjectType()
+export class NoteAccess {
+  @Field()
+  canEdit: boolean;
+
+  @Field()
+  canShare: boolean;
 }

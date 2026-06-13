@@ -1,4 +1,7 @@
-import { usePageTransitionLink } from "@/shared/components/PageTransitionProvider";
+import {
+  usePageTransitionArrival,
+  usePageTransitionLink,
+} from "@/shared/components/PageTransitionProvider";
 import { LandingFooter, LandingHeader } from "./components/LandingChrome";
 import {
   ContactSection,
@@ -11,6 +14,8 @@ import {
 } from "./components/LandingSections";
 
 export function Landing() {
+  usePageTransitionArrival();
+
   const isAuthenticated = Boolean(localStorage.getItem("accessToken"));
   const loading = false;
   const { isTransitioning, linkProps } = usePageTransitionLink(

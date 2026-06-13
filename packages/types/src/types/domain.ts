@@ -56,7 +56,7 @@ export interface Task {
   status: string;
   priority: Priority;
   orderIndex: number;
-  projectId: string;
+  projectId?: string | null;
   assigneeId?: string | null;
   assignee?: User | null;
   dueDate?: Date | null;
@@ -68,7 +68,7 @@ export interface Task {
 export interface CreateTaskInput {
   title: string;
   description?: string;
-  projectId: string;
+  projectId?: string | null;
   status?: string;
   priority?: Priority;
   orderIndex?: number;
@@ -108,9 +108,9 @@ export interface Project {
   id: string;
   name: string;
   description?: string | null;
-  status: string;
-  customerId: string;
-  startDate: Date;
+  status: ProjectStatus;
+  customerId?: string | null;
+  startDate?: Date | null;
   endDate?: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -123,6 +123,13 @@ export enum ProjectRole {
   viewer = "viewer",
   editor = "editor",
   admin = "admin",
+}
+
+export enum ProjectStatus {
+  active = "active",
+  on_hold = "on_hold",
+  completed = "completed",
+  archived = "archived",
 }
 
 export interface ProjectMember {
@@ -158,17 +165,18 @@ export interface DeleteProjectColumnInput {
 export interface CreateProjectInput {
   name: string;
   description?: string;
-  customerId: string;
-  status: string;
-  startDate: string;
+  customerId?: string;
+  status?: ProjectStatus;
+  startDate?: string;
   endDate?: string;
 }
 
 export interface UpdateProjectInput {
   name?: string;
   description?: string;
-  status?: string;
-  startDate?: string;
+  status?: ProjectStatus;
+  customerId?: string | null;
+  startDate?: string | null;
   endDate?: string;
 }
 
@@ -209,6 +217,7 @@ export interface ListCustomersInput {
 
 export interface Note {
   id: string;
+  projectId: string;
   title: string;
   content: string;
   customerId?: string | null;
@@ -217,6 +226,7 @@ export interface Note {
 }
 
 export interface CreateNoteInput {
+  projectId: string;
   title: string;
   content: string;
   customerId?: string;
@@ -229,6 +239,7 @@ export interface UpdateNoteInput {
 }
 
 export interface ListNotesInput {
+  projectId?: string;
   search?: string;
   customerId?: string;
 }

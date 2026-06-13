@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import {
   ChevronDown,
@@ -31,7 +31,8 @@ function buildTrashTree(notes: NoteDetail[]) {
 
   for (const node of nodes.values()) {
     const parent = node.parentId ? nodes.get(node.parentId) : undefined;
-    if (parent && parent.deletedAt === node.deletedAt) parent.children.push(node);
+    if (parent && parent.deletedAt === node.deletedAt)
+      parent.children.push(node);
     else roots.push(node);
   }
 
@@ -114,20 +115,29 @@ export function NoteTrashDialog({
   open,
   onOpenChange,
   onRestored,
+  projectId,
+  standaloneOnly,
+  canEdit,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onRestored: (id: string) => void;
+  projectId?: string;
+  standaloneOnly?: boolean;
+  canEdit: boolean;
 }) {
   const trashQuery = useQuery(NOTE_TRASH_QUERY, {
+    variables: { projectId, standaloneOnly },
     skip: !open,
     fetchPolicy: "network-only",
   });
   const [restoreNote] = useMutation(RESTORE_NOTE_MUTATION);
   const [selectedId, setSelectedId] = useState<string>();
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
-  const notes =
-    (trashQuery.data as { noteTrash?: NoteDetail[] })?.noteTrash ?? [];
+  const notes = useMemo(
+    () => (trashQuery.data as { noteTrash?: NoteDetail[] })?.noteTrash ?? [],
+    [trashQuery.data],
+  );
   const tree = buildTrashTree(notes);
   const selectedNote = notes.find((note) => note.id === selectedId);
 
@@ -214,14 +224,16 @@ export function NoteTrashDialog({
                         Deleted note · Read-only preview
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void handleRestore(selectedNote)}
-                    >
-                      <RotateCcw />
-                      Restore
-                    </Button>
+                    {canEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void handleRestore(selectedNote)}
+                      >
+                        <RotateCcw />
+                        Restore
+                      </Button>
+                    )}
                   </div>
                   <NotePreview content={selectedNote.content} />
                 </>

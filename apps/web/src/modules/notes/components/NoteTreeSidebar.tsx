@@ -15,6 +15,7 @@ import {
   ArrowDown,
   RotateCcw,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import {
@@ -63,6 +64,8 @@ function TreeRow({
   onDropInto,
   onMoveUp,
   onMoveDown,
+  canEdit,
+  editableNoteId,
 }: {
   note: NoteTreeNode;
   depth: number;
@@ -76,16 +79,20 @@ function TreeRow({
   onDropInto: (noteId: string, parentId: string | null) => void;
   onMoveUp: (note: NoteTreeItem) => void;
   onMoveDown: (note: NoteTreeItem) => void;
+  canEdit: boolean;
+  editableNoteId?: string;
 }) {
+  const canManageNote = canEdit || editableNoteId === note.id;
   const rowRef = useRef<HTMLDivElement>(null);
   const [{ isDragging }, drag] = useDrag({
     type: NOTE_TREE_ITEM,
     item: { id: note.id },
+    canDrag: canEdit,
     collect: (monitor) => ({ isDragging: monitor.isDragging() }),
   });
   const [{ isOver }, drop] = useDrop({
     accept: NOTE_TREE_ITEM,
-    canDrop: (item: { id: string }) => item.id !== note.id,
+    canDrop: (item: { id: string }) => canEdit && item.id !== note.id,
     drop: (item: { id: string }, monitor) => {
       if (monitor.didDrop()) return;
       onDropInto(item.id, note.id);
@@ -130,45 +137,51 @@ function TreeRow({
             <Pin className="size-3.5 shrink-0 fill-indigo-100 text-indigo-500" />
           )}
         </button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
-              aria-label={`Actions for ${note.title}`}
-            >
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onSelect={() => onSetPinned(note, !note.isPinned)}
-            >
-              {note.isPinned ? <PinOff /> : <Pin />}
-              {note.isPinned ? "Unpin" : "Pin"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onCreateChild(note.id)}>
-              <Plus />
-              New child
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onMoveUp(note)}>
-              <ArrowUp />
-              Move up
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onMoveDown(note)}>
-              <ArrowDown />
-              Move down
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              variant="destructive"
-              onSelect={() => onDelete(note)}
-            >
-              <Trash2 />
-              Delete subtree
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {canManageNote && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
+                aria-label={`Actions for ${note.title}`}
+              >
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onSelect={() => onSetPinned(note, !note.isPinned)}
+              >
+                {note.isPinned ? <PinOff /> : <Pin />}
+                {note.isPinned ? "Unpin" : "Pin"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onCreateChild(note.id)}>
+                <Plus />
+                New child
+              </DropdownMenuItem>
+              {canEdit && (
+                <>
+                  <DropdownMenuItem onSelect={() => onMoveUp(note)}>
+                    <ArrowUp />
+                    Move up
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => onMoveDown(note)}>
+                    <ArrowDown />
+                    Move down
+                  </DropdownMenuItem>
+                </>
+              )}
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => onDelete(note)}
+              >
+                <Trash2 />
+                Delete subtree
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       {expanded.has(note.id) &&
         note.children.map((child) => (
@@ -186,6 +199,8 @@ function TreeRow({
             onDropInto={onDropInto}
             onMoveUp={onMoveUp}
             onMoveDown={onMoveDown}
+            canEdit={canEdit}
+            editableNoteId={editableNoteId}
           />
         ))}
     </>
@@ -203,6 +218,10 @@ export function NoteTreeSidebar({
   onSetPinned,
   onMove,
   onOpenTrash,
+  canEdit,
+  canCreate,
+  editableNoteId,
+  scopeControl,
 }: {
   notes: NoteTreeItem[];
   selectedId?: string;
@@ -218,11 +237,16 @@ export function NoteTreeSidebar({
     orderedIds: string[],
   ) => void;
   onOpenTrash: () => void;
+  canEdit: boolean;
+  canCreate: boolean;
+  editableNoteId?: string;
+  scopeControl?: ReactNode;
 }) {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const tree = useMemo(() => buildTree(notes), [notes]);
   const [, rootDrop] = useDrop({
     accept: NOTE_TREE_ITEM,
+    canDrop: () => canEdit,
     drop: (item: { id: string }, monitor) => {
       if (monitor.didDrop()) return;
       moveInto(item.id, null);
@@ -237,6 +261,11 @@ export function NoteTreeSidebar({
       else next.add(id);
       return next;
     });
+  };
+
+  const createChild = (parentId: string) => {
+    setExpanded((current) => new Set(current).add(parentId));
+    onCreate(parentId);
   };
 
   const siblingsFor = (parentId: string | null) =>
@@ -283,22 +312,27 @@ export function NoteTreeSidebar({
               Drag a note onto another to nest it.
             </p>
           </div>
-          <Button
-            size="icon"
-            onClick={() => onCreate()}
-            aria-label="New root note"
-          >
-            <Plus />
-          </Button>
+          {canCreate && (
+            <Button
+              size="icon"
+              onClick={() => onCreate()}
+              aria-label="New root note"
+            >
+              <Plus />
+            </Button>
+          )}
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search notes..."
-            className="pl-9"
-          />
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+          <div className="relative min-w-0">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Search notes..."
+              className="w-full pl-9"
+            />
+          </div>
+          {scopeControl}
         </div>
       </div>
 
@@ -317,12 +351,14 @@ export function NoteTreeSidebar({
             expanded={expanded}
             onToggle={toggle}
             onSelect={onSelect}
-            onCreateChild={(parentId) => onCreate(parentId)}
+            onCreateChild={createChild}
             onDelete={onDelete}
             onSetPinned={onSetPinned}
             onDropInto={moveInto}
             onMoveUp={(item) => reorder(item, -1)}
             onMoveDown={(item) => reorder(item, 1)}
+            canEdit={canEdit}
+            editableNoteId={editableNoteId}
           />
         ))}
         {notes.length === 0 && (
@@ -331,7 +367,7 @@ export function NoteTreeSidebar({
             <p className="text-sm font-medium text-gray-700">
               {search ? "No matching notes" : "No notes yet"}
             </p>
-            {!search && (
+            {!search && canCreate && (
               <Button className="mt-4" size="sm" onClick={() => onCreate()}>
                 <Plus />
                 Create first note

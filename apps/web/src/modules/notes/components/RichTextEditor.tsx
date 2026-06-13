@@ -26,9 +26,11 @@ import { Button } from "@/shared/ui/button";
 export function RichTextEditor({
   content,
   onChange,
+  editable = true,
 }: {
   content: string;
   onChange: (content: string) => void;
+  editable?: boolean;
 }) {
   const lastEmittedContent = useRef(content);
   const editor = useEditor({
@@ -45,6 +47,7 @@ export function RichTextEditor({
     ],
     content,
     contentType: "markdown",
+    editable,
     editorProps: {
       attributes: {
         class: "min-h-full px-8 py-6 outline-none",
@@ -188,23 +191,27 @@ export function RichTextEditor({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 flex-wrap gap-1 border-b bg-gray-50 px-4 py-2">
-        {toolbarButtons.map(({ label, icon: Icon, active, disabled, action }) => (
-          <Button
-            key={label}
-            type="button"
-            variant={active ? "secondary" : "ghost"}
-            size="icon"
-            className="size-8"
-            disabled={disabled}
-            onClick={action}
-            aria-label={label}
-            title={label}
-          >
-            <Icon />
-          </Button>
-        ))}
-      </div>
+      {editable && (
+        <div className="flex shrink-0 flex-wrap gap-1 border-b bg-gray-50 px-4 py-2">
+          {toolbarButtons.map(
+            ({ label, icon: Icon, active, disabled, action }) => (
+              <Button
+                key={label}
+                type="button"
+                variant={active ? "secondary" : "ghost"}
+                size="icon"
+                className="size-8"
+                disabled={disabled}
+                onClick={action}
+                aria-label={label}
+                title={label}
+              >
+                <Icon />
+              </Button>
+            ),
+          )}
+        </div>
+      )}
       <EditorContent
         editor={editor}
         className="note-markdown rich-text-editor min-h-0 flex-1 overflow-y-auto"

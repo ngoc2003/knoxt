@@ -102,7 +102,7 @@ A comprehensive SaaS platform for freelancers to manage their business operation
    SMTP_SECURE=true
    SMTP_USER="your@gmail.com"
    SMTP_PASS="your_16_character_app_password"
-   SMTP_FROM="Taskio <your@gmail.com>"
+   SMTP_FROM="Knoxt.io <your@gmail.com>"
    ```
 
 5. **Setup the database**
@@ -438,6 +438,12 @@ docker run --rm \
 Open the Web application at http://localhost:8080. The Web container serves
 SPA routes through Nginx and falls back to `index.html`.
 
+The Web Nginx image also enables gzip, immutable caching for hashed assets,
+short caching for SEO files, SPA-safe no-cache behavior for `index.html`, and
+security headers. Production HTTPS termination and HTTP-to-HTTPS redirect must
+be configured in a reverse proxy or load balancer in front of port `8080`; see
+`README-DEPLOY-VPS.md`.
+
 Do not copy `.env` files into images. The root `.dockerignore` excludes them;
 API secrets must be supplied at runtime.
 
@@ -458,6 +464,12 @@ docker image history freelancer-web
 
 # Verify that the Web server supports SPA fallback
 curl -i http://localhost:8080/projects/example
+
+# Verify caching, content types, compression, and security headers
+curl -I http://localhost:8080/
+curl -I http://localhost:8080/robots.txt
+curl -I http://localhost:8080/sitemap.xml
+curl -H 'Accept-Encoding: gzip' -I http://localhost:8080/assets/example.js
 ```
 
 Expected container users:

@@ -4,14 +4,12 @@ import {
   FolderKanban,
   FileText,
   Settings,
-  Search,
   User,
   Users,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import LogoWithText from "@/shared/components/LogoWithText";
-import { Input } from "@/shared/ui/input";
 
 import { Button } from "@/shared/ui/button";
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
@@ -24,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { NotificationCenter } from "@/modules/notification/components/NotificationCenter";
+import { GlobalSearch } from "@/modules/notes/components/GlobalSearch";
 
 const navigation = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -109,14 +108,7 @@ export function Layout() {
         {/* Top Bar */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
           <div className="flex-1 max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search..."
-                className="pl-9 bg-gray-50 border-gray-200"
-              />
-            </div>
+            <GlobalSearch />
           </div>
 
           <div className="flex items-center gap-3">
