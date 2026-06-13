@@ -1,5 +1,7 @@
 import { Field, GraphQLISODateTime, InputType, Int } from '@nestjs/graphql';
 import {
+  ArrayNotEmpty,
+  ArrayUnique,
   IsArray,
   IsEnum,
   IsInt,
@@ -103,6 +105,24 @@ export class MoveTaskInput {
   @Field(() => Int)
   @IsInt()
   orderIndex: number;
+}
+
+@InputType()
+export class BulkMoveTasksInput {
+  @Field()
+  @IsUUID()
+  projectId: string;
+
+  @Field(() => [String])
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  @IsUUID(undefined, { each: true })
+  taskIds: string[];
+
+  @Field()
+  @IsString()
+  status: string;
 }
 
 @InputType()

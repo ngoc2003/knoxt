@@ -4,6 +4,7 @@ import { TasksService } from './tasks.service';
 import { Task } from './task.model';
 import { TaskPage } from './task-page.model';
 import {
+  BulkMoveTasksInput,
   CreateTaskInput,
   ListTasksInput,
   MoveTaskInput,
@@ -62,6 +63,15 @@ export class TasksResolver {
   @RequirePermission(Permission.projectEdit, 'task', 'input.id')
   moveTask(@CurrentUser() user: AuthUser, @Args('input') input: MoveTaskInput) {
     return this.tasksService.moveTask(user.id, input);
+  }
+
+  @Mutation(() => [Task])
+  @RequirePermission(Permission.projectEdit, 'project', 'input.projectId')
+  bulkMoveTasks(
+    @CurrentUser() user: AuthUser,
+    @Args('input') input: BulkMoveTasksInput,
+  ) {
+    return this.tasksService.bulkMoveTasks(user.id, input);
   }
 
   @Mutation(() => Task)

@@ -42,6 +42,12 @@ type AuthResponse {
   user: User!
 }
 
+input BulkMoveTasksInput {
+  projectId: String!
+  status: String!
+  taskIds: [String!]!
+}
+
 input CancelProjectInvitationInput {
   invitationId: String!
   projectId: String!
@@ -183,6 +189,7 @@ type Mutation {
   addNoteAttachment(data: AddNoteAttachmentInput!): NoteAttachment!
   addProjectMember(data: AddProjectMemberInput!): ProjectShareResult!
   assignNoteToProject(data: AssignNoteProjectInput!): Note!
+  bulkMoveTasks(input: BulkMoveTasksInput!): [Task!]!
   cancelProjectInvitation(data: CancelProjectInvitationInput!): ProjectInvitation!
   createAiSession(data: CreateAiSessionInput!): AiSession!
   createCustomer(data: CreateCustomerInput!): Customer!

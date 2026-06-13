@@ -4,6 +4,7 @@ import type {
   PageResult,
 } from '../../../../core/common/dtos/pagination.dto';
 import type {
+  BulkMoveTasksInput,
   CreateTaskInput,
   ListTasksInput,
   MoveTaskInput,
@@ -21,8 +22,10 @@ export interface ITaskRepository {
     pagination: PaginationInput,
   ): Promise<PageResult<TaskWithTags>>;
   findOne(userId: string, id: string): Promise<Task | null>;
+  findByIds(userId: string, ids: string[]): Promise<Task[]>;
   update(userId: string, id: string, data: UpdateTaskInput): Promise<Task>;
   moveTask(userId: string, input: MoveTaskInput): Promise<Task>;
+  bulkMoveTasks(userId: string, input: BulkMoveTasksInput): Promise<Task[]>;
   remove(userId: string, id: string): Promise<Task>;
   projectHasColumn(
     userId: string,

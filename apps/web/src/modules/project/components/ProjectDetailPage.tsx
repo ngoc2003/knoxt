@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   Columns3,
   FileText,
+  ListChecks,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
+  BULK_MOVE_TASKS_MUTATION,
   MOVE_TASK_MUTATION,
   CREATE_TASK_MUTATION,
   UPDATE_TASK_MUTATION,
@@ -41,6 +43,13 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { ProjectOverview } from "./ProjectOverview";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 
 interface Task {
   id: string;
@@ -112,6 +121,9 @@ export function ProjectDetailPage() {
   );
 
   const [moveTaskMutation] = useMutation(MOVE_TASK_MUTATION);
+  const [bulkMoveTasksMutation, { loading: bulkMoveLoading }] = useMutation(
+    BULK_MOVE_TASKS_MUTATION,
+  );
   const [updateProjectMutation] = useMutation(UPDATE_PROJECT_MUTATION);
   const [createTaskMutation] = useMutation(CREATE_TASK_MUTATION);
   const [updateTaskMutation] = useMutation(UPDATE_TASK_MUTATION);
@@ -131,6 +143,11 @@ export function ProjectDetailPage() {
   const [isDeleteProjectOpen, setIsDeleteProjectOpen] = useState(false);
   const [isProjectNotesOpen, setIsProjectNotesOpen] = useState(false);
   const [focusedProjectNoteId, setFocusedProjectNoteId] = useState<string>();
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [bulkStatus, setBulkStatus] = useState("");
 
   const [tasksState, setTasksState] = useState([] as Task[]);
   const [columnsState, setColumnsState] = useState([] as ProjectColumn[]);
@@ -141,6 +158,15 @@ export function ProjectDetailPage() {
       setTasksState(project.tasks);
     }
   }, [project]);
+
+  useEffect(() => {
+    if (
+      columnsState[0] &&
+      !columnsState.some((column) => column.key === bulkStatus)
+    ) {
+      setBulkStatus(columnsState[0].key);
+    }
+  }, [bulkStatus, columnsState]);
 
   useEffect(() => {
     if (project?.columns) {
@@ -190,6 +216,62 @@ export function ProjectDetailPage() {
       }
     } catch (error) {
       console.error("Failed to move task", error);
+    }
+  };
+
+  const handleTaskSelectionChange = (taskId: string, selected: boolean) => {
+    setSelectedTaskIds((current) => {
+      const next = new Set(current);
+      if (selected) next.add(taskId);
+      else next.delete(taskId);
+      return next;
+    });
+  };
+
+  const exitSelectionMode = () => {
+    setSelectedTaskIds(new Set());
+    setSelectionMode(false);
+  };
+
+  const handleBulkMoveTasks = async () => {
+    if (!projectId || !bulkStatus || selectedTaskIds.size === 0) return;
+
+    const columnOrder = new Map(
+      columnsState.map((column, index) => [column.key, index]),
+    );
+    const orderedTaskIds = tasksState
+      .filter((task) => selectedTaskIds.has(task.id))
+      .sort((a, b) => {
+        const statusOrder =
+          (columnOrder.get(a.status) ?? 0) - (columnOrder.get(b.status) ?? 0);
+        if (statusOrder !== 0) return statusOrder;
+        return a.orderKey.localeCompare(b.orderKey);
+      })
+      .map((task) => task.id);
+
+    try {
+      const { data } = await bulkMoveTasksMutation({
+        variables: {
+          input: { projectId, taskIds: orderedTaskIds, status: bulkStatus },
+        },
+      });
+      const movedTasks = (
+        data as { bulkMoveTasks?: Pick<Task, "id" | "status" | "orderKey">[] }
+      )?.bulkMoveTasks;
+      if (!movedTasks) {
+        throw new Error("The server did not return the moved tasks");
+      }
+
+      const movedById = new Map(movedTasks.map((task) => [task.id, task]));
+      setTasksState((currentTasks) =>
+        currentTasks.map((task) => ({
+          ...task,
+          ...(movedById.get(task.id) ?? {}),
+        })),
+      );
+      exitSelectionMode();
+    } catch (error) {
+      console.error("Failed to bulk move tasks", error);
     }
   };
 
@@ -327,7 +409,7 @@ export function ProjectDetailPage() {
 
   return (
     <div className="p-6">
-      <nav className="mb-4 text-sm flex items-center justify-between">
+      <nav className="sticky top-0 z-20 -mx-6 -mt-6 mb-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 text-sm shadow-sm">
         <div>
           <Button variant="ghost" onClick={() => navigate("/projects")}>
             <ArrowLeft />
@@ -354,6 +436,16 @@ export function ProjectDetailPage() {
           )}
           {canEdit && (
             <>
+              <Button
+                variant={selectionMode ? "secondary" : "outline"}
+                onClick={() => {
+                  if (selectionMode) exitSelectionMode();
+                  else setSelectionMode(true);
+                }}
+              >
+                <ListChecks />
+                {selectionMode ? "Cancel selection" : "Select tasks"}
+              </Button>
               <Button
                 size="icon"
                 className="min-w-36"
@@ -409,6 +501,36 @@ export function ProjectDetailPage() {
           setIsProjectNotesOpen(true);
         }}
       />
+      {selectionMode && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md border border-indigo-100 bg-indigo-50 p-3">
+          <span className="text-sm font-medium text-indigo-900">
+            {selectedTaskIds.size} selected
+          </span>
+          <Select value={bulkStatus} onValueChange={setBulkStatus}>
+            <SelectTrigger className="w-48 bg-white">
+              <SelectValue placeholder="Move to status" />
+            </SelectTrigger>
+            <SelectContent>
+              {columnsState.map((column) => (
+                <SelectItem key={column.id} value={column.key}>
+                  {column.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={() => void handleBulkMoveTasks()}
+            disabled={
+              selectedTaskIds.size === 0 || !bulkStatus || bulkMoveLoading
+            }
+          >
+            {bulkMoveLoading ? "Applying..." : "Apply"}
+          </Button>
+          <Button variant="ghost" onClick={exitSelectionMode}>
+            Cancel
+          </Button>
+        </div>
+      )}
       <DndProvider backend={HTML5Backend}>
         <KanbanBoard
           tasks={tasksState}
@@ -417,6 +539,9 @@ export function ProjectDetailPage() {
           moveColumn={handleMoveColumn}
           canEdit={canEdit}
           canManageColumns={isOwner}
+          selectionMode={selectionMode}
+          selectedTaskIds={selectedTaskIds}
+          onTaskSelectionChange={handleTaskSelectionChange}
           onTaskClick={(task) => {
             setSelectedTask(task as Task);
             setIsTaskModalOpen(true);

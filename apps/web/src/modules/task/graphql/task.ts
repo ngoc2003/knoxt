@@ -38,6 +38,16 @@ export const MOVE_TASK_MUTATION = gql`
   }
 `;
 
+export const BULK_MOVE_TASKS_MUTATION = gql`
+  mutation BulkMoveTasks($input: BulkMoveTasksInput!) {
+    bulkMoveTasks(input: $input) {
+      id
+      status
+      orderKey
+    }
+  }
+`;
+
 export const CREATE_TASK_MUTATION = gql`
   mutation CreateTask($input: CreateTaskInput!) {
     createTask(data: $input) {

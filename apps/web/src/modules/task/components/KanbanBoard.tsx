@@ -1,6 +1,7 @@
 import { useDrop, useDrag } from "react-dnd";
 import { useRef } from "react";
 import { Badge } from "../../../shared/ui/badge";
+import { Checkbox } from "../../../shared/ui/checkbox";
 import {
   Calendar,
   ClipboardList,
@@ -36,6 +37,9 @@ export function KanbanBoard({
   moveColumn,
   canEdit,
   canManageColumns,
+  selectionMode,
+  selectedTaskIds,
+  onTaskSelectionChange,
   onTaskClick,
 }: {
   tasks: Task[];
@@ -44,6 +48,9 @@ export function KanbanBoard({
   moveColumn: (columnId: string, targetColumnId: string) => void;
   canEdit: boolean;
   canManageColumns: boolean;
+  selectionMode: boolean;
+  selectedTaskIds: Set<string>;
+  onTaskSelectionChange: (taskId: string, selected: boolean) => void;
   onTaskClick: (task: Task) => void;
 }) {
   return (
@@ -67,6 +74,9 @@ export function KanbanBoard({
             moveColumn={moveColumn}
             canEdit={canEdit}
             canManageColumns={canManageColumns}
+            selectionMode={selectionMode}
+            selectedTaskIds={selectedTaskIds}
+            onTaskSelectionChange={onTaskSelectionChange}
             onTaskClick={onTaskClick}
             badgeClass="bg-indigo-50 text-indigo-600"
           />
@@ -87,6 +97,9 @@ interface ColumnProps {
   moveColumn: (columnId: string, targetColumnId: string) => void;
   canEdit: boolean;
   canManageColumns: boolean;
+  selectionMode: boolean;
+  selectedTaskIds: Set<string>;
+  onTaskSelectionChange: (taskId: string, selected: boolean) => void;
   onTaskClick: (task: Task) => void;
   badgeClass: string;
 }
@@ -105,12 +118,15 @@ function Column({
   moveColumn,
   canEdit,
   canManageColumns,
+  selectionMode,
+  selectedTaskIds,
+  onTaskSelectionChange,
   onTaskClick,
   badgeClass,
 }: ColumnProps) {
   const [{ isOver }, drop] = useDrop({
     accept: ITEM_TYPE,
-    canDrop: () => canEdit,
+    canDrop: () => canEdit && !selectionMode,
     drop: (item: { id: string }, monitor) => {
       if (!monitor.didDrop()) moveTask(item.id, status, tasks.length);
     },
@@ -120,7 +136,8 @@ function Column({
   });
   const [{ isColumnOver }, columnDrop] = useDrop({
     accept: COLUMN_TYPE,
-    canDrop: (item: { id: string }) => canManageColumns && item.id !== id,
+    canDrop: (item: { id: string }) =>
+      canManageColumns && !selectionMode && item.id !== id,
     drop: (item: { id: string }) => moveColumn(item.id, id),
     collect: (monitor) => ({
       isColumnOver: monitor.isOver() && monitor.canDrop(),
@@ -129,7 +146,7 @@ function Column({
   const [{ isColumnDragging }, columnDrag] = useDrag({
     type: COLUMN_TYPE,
     item: { id },
-    canDrag: canManageColumns,
+    canDrag: canManageColumns && !selectionMode,
     collect: (monitor) => ({
       isColumnDragging: monitor.isDragging(),
     }),
@@ -181,6 +198,9 @@ function Column({
             orderIndex={orderIndex}
             moveTask={moveTask}
             canEdit={canEdit}
+            selectionMode={selectionMode}
+            selected={selectedTaskIds.has(task.id)}
+            onSelectionChange={onTaskSelectionChange}
             onClick={onTaskClick}
           />
         ))}
@@ -222,6 +242,9 @@ interface TaskCardProps {
   orderIndex: number;
   moveTask: (taskId: string, newStatus: Status, newOrderIndex?: number) => void;
   canEdit: boolean;
+  selectionMode: boolean;
+  selected: boolean;
+  onSelectionChange: (taskId: string, selected: boolean) => void;
   onClick: (task: Task) => void;
 }
 
@@ -241,12 +264,16 @@ function TaskCard({
   orderIndex,
   moveTask,
   canEdit,
+  selectionMode,
+  selected,
+  onSelectionChange,
   onClick,
 }: TaskCardProps) {
   const suppressClick = useRef(false);
   const [{ isOver }, drop] = useDrop({
     accept: ITEM_TYPE,
-    canDrop: (item: { id: string }) => canEdit && item.id !== task.id,
+    canDrop: (item: { id: string }) =>
+      canEdit && !selectionMode && item.id !== task.id,
     drop: (item: { id: string }) => moveTask(item.id, status, orderIndex),
     collect: (monitor) => ({
       isOver: monitor.isOver({ shallow: true }) && monitor.canDrop(),
@@ -255,7 +282,7 @@ function TaskCard({
   const [{ isDragging }, drag] = useDrag({
     type: ITEM_TYPE,
     item: { id: task.id },
-    canDrag: canEdit,
+    canDrag: canEdit && !selectionMode,
     end: () => {
       suppressClick.current = true;
       window.setTimeout(() => {
@@ -296,21 +323,42 @@ function TaskCard({
         role={canEdit ? "button" : undefined}
         tabIndex={canEdit ? 0 : undefined}
         onClick={() => {
-          if (canEdit && !suppressClick.current) onClick(task);
+          if (!canEdit || suppressClick.current) return;
+          if (selectionMode) {
+            onSelectionChange(task.id, !selected);
+          } else {
+            onClick(task);
+          }
         }}
         onKeyDown={(event) => {
           if (canEdit && (event.key === "Enter" || event.key === " ")) {
             event.preventDefault();
-            onClick(task);
+            if (selectionMode) {
+              onSelectionChange(task.id, !selected);
+            } else {
+              onClick(task);
+            }
           }
         }}
         className={`p-4 bg-white rounded-sm border shadow-sm transition-all ${
           isOver
             ? "border-indigo-300 shadow-md -translate-y-0.5"
             : "border-gray-200 hover:shadow-md"
-        } ${canEdit ? "cursor-pointer" : ""} ${isDragging ? "opacity-40" : ""}`}
+        } ${selected ? "border-indigo-500 ring-2 ring-indigo-100" : ""} ${
+          canEdit ? "cursor-pointer" : ""
+        } ${isDragging ? "opacity-40" : ""}`}
       >
         <div className="flex items-start gap-2 mb-3">
+          {selectionMode && (
+            <Checkbox
+              checked={selected}
+              aria-label={`Select ${task.title}`}
+              onClick={(event) => event.stopPropagation()}
+              onCheckedChange={(checked) =>
+                onSelectionChange(task.id, checked === true)
+              }
+            />
+          )}
           <p className="text-sm font-medium text-gray-900 flex-1">
             {task.title}
           </p>

@@ -7,6 +7,7 @@ import {
 import { TASK_REPOSITORY } from '../../core/constants/repository.tokens';
 import type { ITaskRepository } from './application/ports/task.repository';
 import {
+  BulkMoveTasksInput,
   CreateTaskInput,
   ListTasksInput,
   MoveTaskInput,
@@ -67,6 +68,28 @@ export class TasksService {
     const task = await this.findOne(userId, input.id);
     await this.ensureProjectColumn(userId, task.projectId, input.status);
     return this.taskRepo.moveTask(userId, input);
+  }
+
+  async bulkMoveTasks(userId: string, input: BulkMoveTasksInput) {
+    if (input.taskIds.length === 0) {
+      throw new BadRequestException('At least one task must be selected');
+    }
+    if (new Set(input.taskIds).size !== input.taskIds.length) {
+      throw new BadRequestException('Task IDs must be unique');
+    }
+
+    await this.ensureProjectColumn(userId, input.projectId, input.status);
+    const tasks = await this.taskRepo.findByIds(userId, input.taskIds);
+    if (
+      tasks.length !== input.taskIds.length ||
+      tasks.some((task) => task.projectId !== input.projectId)
+    ) {
+      throw new BadRequestException(
+        'All selected tasks must exist in the specified project',
+      );
+    }
+
+    return this.taskRepo.bulkMoveTasks(userId, input);
   }
 
   async remove(userId: string, id: string) {
