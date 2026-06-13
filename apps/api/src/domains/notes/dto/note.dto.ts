@@ -12,6 +12,11 @@ import {
 
 @InputType()
 export class CreateNoteInput {
+  @Field(() => String, { nullable: true })
+  @IsUUID()
+  @IsOptional()
+  projectId?: string | null;
+
   @Field()
   @IsString()
   @MaxLength(500)
@@ -58,7 +63,28 @@ export class UpdateNoteInput {
 }
 
 @InputType()
+export class AssignNoteProjectInput {
+  @Field()
+  @IsUUID()
+  noteId: string;
+
+  @Field(() => String, { nullable: true })
+  @IsUUID()
+  @IsOptional()
+  projectId?: string | null;
+}
+
+@InputType()
 export class ListNotesInput {
+  @Field(() => String, { nullable: true })
+  @IsUUID()
+  @IsOptional()
+  projectId?: string;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  standaloneOnly?: boolean;
+
   @Field(() => String, { nullable: true })
   @IsString()
   @IsOptional()

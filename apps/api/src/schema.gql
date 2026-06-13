@@ -32,6 +32,11 @@ type AiSession {
   updatedAt: DateTime!
 }
 
+input AssignNoteProjectInput {
+  noteId: String!
+  projectId: String
+}
+
 type AuthResponse {
   accessToken: String!
   user: User!
@@ -57,6 +62,7 @@ input CreateNoteInput {
   content: String = ""
   customerId: String
   parentId: String
+  projectId: String
   title: String!
 }
 
@@ -73,12 +79,12 @@ input CreateProjectColumnInput {
 }
 
 input CreateProjectInput {
-  customerId: String!
+  customerId: String
   description: String
   endDate: String
   name: String!
-  startDate: String!
-  status: String!
+  startDate: String
+  status: ProjectStatus = active
 }
 
 input CreateTaskInput {
@@ -143,7 +149,9 @@ input ListCustomersInput {
 
 input ListNotesInput {
   customerId: String
+  projectId: String
   search: String
+  standaloneOnly: Boolean
 }
 
 input ListTasksInput {
@@ -174,6 +182,7 @@ input MoveTaskInput {
 type Mutation {
   addNoteAttachment(data: AddNoteAttachmentInput!): NoteAttachment!
   addProjectMember(data: AddProjectMemberInput!): ProjectShareResult!
+  assignNoteToProject(data: AssignNoteProjectInput!): Note!
   cancelProjectInvitation(data: CancelProjectInvitationInput!): ProjectInvitation!
   createAiSession(data: CreateAiSessionInput!): AiSession!
   createCustomer(data: CreateCustomerInput!): Customer!
@@ -218,9 +227,15 @@ type Note {
   id: ID!
   parentId: ID
   position: Int!
+  projectId: ID
   title: String!
   updatedAt: DateTime!
   version: Int!
+}
+
+type NoteAccess {
+  canEdit: Boolean!
+  canShare: Boolean!
 }
 
 type NoteAttachment {
@@ -255,6 +270,24 @@ type NotePublicLinkResult {
   token: String!
 }
 
+type NoteSearchPage {
+  items: [NoteSearchResult!]!
+  skip: Int!
+  take: Int!
+  total: Int!
+}
+
+type NoteSearchResult {
+  id: ID!
+  projectId: ID
+  projectName: String
+  score: Int!
+  snippet: String!
+  tags: [NoteTag!]!
+  title: String!
+  updatedAt: DateTime!
+}
+
 type NoteShare {
   id: ID!
   includeChildren: Boolean!
@@ -276,6 +309,7 @@ type NoteTreeItem {
   isPinned: Boolean!
   parentId: ID
   position: Int!
+  projectId: ID
   title: String!
   updatedAt: DateTime!
 }
@@ -315,16 +349,17 @@ enum Priority {
 type Project {
   columns: [ProjectColumn!]!
   createdAt: DateTime!
-  customer: Customer!
-  customerId: ID!
+  customer: Customer
+  customerId: ID
   description: String
   endDate: DateTime
   id: ID!
   invitations: [ProjectInvitation!]
   members: [ProjectMember!]
   name: String!
-  startDate: DateTime!
-  status: String!
+  noteCount: Int
+  startDate: DateTime
+  status: ProjectStatus!
   tasks: [Task!]!
   updatedAt: DateTime!
   userId: ID!
@@ -343,11 +378,39 @@ type ProjectInvitation {
   role: ProjectRole!
 }
 
+input ProjectListFilterInput {
+  customerId: String
+  ownership: String
+  search: String
+  status: ProjectStatus
+}
+
 type ProjectMember {
   id: ID!
   role: ProjectRole!
   user: User!
   userId: ID!
+}
+
+type ProjectOverview {
+  pinnedNotes: [ProjectOverviewNote!]!
+  recentAttachments: [ProjectOverviewAttachment!]!
+  recentNotes: [ProjectOverviewNote!]!
+}
+
+type ProjectOverviewAttachment {
+  createdAt: DateTime!
+  filename: String!
+  id: ID!
+  noteId: ID!
+  noteTitle: String!
+  url: String!
+}
+
+type ProjectOverviewNote {
+  id: ID!
+  title: String!
+  updatedAt: DateTime!
 }
 
 type ProjectPage {
@@ -370,6 +433,13 @@ type ProjectShareResult {
   status: String!
 }
 
+enum ProjectStatus {
+  active
+  archived
+  completed
+  on_hold
+}
+
 type PublicNote {
   content: String!
   id: ID!
@@ -390,16 +460,20 @@ type Query {
   customerDetail(id: String!): Customer!
   listCustomers(filter: ListCustomersInput, pagination: PaginationInput): CustomerPage!
   me: User!
+  noteAccess(id: String!): NoteAccess!
   noteDetail(id: String!): Note!
-  noteTrash: [Note!]!
-  noteTree(search: String): [NoteTreeItem!]!
+  noteTags: [NoteTag!]!
+  noteTrash(projectId: String, standaloneOnly: Boolean): [Note!]!
+  noteTree(projectId: String, search: String, standaloneOnly: Boolean, tagIds: [String!]): [NoteTreeItem!]!
   noteWorkspaceMeta(noteId: String!): NoteWorkspaceMeta!
   notes(filter: ListNotesInput, pagination: PaginationInput): NotePage!
   notifications: [Notification!]!
   projectDetail(id: String!): Project!
-  projects(customerId: String, pagination: PaginationInput): ProjectPage!
+  projectOverview(projectId: String!): ProjectOverview!
+  projects(filter: ProjectListFilterInput, pagination: PaginationInput): ProjectPage!
   projectsByCustomer(customerId: String!, pagination: PaginationInput): ProjectPage!
   publicNote(token: String!): PublicNoteResult!
+  searchNotes(input: SearchNotesInput, pagination: PaginationInput): NoteSearchPage!
   taskDetail(id: String!): Task!
   tasks(filter: ListTasksInput, pagination: PaginationInput): TaskPage!
 }
@@ -419,6 +493,13 @@ input RemoveProjectMemberInput {
 input ReorderProjectColumnsInput {
   columnIds: [String!]!
   projectId: String!
+}
+
+input SearchNotesInput {
+  projectId: String
+  query: String
+  standaloneOnly: Boolean
+  tagIds: [String!]
 }
 
 input SendAiMessageInput {
@@ -484,11 +565,12 @@ input UpdateNoteInput {
 }
 
 input UpdateProjectInput {
+  customerId: String
   description: String
   endDate: String
   name: String
   startDate: String
-  status: String
+  status: ProjectStatus
 }
 
 input UpdateProjectMemberRoleInput {

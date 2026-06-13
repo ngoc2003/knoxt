@@ -16,14 +16,17 @@ const RichTextEditor = lazy(() =>
 export function NoteEditor({
   note,
   onSaved,
+  canEdit = true,
 }: {
   note: NoteDetail;
   onSaved: (note: NoteDetail) => void;
+  canEdit?: boolean;
 }) {
   const [mode, setMode] = useState<EditorMode>("rich");
   const { title, setTitle, content, setContent, status } = useNoteAutosave(
     note,
     onSaved,
+    canEdit,
   );
 
   const statusText = {
@@ -43,6 +46,7 @@ export function NoteEditor({
             onChange={(event) => setTitle(event.target.value)}
             className="h-auto border-none bg-transparent px-0 text-xl font-semibold shadow-none focus-visible:ring-0"
             aria-label="Note title"
+            disabled={!canEdit}
           />
           <span
             className={`ml-auto shrink-0 text-xs ${
@@ -93,7 +97,11 @@ export function NoteEditor({
               </div>
             }
           >
-            <RichTextEditor content={content} onChange={setContent} />
+            <RichTextEditor
+              content={content}
+              onChange={setContent}
+              editable={canEdit}
+            />
           </Suspense>
         )}
         {(mode === "edit" || mode === "split") && (
@@ -104,6 +112,7 @@ export function NoteEditor({
               className="h-full min-h-0 field-sizing-fixed overflow-y-auto resize-none border-none bg-transparent font-mono text-sm leading-7 shadow-none focus-visible:ring-0"
               placeholder="Write Markdown..."
               aria-label="Note content"
+              disabled={!canEdit}
             />
           </div>
         )}

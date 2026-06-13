@@ -13,6 +13,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import {
   ArrowLeft,
   Columns3,
+  FileText,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -31,6 +32,7 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { ProjectMembersDialog } from "./ProjectMembersDialog";
 import { ManageProjectColumnsDialog } from "./ManageProjectColumnsDialog";
 import { DeleteConfirmDialog } from "@/shared/components/DeleteConfirmDialog";
+import { ProjectNotesDialog } from "./ProjectNotesDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +40,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
+import { ProjectOverview } from "./ProjectOverview";
 
 interface Task {
   id: string;
@@ -77,9 +80,9 @@ interface Project {
   name: string;
   description?: string;
   status: string;
-  startDate: string;
+  startDate?: string;
   endDate?: string;
-  customerId: string;
+  customerId?: string;
   tasks: Task[];
   columns: ProjectColumn[];
   members: {
@@ -126,6 +129,8 @@ export function ProjectDetailPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
   const [isDeleteProjectOpen, setIsDeleteProjectOpen] = useState(false);
+  const [isProjectNotesOpen, setIsProjectNotesOpen] = useState(false);
+  const [focusedProjectNoteId, setFocusedProjectNoteId] = useState<string>();
 
   const [tasksState, setTasksState] = useState([] as Task[]);
   const [columnsState, setColumnsState] = useState([] as ProjectColumn[]);
@@ -198,7 +203,8 @@ export function ProjectDetailPage() {
           name: projectData.name,
           description: projectData.description,
           status: projectData.status,
-          startDate: projectData.startDate,
+          customerId: projectData.customerId || null,
+          startDate: projectData.startDate || null,
           endDate: projectData.endDate || null,
         },
       },
@@ -329,6 +335,16 @@ export function ProjectDetailPage() {
           </Button>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setFocusedProjectNoteId(undefined);
+              setIsProjectNotesOpen(true);
+            }}
+          >
+            <FileText />
+            Documents
+          </Button>
           {isOwner && (
             <ProjectMembersDialog
               projectId={project.id}
@@ -386,6 +402,13 @@ export function ProjectDetailPage() {
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">
         {project.name}
       </h1>
+      <ProjectOverview
+        projectId={project.id}
+        onOpenDocument={(noteId) => {
+          setFocusedProjectNoteId(noteId);
+          setIsProjectNotesOpen(true);
+        }}
+      />
       <DndProvider backend={HTML5Backend}>
         <KanbanBoard
           tasks={tasksState}
@@ -447,6 +470,13 @@ export function ProjectDetailPage() {
         onConfirm={() => void handleDeleteProject()}
         title="Delete project?"
         description={`This will delete "${project.name}" and remove it for every project member.`}
+      />
+      <ProjectNotesDialog
+        projectId={project.id}
+        projectName={project.name}
+        focusedNoteId={focusedProjectNoteId}
+        open={isProjectNotesOpen}
+        onOpenChange={setIsProjectNotesOpen}
       />
     </div>
   );

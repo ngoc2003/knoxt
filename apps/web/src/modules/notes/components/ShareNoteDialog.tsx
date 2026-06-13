@@ -6,8 +6,6 @@ import {
   ExternalLink,
   Link2,
   RefreshCw,
-  Trash2,
-  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
@@ -21,18 +19,9 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Switch } from "@/shared/ui/switch";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
-import {
   CREATE_NOTE_PUBLIC_LINK_MUTATION,
   NOTE_WORKSPACE_META_QUERY,
-  REMOVE_NOTE_SHARE_MUTATION,
   REVOKE_NOTE_PUBLIC_LINK_MUTATION,
-  SHARE_NOTE_WITH_USER_MUTATION,
 } from "../graphql/note";
 import type { NoteWorkspaceMeta } from "../types/note";
 
@@ -46,9 +35,6 @@ export function ShareNoteDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [includeChildren, setIncludeChildren] = useState(false);
-  const [email, setEmail] = useState("");
-  const [permission, setPermission] = useState<"viewer" | "editor">("viewer");
-  const [userIncludeChildren, setUserIncludeChildren] = useState(true);
   const [latestUrl, setLatestUrl] = useState("");
   const metaQuery = useQuery(NOTE_WORKSPACE_META_QUERY, {
     variables: { noteId },
@@ -56,8 +42,6 @@ export function ShareNoteDialog({
   });
   const [createLink] = useMutation(CREATE_NOTE_PUBLIC_LINK_MUTATION);
   const [revokeLink] = useMutation(REVOKE_NOTE_PUBLIC_LINK_MUTATION);
-  const [shareNote] = useMutation(SHARE_NOTE_WITH_USER_MUTATION);
-  const [removeShare] = useMutation(REMOVE_NOTE_SHARE_MUTATION);
   const meta = (metaQuery.data as { noteWorkspaceMeta?: NoteWorkspaceMeta })
     ?.noteWorkspaceMeta;
   const hasActivePublicLink = Boolean(
@@ -78,29 +62,14 @@ export function ShareNoteDialog({
     toast.success("Public link copied.");
   };
 
-  const handleShare = async () => {
-    if (!email.trim()) return;
-    await shareNote({
-      variables: {
-        data: {
-          noteId,
-          email: email.trim(),
-          permission,
-          includeChildren: userIncludeChildren,
-        },
-      },
-    });
-    setEmail("");
-    await metaQuery.refetch();
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Share note</DialogTitle>
           <DialogDescription>
-            Create a public read-only link or grant access to a registered user.
+            Create a public read-only link. Internal access is managed through
+            project members.
           </DialogDescription>
         </DialogHeader>
 
@@ -204,76 +173,6 @@ export function ShareNoteDialog({
               </p>
             </div>
           )}
-        </section>
-
-        <section className="rounded-lg border p-4">
-          <p className="mb-3 text-sm font-medium">People with access</p>
-          <div className="flex gap-2">
-            <Input
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="person@example.com"
-            />
-            <Select
-              value={permission}
-              onValueChange={(value) =>
-                setPermission(value as "viewer" | "editor")
-              }
-            >
-              <SelectTrigger className="w-28">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="viewer">Viewer</SelectItem>
-                <SelectItem value="editor">Editor</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button size="icon" onClick={() => void handleShare()}>
-              <UserPlus />
-            </Button>
-          </div>
-          <label className="mt-3 flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 text-sm">
-            <span>
-              <span className="block font-medium">Include child notes</span>
-              <span className="block text-xs text-gray-500">
-                Permission is inherited by the current subtree.
-              </span>
-            </span>
-            <Switch
-              checked={userIncludeChildren}
-              onCheckedChange={setUserIncludeChildren}
-            />
-          </label>
-          <div className="mt-3 space-y-2">
-            {meta?.shares.map((share) => (
-              <div
-                key={share.userId}
-                className="flex items-center gap-3 rounded-md bg-gray-50 p-2"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
-                    {share.user.name}
-                  </p>
-                  <p className="truncate text-xs text-gray-500">
-                    {share.user.email} · {share.permission}
-                    {share.includeChildren ? " · includes children" : ""}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={async () => {
-                    await removeShare({
-                      variables: { noteId, userId: share.userId },
-                    });
-                    await metaQuery.refetch();
-                  }}
-                >
-                  <Trash2 className="text-red-600" />
-                </Button>
-              </div>
-            ))}
-          </div>
         </section>
       </DialogContent>
     </Dialog>

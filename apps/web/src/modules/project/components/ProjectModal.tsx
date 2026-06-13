@@ -25,8 +25,8 @@ interface Project {
   name: string;
   customerId?: string;
   client?: string; // for backward compatibility
-  status: "active" | "completed" | "on-hold";
-  startDate: string;
+  status: "active" | "on_hold" | "completed" | "archived";
+  startDate?: string;
   endDate?: string;
   description?: string;
   customerObj?: any;
@@ -70,8 +70,6 @@ export function ProjectModal({
 
   const [errors, setErrors] = useState<{
     name?: string;
-    customerId?: string;
-    startDate?: string;
   }>({});
 
   useEffect(() => {
@@ -103,20 +101,10 @@ export function ProjectModal({
   const validateForm = () => {
     const newErrors: {
       name?: string;
-      customerId?: string;
-      startDate?: string;
     } = {};
 
     if (!formData.name?.trim()) {
       newErrors.name = "Project name is required";
-    }
-
-    if (!formData.customerId) {
-      newErrors.customerId = "Client is required";
-    }
-
-    if (!formData.startDate) {
-      newErrors.startDate = "Start date is required";
     }
 
     setErrors(newErrors);
@@ -151,9 +139,6 @@ export function ProjectModal({
       customerId: customerObj?.id,
       customerObj,
     }));
-    if (errors.customerId) {
-      setErrors({ ...errors, customerId: undefined });
-    }
   };
 
   return (
@@ -191,16 +176,13 @@ export function ProjectModal({
           {/* Client (Customer) */}
           <div>
             <Label htmlFor="customer" className="text-gray-700 mb-2 block">
-              Client <span className="text-red-500">*</span>
+              Client <span className="text-gray-400">(optional)</span>
             </Label>
             <CustomerSelect
               value={formData.customerObj?.name || ""}
               onChange={handleCustomerChange}
               placeholder="Select or type customer..."
             />
-            {errors.customerId && (
-              <p className="text-red-500 text-sm mt-1.5">{errors.customerId}</p>
-            )}
           </div>
 
           {/* Status */}
@@ -210,9 +192,9 @@ export function ProjectModal({
             </Label>
             <Select
               value={formData.status}
-              onValueChange={(value: "active" | "completed" | "on-hold") =>
-                updateField("status", value)
-              }
+              onValueChange={(
+                value: "active" | "on_hold" | "completed" | "archived",
+              ) => updateField("status", value)}
             >
               <SelectTrigger className="border-gray-300">
                 <SelectValue />
@@ -220,7 +202,8 @@ export function ProjectModal({
               <SelectContent>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="on-hold">On Hold</SelectItem>
+                <SelectItem value="on_hold">On Hold</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -229,24 +212,15 @@ export function ProjectModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="startDate" className="text-gray-700 mb-2 block">
-                Start Date <span className="text-red-500">*</span>
+                Start Date <span className="text-gray-400">(optional)</span>
               </Label>
               <Input
                 id="startDate"
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => updateField("startDate", e.target.value)}
-                className={`${
-                  errors.startDate
-                    ? "border-red-500 focus-visible:ring-red-500"
-                    : "border-gray-300 focus-visible:ring-blue-500"
-                }`}
+                className="border-gray-300 focus-visible:ring-blue-500"
               />
-              {errors.startDate && (
-                <p className="text-red-500 text-sm mt-1.5">
-                  {errors.startDate}
-                </p>
-              )}
             </div>
             <div>
               <Label htmlFor="endDate" className="text-gray-700 mb-2 block">

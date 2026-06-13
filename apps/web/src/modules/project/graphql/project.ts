@@ -8,6 +8,9 @@ export const CREATE_PROJECT_MUTATION = gql`
       name
       description
       customerId
+      status
+      startDate
+      endDate
       createdAt
       updatedAt
     }
@@ -21,6 +24,9 @@ export const UPDATE_PROJECT_MUTATION = gql`
       name
       description
       customerId
+      status
+      startDate
+      endDate
       createdAt
       updatedAt
     }
@@ -36,8 +42,8 @@ export const DELETE_PROJECT_MUTATION = gql`
 `;
 
 export const PROJECTS_QUERY = gql`
-  query Projects($pagination: PaginationInput, $customerId: String) {
-    projects(pagination: $pagination, customerId: $customerId) {
+  query Projects($pagination: PaginationInput, $filter: ProjectListFilterInput) {
+    projects(pagination: $pagination, filter: $filter) {
       items {
         id
         name
@@ -46,6 +52,8 @@ export const PROJECTS_QUERY = gql`
         createdAt
         updatedAt
         status
+        noteCount
+        userId
         customer {
           id
           name
@@ -64,6 +72,16 @@ export const PROJECTS_QUERY = gql`
       total
       skip
       take
+    }
+  }
+`;
+
+export const PROJECT_OVERVIEW_QUERY = gql`
+  query ProjectOverview($projectId: String!) {
+    projectOverview(projectId: $projectId) {
+      recentNotes { id title updatedAt }
+      pinnedNotes { id title updatedAt }
+      recentAttachments { id noteId noteTitle filename url createdAt }
     }
   }
 `;

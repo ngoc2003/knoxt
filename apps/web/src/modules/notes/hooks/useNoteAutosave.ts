@@ -8,6 +8,7 @@ export type SaveStatus = "idle" | "saving" | "saved" | "error" | "conflict";
 export function useNoteAutosave(
   note: NoteDetail,
   onSaved?: (note: NoteDetail) => void,
+  enabled = true,
 ) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
@@ -28,9 +29,10 @@ export function useNoteAutosave(
     savedRef.current = { title: note.title, content: note.content };
     draftRef.current = { title: note.title, content: note.content };
     saveQueueRef.current = Promise.resolve();
-  }, [note.id]);
+  }, [note.content, note.id, note.title, note.version]);
 
   useEffect(() => {
+    if (!enabled) return;
     if (
       title === savedRef.current.title &&
       content === savedRef.current.content
@@ -81,7 +83,7 @@ export function useNoteAutosave(
     }, 800);
 
     return () => window.clearTimeout(timer);
-  }, [content, note.id, onSaved, title, updateNote]);
+  }, [content, enabled, note.id, onSaved, title, updateNote]);
 
   return { title, setTitle, content, setContent, status };
 }

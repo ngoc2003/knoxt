@@ -7,6 +7,7 @@ import {
   ProjectInvitation,
   ProjectMember,
   ProjectShareResult,
+  ProjectOverview,
 } from './project.model';
 import { ProjectPage } from './project-page.model';
 import {
@@ -19,6 +20,7 @@ import {
   ReorderProjectColumnsInput,
   UpdateProjectMemberRoleInput,
   UpdateProjectInput,
+  ProjectListFilterInput,
 } from './dto/project.dto';
 import { GqlAuthGuard } from '../../core/common/guards/gql-auth.guard';
 import {
@@ -39,9 +41,13 @@ export class ProjectsResolver {
   projects(
     @CurrentUser() user: AuthUser,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
-    @Args('customerId', { nullable: true }) customerId?: string,
+    @Args('filter', { nullable: true }) filter?: ProjectListFilterInput,
   ) {
-    return this.projectsService.findAll(user.id, pagination ?? {}, customerId);
+    return this.projectsService.findAll(
+      user.id,
+      pagination ?? {},
+      filter ?? {},
+    );
   }
 
   @Query(() => ProjectPage)
@@ -50,7 +56,18 @@ export class ProjectsResolver {
     @Args('customerId') customerId: string,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
   ) {
-    return this.projectsService.findAll(user.id, pagination ?? {}, customerId);
+    return this.projectsService.findAll(user.id, pagination ?? {}, {
+      customerId,
+    });
+  }
+
+  @Query(() => ProjectOverview)
+  @RequirePermission(Permission.projectRead, 'project', 'projectId')
+  projectOverview(
+    @CurrentUser() user: AuthUser,
+    @Args('projectId') projectId: string,
+  ) {
+    return this.projectsService.overview(user.id, projectId);
   }
 
   @Query(() => Project)

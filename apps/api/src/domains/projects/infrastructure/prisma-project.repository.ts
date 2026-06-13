@@ -12,6 +12,7 @@ import type {
   ReorderProjectColumnsInput,
   UpdateProjectMemberRoleInput,
   UpdateProjectInput,
+  ProjectListFilterInput,
 } from '../dto/project.dto';
 import type {
   IProjectRepository,
@@ -33,7 +34,7 @@ export class PrismaProjectRepository implements IProjectRepository {
     return {
       ...rest,
       userId,
-      startDate: new Date(startDate),
+      startDate: startDate ? new Date(startDate) : null,
       endDate: endDate ? new Date(endDate) : null,
       columns: {
         create: [
@@ -54,12 +55,39 @@ export class PrismaProjectRepository implements IProjectRepository {
   async findAll(
     userId: string,
     pagination: PaginationInput,
-    customerId?: string,
+    filter: ProjectListFilterInput = {},
   ) {
     const where: Prisma.ProjectWhereInput = {
       deletedAt: null,
-      ...this.accessibleBy(userId),
-      ...(customerId && { customerId }),
+      ...(filter.customerId && { customerId: filter.customerId }),
+      ...(filter.status && { status: filter.status }),
+      ...(filter.ownership === 'owned' ? { userId } : {}),
+      ...(filter.ownership === 'member'
+        ? { userId: { not: userId }, members: { some: { userId } } }
+        : {}),
+      AND: [
+        this.accessibleBy(userId),
+        ...(filter.search
+          ? [
+              {
+                OR: [
+                  {
+                    name: {
+                      contains: filter.search,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                  {
+                    description: {
+                      contains: filter.search,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                ],
+              },
+            ]
+          : []),
+      ],
     };
 
     const [items, total] = await Promise.all([
@@ -79,13 +107,17 @@ export class PrismaProjectRepository implements IProjectRepository {
           },
           members: { include: { user: true }, orderBy: { createdAt: 'asc' } },
           invitations: { orderBy: { createdAt: 'asc' } },
+          _count: { select: { notes: { where: { deletedAt: null } } } },
         },
       }),
       this.prisma.project.count({ where }),
     ]);
 
     return {
-      items: items as ProjectWithRelations[],
+      items: items.map(({ _count, ...project }) => ({
+        ...project,
+        noteCount: _count.notes,
+      })) as ProjectWithRelations[],
       total,
       skip: pagination.skip ?? 0,
       take: pagination.take ?? 20,
@@ -130,7 +162,10 @@ export class PrismaProjectRepository implements IProjectRepository {
           : {}),
         ...(data.status !== undefined ? { status: data.status } : {}),
         ...(data.startDate !== undefined
-          ? { startDate: new Date(data.startDate) }
+          ? { startDate: data.startDate ? new Date(data.startDate) : null }
+          : {}),
+        ...(data.customerId !== undefined
+          ? { customerId: data.customerId }
           : {}),
         ...(data.endDate !== undefined
           ? { endDate: data.endDate ? new Date(data.endDate) : null }

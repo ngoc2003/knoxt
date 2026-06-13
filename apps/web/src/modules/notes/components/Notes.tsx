@@ -12,7 +12,7 @@ import {
   PinOff,
   Share2,
 } from "lucide-react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { DeleteConfirmDialog } from "@/shared/components/DeleteConfirmDialog";
@@ -20,23 +20,35 @@ import {
   CREATE_NOTE_MUTATION,
   DELETE_NOTE_MUTATION,
   MOVE_NOTE_MUTATION,
+  NOTE_ACCESS_QUERY,
   NOTE_DETAIL_QUERY,
   NOTE_TRASH_QUERY,
   NOTE_TREE_QUERY,
+  NOTE_TAGS_QUERY,
   SET_NOTE_PINNED_MUTATION,
 } from "../graphql/note";
-import type { NoteDetail, NoteTreeItem } from "../types/note";
+import type { NoteDetail, NoteTag, NoteTreeItem } from "../types/note";
 import { NoteBreadcrumb } from "./NoteBreadcrumb";
 import { NoteEditor } from "./NoteEditor";
 import { NoteTreeSidebar } from "./NoteTreeSidebar";
 import { NoteDetailsDialog } from "./NoteDetailsDialog";
 import { NoteTrashDialog } from "./NoteTrashDialog";
 import { ShareNoteDialog } from "./ShareNoteDialog";
+import { PROJECT_DETAIL_QUERY } from "@/modules/project/graphql/project";
+import { PROJECTS_QUERY } from "@/modules/project/graphql/project";
+import { useAuth } from "@/modules/auth/context/AuthContext";
+import { NoteFiltersPopover } from "./NoteFiltersPopover";
 
 export function Notes() {
   const { noteId } = useParams();
+  const [searchParams] = useSearchParams();
+  const projectId = searchParams.get("projectId") ?? undefined;
+  const scope = projectId ?? searchParams.get("scope") ?? "all";
+  const standaloneOnly = scope === "standalone";
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
+  const [tagId, setTagId] = useState("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [noteToDelete, setNoteToDelete] = useState<NoteTreeItem | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
@@ -64,10 +76,27 @@ export function Notes() {
   }, [isFullScreen]);
 
   const treeQuery = useQuery(NOTE_TREE_QUERY, {
-    variables: { search: debouncedSearch || undefined },
+    variables: {
+      projectId,
+      standaloneOnly,
+      search: debouncedSearch || undefined,
+      tagIds: tagId === "all" ? undefined : [tagId],
+    },
     fetchPolicy: "cache-and-network",
   });
+  const tagsQuery = useQuery(NOTE_TAGS_QUERY);
+  const projectsQuery = useQuery(PROJECTS_QUERY, {
+    variables: { pagination: { skip: 0, take: 100 } },
+  });
+  const projectQuery = useQuery(PROJECT_DETAIL_QUERY, {
+    variables: { id: projectId ?? "" },
+    skip: !projectId,
+  });
   const detailQuery = useQuery(NOTE_DETAIL_QUERY, {
+    variables: { id: noteId ?? "" },
+    skip: !noteId,
+  });
+  const accessQuery = useQuery(NOTE_ACCESS_QUERY, {
     variables: { id: noteId ?? "" },
     skip: !noteId,
   });
@@ -79,21 +108,71 @@ export function Notes() {
   const [deleteNote, { loading: deleting }] = useMutation(
     DELETE_NOTE_MUTATION,
     {
-      refetchQueries: [{ query: NOTE_TRASH_QUERY }],
+      refetchQueries: [
+        {
+          query: NOTE_TRASH_QUERY,
+          variables: { projectId, standaloneOnly },
+        },
+      ],
       awaitRefetchQueries: true,
     },
   );
 
-  const notes =
-    (treeQuery.data as { noteTree?: NoteTreeItem[] })?.noteTree ?? [];
+  const notes = useMemo(
+    () => (treeQuery.data as { noteTree?: NoteTreeItem[] })?.noteTree ?? [],
+    [treeQuery.data],
+  );
   const selectedNote = (detailQuery.data as { noteDetail?: NoteDetail })
     ?.noteDetail;
+  const selectedAccess = (
+    accessQuery.data as {
+      noteAccess?: { canEdit: boolean; canShare: boolean };
+    }
+  )?.noteAccess;
+  const project = (
+    projectQuery.data as {
+      projectDetail?: {
+        userId: string;
+        members: { userId: string; role: "viewer" | "editor" | "admin" }[];
+      };
+    }
+  )?.projectDetail;
+  const projects =
+    (
+      projectsQuery.data as {
+        projects?: { items: { id: string; name: string }[] };
+      }
+    )?.projects?.items ?? [];
+  const tags = (tagsQuery.data as { noteTags?: NoteTag[] })?.noteTags ?? [];
+  const membership = project?.members.find(
+    (member) => member.userId === user?.id,
+  );
+  const isOwner = project?.userId === user?.id;
+  const projectCanEdit =
+    Boolean(isOwner) ||
+    membership?.role === "editor" ||
+    membership?.role === "admin";
+  const canEditTree = standaloneOnly || (Boolean(projectId) && projectCanEdit);
+  const canEditSelected = selectedAccess?.canEdit ?? false;
+  const canCreate = !projectId || projectCanEdit;
+  const canShare = selectedAccess?.canShare ?? false;
+  const notesPath = useCallback(
+    (id?: string) =>
+      `/notes${id ? `/${id}` : ""}${
+        projectId
+          ? `?projectId=${encodeURIComponent(projectId)}`
+          : standaloneOnly
+            ? "?scope=standalone"
+            : ""
+      }`,
+    [projectId, standaloneOnly],
+  );
 
   useEffect(() => {
     if (!noteId && !search && notes.length > 0) {
-      navigate(`/notes/${notes[0].id}`, { replace: true });
+      navigate(notesPath(notes[0].id), { replace: true });
     }
-  }, [navigate, noteId, notes, search]);
+  }, [navigate, noteId, notes, notesPath, search]);
 
   const notesById = useMemo(
     () => new Map(notes.map((note) => [note.id, note])),
@@ -101,18 +180,30 @@ export function Notes() {
   );
 
   const handleCreate = async (parentId?: string) => {
-    const result = await createNote({
-      variables: {
-        data: {
-          title: "Untitled",
-          content: "",
-          parentId,
+    const parent = parentId ? notesById.get(parentId) : undefined;
+    const canCreateChild =
+      !parentId ||
+      canEditTree ||
+      (parentId === noteId && canEditSelected);
+    if (!canCreate || !canCreateChild) return;
+    const targetProjectId = parent?.projectId ?? projectId;
+    try {
+      const result = await createNote({
+        variables: {
+          data: {
+            title: "Untitled",
+            content: "",
+            ...(targetProjectId ? { projectId: targetProjectId } : {}),
+            parentId,
+          },
         },
-      },
-    });
-    await treeQuery.refetch();
-    const created = (result.data as { createNote?: NoteDetail })?.createNote;
-    if (created) navigate(`/notes/${created.id}`);
+      });
+      await treeQuery.refetch();
+      const created = (result.data as { createNote?: NoteDetail })?.createNote;
+      if (created) navigate(notesPath(created.id));
+    } catch {
+      toast.error("Could not create that note.");
+    }
   };
 
   const handleMove = async (
@@ -148,7 +239,7 @@ export function Notes() {
     await treeQuery.refetch();
     setNoteToDelete(null);
     if (noteId === noteToDelete.id || isDescendantOf(noteId, noteToDelete.id)) {
-      navigate(fallbackId ? `/notes/${fallbackId}` : "/notes");
+      navigate(notesPath(fallbackId ?? undefined));
     }
   };
 
@@ -177,7 +268,7 @@ export function Notes() {
               selectedId={noteId}
               search={search}
               onSearchChange={setSearch}
-              onSelect={(id) => navigate(`/notes/${id}`)}
+              onSelect={(id) => navigate(notesPath(id))}
               onCreate={(parentId) => void handleCreate(parentId)}
               onDelete={setNoteToDelete}
               onSetPinned={(note, isPinned) =>
@@ -187,6 +278,29 @@ export function Notes() {
                 void handleMove(id, parentId, orderedIds)
               }
               onOpenTrash={() => setTrashOpen(true)}
+              canEdit={canEditTree}
+              canCreate={canCreate}
+              editableNoteId={canEditSelected ? noteId : undefined}
+              scopeControl={
+                <NoteFiltersPopover
+                  scope={scope}
+                  tagId={tagId}
+                  projects={projects}
+                  tags={tags}
+                  onScopeChange={(value) => {
+                    navigate(
+                      `/notes${
+                        value === "all"
+                          ? ""
+                          : value === "standalone"
+                            ? "?scope=standalone"
+                            : `?projectId=${encodeURIComponent(value)}`
+                      }`,
+                    );
+                  }}
+                  onTagChange={setTagId}
+                />
+              }
             />
           )}
 
@@ -195,35 +309,41 @@ export function Notes() {
               <div className="flex h-12 items-center border-b px-5">
                 <NoteBreadcrumb noteId={noteId} notes={notes} />
                 <div className="ml-auto flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      void handleSetPinned(
-                        noteId,
-                        !notesById.get(noteId)?.isPinned,
-                      )
-                    }
-                  >
-                    {notesById.get(noteId)?.isPinned ? <PinOff /> : <Pin />}
-                    {notesById.get(noteId)?.isPinned ? "Unpin" : "Pin"}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDetailsOpen(true)}
-                  >
-                    <Info />
-                    Details
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShareOpen(true)}
-                  >
-                    <Share2 />
-                    Share
-                  </Button>
+                  {canEditSelected && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        void handleSetPinned(
+                          noteId,
+                          !notesById.get(noteId)?.isPinned,
+                        )
+                      }
+                    >
+                      {notesById.get(noteId)?.isPinned ? <PinOff /> : <Pin />}
+                      {notesById.get(noteId)?.isPinned ? "Unpin" : "Pin"}
+                    </Button>
+                  )}
+                  {canEditSelected && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDetailsOpen(true)}
+                    >
+                      <Info />
+                      Details
+                    </Button>
+                  )}
+                  {canShare && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShareOpen(true)}
+                    >
+                      <Share2 />
+                      Share
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -258,6 +378,7 @@ export function Notes() {
                 key={selectedNote.id}
                 note={selectedNote}
                 onSaved={handleSaved}
+                canEdit={canEditSelected}
               />
             )}
             {!noteId && !treeQuery.loading && (
@@ -269,9 +390,11 @@ export function Notes() {
                 <p className="mt-1 text-sm text-gray-500">
                   Notes can contain both Markdown content and child notes.
                 </p>
-                <Button className="mt-5" onClick={() => void handleCreate()}>
-                  Create note
-                </Button>
+                {canCreate && (
+                  <Button className="mt-5" onClick={() => void handleCreate()}>
+                    Create note
+                  </Button>
+                )}
               </div>
             )}
           </main>
@@ -294,8 +417,20 @@ export function Notes() {
           />
           <NoteDetailsDialog
             noteId={noteId}
+            projectId={selectedNote?.projectId}
+            projects={projects}
             open={detailsOpen}
             onOpenChange={setDetailsOpen}
+            onProjectAssigned={(nextProjectId) => {
+              void treeQuery.refetch();
+              navigate(
+                `/notes/${noteId}${
+                  nextProjectId
+                    ? `?projectId=${encodeURIComponent(nextProjectId)}`
+                    : "?scope=standalone"
+                }`,
+              );
+            }}
           />
         </>
       )}
@@ -304,8 +439,11 @@ export function Notes() {
         onOpenChange={setTrashOpen}
         onRestored={(id) => {
           void treeQuery.refetch();
-          navigate(`/notes/${id}`);
+          navigate(notesPath(id));
         }}
+        projectId={projectId}
+        standaloneOnly={standaloneOnly}
+        canEdit={canEditTree}
       />
     </>
   );

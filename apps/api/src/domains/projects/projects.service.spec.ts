@@ -4,6 +4,7 @@ import { IProjectRepository } from './application/ports/project.repository';
 import { MailService } from '../../infrastructure/mail/mail.service';
 import { NotificationType, ProjectRole } from '../../core/common/enum/enums';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 
 describe('ProjectsService invitations', () => {
   const projectRepo = {
@@ -20,10 +21,12 @@ describe('ProjectsService invitations', () => {
   const notificationsService = {
     create: jest.fn(),
   } as unknown as jest.Mocked<NotificationsService>;
+  const prisma = {} as jest.Mocked<PrismaService>;
   const service = new ProjectsService(
     projectRepo,
     mailService,
     notificationsService,
+    prisma,
   );
 
   beforeEach(() => jest.clearAllMocks());

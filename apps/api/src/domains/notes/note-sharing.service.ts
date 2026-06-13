@@ -7,6 +7,8 @@ import {
 import { createHash, randomBytes } from 'crypto';
 import { Prisma, NotePermission } from 'database/generated/client';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
+import { ProjectAuthorizationService } from '../../core/authorization/project-authorization.service';
+import { Permission } from '../../core/common/enum/enums';
 import {
   AddNoteAttachmentInput,
   CreateNotePublicLinkInput,
@@ -16,7 +18,42 @@ import {
 
 @Injectable()
 export class NoteSharingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly projectAuthorization: ProjectAuthorizationService,
+  ) {}
+
+  tags(userId: string) {
+    return this.prisma.noteTag.findMany({
+      where: {
+        OR: [
+          { userId },
+          {
+            notes: {
+              some: {
+                note: {
+                  deletedAt: null,
+                  OR: [
+                    {
+                      projectId: null,
+                      OR: [{ userId }, { shares: { some: { userId } } }],
+                    },
+                    {
+                      project: {
+                        deletedAt: null,
+                        OR: [{ userId }, { members: { some: { userId } } }],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
 
   async createPublicLink(userId: string, data: CreateNotePublicLinkInput) {
     await this.assertOwner(userId, data.noteId);
@@ -61,20 +98,23 @@ export class NoteSharingService {
         tokenHash: this.hashToken(token),
         revokedAt: null,
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-        note: { deletedAt: null },
+        note: {
+          deletedAt: null,
+          OR: [{ projectId: null }, { project: { deletedAt: null } }],
+        },
       },
       include: { note: true },
     });
     if (!link) throw new NotFoundException('Shared note not found');
 
     const children = link.includeChildren
-      ? await this.descendants(link.noteId, link.note.userId)
+      ? await this.descendants(link.noteId, link.note.projectId)
       : [];
     return { note: this.toPublicNote(link.note), children };
   }
 
   async shareWithUser(userId: string, data: ShareNoteInput) {
-    const note = await this.assertOwner(userId, data.noteId);
+    const note = await this.assertStandaloneOwner(userId, data.noteId);
     const target = await this.prisma.user.findFirst({
       where: { email: { equals: data.email, mode: 'insensitive' } },
     });
@@ -83,7 +123,9 @@ export class NoteSharingService {
       throw new BadRequestException('Note owner already has access');
     }
     const descendantIds = data.includeChildren
-      ? (await this.descendantIds(data.noteId, note.userId)).map(({ id }) => id)
+      ? (await this.descendantIds(data.noteId, note.projectId)).map(
+          ({ id }) => id,
+        )
       : [];
     const sharedNoteIds = [data.noteId, ...descendantIds];
 
@@ -118,7 +160,7 @@ export class NoteSharingService {
   }
 
   async removeShare(userId: string, noteId: string, sharedUserId: string) {
-    await this.assertOwner(userId, noteId);
+    await this.assertStandaloneOwner(userId, noteId);
     const deleted = await this.prisma.noteShare.deleteMany({
       where: { sourceNoteId: noteId, userId: sharedUserId },
     });
@@ -201,24 +243,48 @@ export class NoteSharingService {
     return deleted;
   }
 
-  async trash(userId: string) {
+  async trash(userId: string, projectId?: string, standaloneOnly?: boolean) {
+    if (projectId) {
+      await this.projectAuthorization.assertPermission(
+        userId,
+        projectId,
+        Permission.projectRead,
+      );
+    }
     return this.prisma.note.findMany({
-      where: { userId, deletedAt: { not: null } },
+      where: {
+        deletedAt: { not: null },
+        ...(projectId ? { projectId } : {}),
+        ...(standaloneOnly ? { projectId: null } : {}),
+        OR: [
+          {
+            projectId: null,
+            OR: [{ userId }, { shares: { some: { userId } } }],
+          },
+          {
+            project: {
+              deletedAt: null,
+              OR: [{ userId }, { members: { some: { userId } } }],
+            },
+          },
+        ],
+      },
       orderBy: { deletedAt: 'desc' },
     });
   }
 
   async restore(userId: string, id: string) {
     const note = await this.prisma.note.findFirst({
-      where: { id, userId, deletedAt: { not: null } },
+      where: { id, deletedAt: { not: null } },
     });
     if (!note) throw new NotFoundException('Deleted note not found');
+    await this.assertEditableRecord(userId, note);
 
     const deletedParent = note.parentId
       ? await this.prisma.note.findFirst({
           where: {
             id: note.parentId,
-            userId,
+            projectId: note.projectId,
             deletedAt: { not: null },
           },
           select: { id: true },
@@ -232,11 +298,11 @@ export class NoteSharingService {
     await this.prisma.$executeRaw(Prisma.sql`
       WITH RECURSIVE subtree AS (
         SELECT "id" FROM "Note"
-        WHERE "id" = ${id} AND "userId" = ${userId} AND "deletedAt" = ${note.deletedAt}
+      WHERE "id" = ${id} AND "projectId" IS NOT DISTINCT FROM ${note.projectId} AND "deletedAt" = ${note.deletedAt}
         UNION ALL
         SELECT child."id" FROM "Note" child
         INNER JOIN subtree parent ON child."parentId" = parent."id"
-        WHERE child."userId" = ${userId} AND child."deletedAt" = ${note.deletedAt}
+        WHERE child."projectId" IS NOT DISTINCT FROM ${note.projectId} AND child."deletedAt" = ${note.deletedAt}
       )
       UPDATE "Note" SET "deletedAt" = NULL, "updatedAt" = CURRENT_TIMESTAMP
       WHERE "id" IN (SELECT "id" FROM subtree)
@@ -247,7 +313,7 @@ export class NoteSharingService {
 
   private async restoreChildAsNewTree(
     userId: string,
-    root: { id: string; deletedAt: Date | null },
+    root: { id: string; projectId: string | null; deletedAt: Date | null },
   ) {
     const deletedAt = root.deletedAt;
     if (!deletedAt) throw new NotFoundException('Deleted note not found');
@@ -257,12 +323,12 @@ export class NoteSharingService {
         WITH RECURSIVE subtree AS (
           SELECT "id" FROM "Note"
           WHERE "id" = ${root.id}
-            AND "userId" = ${userId}
+            AND "projectId" IS NOT DISTINCT FROM ${root.projectId}
             AND "deletedAt" = ${deletedAt}
           UNION ALL
           SELECT child."id" FROM "Note" child
           INNER JOIN subtree parent ON child."parentId" = parent."id"
-          WHERE child."userId" = ${userId}
+          WHERE child."projectId" IS NOT DISTINCT FROM ${root.projectId}
             AND child."deletedAt" = ${deletedAt}
         )
         SELECT "id" FROM subtree
@@ -282,7 +348,12 @@ export class NoteSharingService {
 
     return this.prisma.$transaction(async (tx) => {
       const lastRoot = await tx.note.findFirst({
-        where: { userId, parentId: null, deletedAt: null },
+        where: {
+          projectId: root.projectId,
+          ...(root.projectId ? {} : { userId }),
+          parentId: null,
+          deletedAt: null,
+        },
         orderBy: { position: 'desc' },
         select: { position: true },
       });
@@ -294,6 +365,7 @@ export class NoteSharingService {
         const cloned = await tx.note.create({
           data: {
             userId,
+            projectId: original.projectId,
             customerId: original.customerId,
             parentId: isRoot
               ? null
@@ -363,40 +435,83 @@ export class NoteSharingService {
 
   private async assertOwner(userId: string, noteId: string) {
     const note = await this.prisma.note.findFirst({
-      where: { id: noteId, userId, deletedAt: null },
+      where: { id: noteId, deletedAt: null },
     });
-    if (!note) throw new ForbiddenException('Only the note owner can do that');
+    if (!note) throw new ForbiddenException('You cannot access this note');
+    if (note.projectId) {
+      await this.projectAuthorization.assertPermission(
+        userId,
+        note.projectId,
+        Permission.projectManageMembers,
+      );
+    } else if (note.userId !== userId) {
+      throw new ForbiddenException('Only the note owner can do that');
+    }
+    return note;
+  }
+
+  private async assertStandaloneOwner(userId: string, noteId: string) {
+    const note = await this.prisma.note.findFirst({
+      where: { id: noteId, userId, projectId: null, deletedAt: null },
+    });
+    if (!note) {
+      throw new ForbiddenException(
+        'Direct user sharing is only available for standalone notes',
+      );
+    }
     return note;
   }
 
   private async assertReadable(userId: string, noteId: string) {
     const note = await this.prisma.note.findFirst({
-      where: {
-        id: noteId,
-        deletedAt: null,
-        OR: [{ userId }, { shares: { some: { userId } } }],
-      },
+      where: { id: noteId, deletedAt: null },
     });
     if (!note) throw new ForbiddenException('You cannot access this note');
+    if (note.projectId) {
+      await this.projectAuthorization.assertPermission(
+        userId,
+        note.projectId,
+        Permission.projectRead,
+      );
+    } else if (
+      note.userId !== userId &&
+      !(await this.prisma.noteShare.findFirst({ where: { noteId, userId } }))
+    ) {
+      throw new ForbiddenException('You cannot access this note');
+    }
     return note;
   }
 
   private async assertEditable(userId: string, noteId: string) {
     const note = await this.prisma.note.findFirst({
-      where: {
-        id: noteId,
-        deletedAt: null,
-        OR: [
-          { userId },
-          { shares: { some: { userId, permission: NotePermission.editor } } },
-        ],
-      },
+      where: { id: noteId, deletedAt: null },
     });
     if (!note) throw new ForbiddenException('You cannot edit this note');
+    await this.assertEditableRecord(userId, note);
     return note;
   }
 
-  private async descendants(noteId: string, userId: string) {
+  private async assertEditableRecord(
+    userId: string,
+    note: { id: string; userId: string; projectId: string | null },
+  ) {
+    if (note.projectId) {
+      await this.projectAuthorization.assertPermission(
+        userId,
+        note.projectId,
+        Permission.projectEdit,
+      );
+    } else if (
+      note.userId !== userId &&
+      !(await this.prisma.noteShare.findFirst({
+        where: { noteId: note.id, userId, permission: NotePermission.editor },
+      }))
+    ) {
+      throw new ForbiddenException('You cannot edit this note');
+    }
+  }
+
+  private async descendants(noteId: string, projectId: string | null) {
     return this.prisma.$queryRaw<
       Array<{
         id: string;
@@ -409,28 +524,28 @@ export class NoteSharingService {
     >(Prisma.sql`
       WITH RECURSIVE subtree AS (
         SELECT "id", "title", "content", "parentId", "position", "updatedAt" FROM "Note"
-        WHERE "parentId" = ${noteId} AND "userId" = ${userId} AND "deletedAt" IS NULL
+        WHERE "parentId" = ${noteId} AND "projectId" IS NOT DISTINCT FROM ${projectId} AND "deletedAt" IS NULL
         UNION ALL
         SELECT child."id", child."title", child."content", child."parentId", child."position", child."updatedAt"
         FROM "Note" child
         INNER JOIN subtree parent ON child."parentId" = parent."id"
-        WHERE child."userId" = ${userId} AND child."deletedAt" IS NULL
+        WHERE child."projectId" IS NOT DISTINCT FROM ${projectId} AND child."deletedAt" IS NULL
       )
       SELECT * FROM subtree ORDER BY "position" ASC
     `);
   }
 
-  private async descendantIds(noteId: string, userId: string) {
+  private async descendantIds(noteId: string, projectId: string | null) {
     return this.prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
       WITH RECURSIVE subtree AS (
         SELECT "id" FROM "Note"
         WHERE "parentId" = ${noteId}
-          AND "userId" = ${userId}
+          AND "projectId" IS NOT DISTINCT FROM ${projectId}
           AND "deletedAt" IS NULL
         UNION ALL
         SELECT child."id" FROM "Note" child
         INNER JOIN subtree parent ON child."parentId" = parent."id"
-        WHERE child."userId" = ${userId}
+        WHERE child."projectId" IS NOT DISTINCT FROM ${projectId}
           AND child."deletedAt" IS NULL
       )
       SELECT "id" FROM subtree

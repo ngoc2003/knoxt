@@ -1,9 +1,20 @@
 import { gql } from "@apollo/client";
 
 export const NOTE_TREE_QUERY = gql`
-  query NoteTree($search: String) {
-    noteTree(search: $search) {
+  query NoteTree(
+    $projectId: String
+    $standaloneOnly: Boolean
+    $search: String
+    $tagIds: [String!]
+  ) {
+    noteTree(
+      projectId: $projectId
+      standaloneOnly: $standaloneOnly
+      search: $search
+      tagIds: $tagIds
+    ) {
       id
+      projectId
       parentId
       title
       position
@@ -14,10 +25,45 @@ export const NOTE_TREE_QUERY = gql`
   }
 `;
 
+export const NOTE_TAGS_QUERY = gql`
+  query NoteTags {
+    noteTags {
+      id
+      name
+      color
+    }
+  }
+`;
+
+export const SEARCH_NOTES_QUERY = gql`
+  query SearchNotes($input: SearchNotesInput, $pagination: PaginationInput) {
+    searchNotes(input: $input, pagination: $pagination) {
+      items {
+        id
+        projectId
+        projectName
+        title
+        snippet
+        score
+        updatedAt
+        tags {
+          id
+          name
+          color
+        }
+      }
+      total
+      skip
+      take
+    }
+  }
+`;
+
 export const NOTE_DETAIL_QUERY = gql`
   query NoteDetail($id: String!) {
     noteDetail(id: $id) {
       id
+      projectId
       title
       content
       customerId
@@ -30,10 +76,20 @@ export const NOTE_DETAIL_QUERY = gql`
   }
 `;
 
+export const NOTE_ACCESS_QUERY = gql`
+  query NoteAccess($id: String!) {
+    noteAccess(id: $id) {
+      canEdit
+      canShare
+    }
+  }
+`;
+
 export const CREATE_NOTE_MUTATION = gql`
   mutation CreateNote($data: CreateNoteInput!) {
     createNote(data: $data) {
       id
+      projectId
       title
       content
       parentId
@@ -56,6 +112,19 @@ export const UPDATE_NOTE_MUTATION = gql`
       position
       version
       createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const ASSIGN_NOTE_PROJECT_MUTATION = gql`
+  mutation AssignNoteToProject($data: AssignNoteProjectInput!) {
+    assignNoteToProject(data: $data) {
+      id
+      projectId
+      parentId
+      position
+      version
       updatedAt
     }
   }
@@ -197,9 +266,10 @@ export const REMOVE_NOTE_ATTACHMENT_MUTATION = gql`
 `;
 
 export const NOTE_TRASH_QUERY = gql`
-  query NoteTrash {
-    noteTrash {
+  query NoteTrash($projectId: String, $standaloneOnly: Boolean) {
+    noteTrash(projectId: $projectId, standaloneOnly: $standaloneOnly) {
       id
+      projectId
       title
       content
       parentId

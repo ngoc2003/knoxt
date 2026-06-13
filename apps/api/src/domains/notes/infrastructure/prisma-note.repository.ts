@@ -4,6 +4,7 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import type { PaginationInput } from '../../../core/common/dtos/pagination.dto';
 import type {
   CreateNoteInput,
+  AssignNoteProjectInput,
   ListNotesInput,
   MoveNoteInput,
   UpdateNoteInput,
@@ -14,11 +15,29 @@ import type { INoteRepository } from '../application/ports/note.repository';
 export class PrismaNoteRepository implements INoteRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  private accessibleBy(userId: string): Prisma.NoteWhereInput {
+    return {
+      OR: [
+        {
+          projectId: null,
+          OR: [{ userId }, { shares: { some: { userId } } }],
+        },
+        {
+          project: {
+            deletedAt: null,
+            OR: [{ userId }, { members: { some: { userId } } }],
+          },
+        },
+      ],
+    };
+  }
+
   async create(userId: string, data: CreateNoteInput) {
     const { content = '', ...rest } = data;
     const lastSibling = await this.prisma.note.findFirst({
       where: {
-        userId,
+        projectId: data.projectId ?? null,
+        ...(data.projectId ? {} : { userId }),
         parentId: data.parentId ?? null,
         deletedAt: null,
       },
@@ -34,26 +53,6 @@ export class PrismaNoteRepository implements INoteRepository {
         position: (lastSibling?.position ?? -1) + 1,
       },
     });
-    if (note.parentId) {
-      const inheritedShares = await this.prisma.noteShare.findMany({
-        where: { noteId: note.parentId, includeChildren: true },
-        select: {
-          userId: true,
-          sourceNoteId: true,
-          permission: true,
-          includeChildren: true,
-        },
-      });
-      if (inheritedShares.length > 0) {
-        await this.prisma.noteShare.createMany({
-          data: inheritedShares.map((share) => ({
-            noteId: note.id,
-            ...share,
-          })),
-          skipDuplicates: true,
-        });
-      }
-    }
     await this.audit(userId, 'note.created', note.id);
     return note;
   }
@@ -66,7 +65,7 @@ export class PrismaNoteRepository implements INoteRepository {
     const where: Prisma.NoteWhereInput = {
       deletedAt: null,
       AND: [
-        { OR: [{ userId }, { shares: { some: { userId } } }] },
+        this.accessibleBy(userId),
         ...(filter.search
           ? [
               {
@@ -89,6 +88,8 @@ export class PrismaNoteRepository implements INoteRepository {
           : []),
       ],
       ...(filter.customerId && { customerId: filter.customerId }),
+      ...(filter.projectId && { projectId: filter.projectId }),
+      ...(filter.standaloneOnly && { projectId: null }),
     };
 
     const [items, total] = await Promise.all([
@@ -109,12 +110,20 @@ export class PrismaNoteRepository implements INoteRepository {
     };
   }
 
-  async findTree(userId: string, search?: string) {
+  async findTree(
+    userId: string,
+    projectId?: string | null,
+    standaloneOnly?: boolean,
+    search?: string,
+    tagIds?: string[],
+  ) {
     const items = await this.prisma.note.findMany({
       where: {
         deletedAt: null,
+        ...(projectId ? { projectId } : {}),
+        ...(standaloneOnly ? { projectId: null } : {}),
         AND: [
-          { OR: [{ userId }, { shares: { some: { userId } } }] },
+          this.accessibleBy(userId),
           ...(search
             ? [
                 {
@@ -135,10 +144,14 @@ export class PrismaNoteRepository implements INoteRepository {
                 },
               ]
             : []),
+          ...(tagIds?.length
+            ? [{ tags: { some: { tagId: { in: tagIds } } } }]
+            : []),
         ],
       },
       select: {
         id: true,
+        projectId: true,
         parentId: true,
         title: true,
         position: true,
@@ -152,7 +165,9 @@ export class PrismaNoteRepository implements INoteRepository {
             children: {
               where: {
                 deletedAt: null,
-                OR: [{ userId }, { shares: { some: { userId } } }],
+                ...(projectId ? { projectId } : {}),
+                ...(standaloneOnly ? { projectId: null } : {}),
+                ...this.accessibleBy(userId),
               },
             },
           },
@@ -173,14 +188,33 @@ export class PrismaNoteRepository implements INoteRepository {
       where: {
         id,
         deletedAt: null,
-        OR: [{ userId }, { shares: { some: { userId } } }],
+        ...this.accessibleBy(userId),
       },
     });
   }
 
-  async findOwnedOne(userId: string, id: string) {
+  async findInScope(userId: string, projectId: string | null, id: string) {
     return this.prisma.note.findFirst({
-      where: { id, userId, deletedAt: null },
+      where: {
+        id,
+        projectId,
+        deletedAt: null,
+        ...(projectId ? {} : { userId }),
+      },
+    });
+  }
+
+  async findStandaloneEditable(userId: string, id: string) {
+    return this.prisma.note.findFirst({
+      where: {
+        id,
+        projectId: null,
+        deletedAt: null,
+        OR: [
+          { userId },
+          { shares: { some: { userId, permission: 'editor' } } },
+        ],
+      },
     });
   }
 
@@ -192,20 +226,33 @@ export class PrismaNoteRepository implements INoteRepository {
     return Boolean(customer);
   }
 
-  async findSiblings(userId: string, parentId?: string | null) {
+  async findSiblings(
+    userId: string,
+    projectId: string | null,
+    parentId?: string | null,
+  ) {
     return this.prisma.note.findMany({
-      where: { userId, parentId: parentId ?? null, deletedAt: null },
+      where: {
+        projectId,
+        ...(projectId ? {} : { userId }),
+        parentId: parentId ?? null,
+        deletedAt: null,
+      },
       orderBy: { position: 'asc' },
     });
   }
 
-  async isDescendant(userId: string, noteId: string, candidateId: string) {
+  async isDescendant(
+    projectId: string | null,
+    noteId: string,
+    candidateId: string,
+  ) {
     const rows = await this.prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
       WITH RECURSIVE descendants AS (
         SELECT "id"
         FROM "Note"
         WHERE "parentId" = ${noteId}
-          AND "userId" = ${userId}
+          AND "projectId" IS NOT DISTINCT FROM ${projectId}
           AND "deletedAt" IS NULL
 
         UNION ALL
@@ -213,7 +260,7 @@ export class PrismaNoteRepository implements INoteRepository {
         SELECT child."id"
         FROM "Note" child
         INNER JOIN descendants parent ON child."parentId" = parent."id"
-        WHERE child."userId" = ${userId}
+        WHERE child."projectId" IS NOT DISTINCT FROM ${projectId}
           AND child."deletedAt" IS NULL
       )
       SELECT "id"
@@ -231,10 +278,6 @@ export class PrismaNoteRepository implements INoteRepository {
         id,
         deletedAt: null,
         version: expectedVersion,
-        OR: [
-          { userId },
-          { shares: { some: { userId, permission: 'editor' } } },
-        ],
       },
       data: { ...changes, version: { increment: 1 } },
     });
@@ -242,6 +285,69 @@ export class PrismaNoteRepository implements INoteRepository {
     const note = await this.prisma.note.findUniqueOrThrow({ where: { id } });
     await this.audit(userId, 'note.updated', id);
     return note;
+  }
+
+  async assignProject(userId: string, data: AssignNoteProjectInput) {
+    const projectId = data.projectId ?? null;
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.note.findUniqueOrThrow({
+        where: { id: data.noteId },
+      });
+      const subtree = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+        WITH RECURSIVE subtree AS (
+          SELECT "id"
+          FROM "Note"
+          WHERE "id" = ${data.noteId}
+            AND "projectId" IS NOT DISTINCT FROM ${current.projectId}
+            AND "deletedAt" IS NULL
+
+          UNION ALL
+
+          SELECT child."id"
+          FROM "Note" child
+          INNER JOIN subtree parent ON child."parentId" = parent."id"
+          WHERE child."projectId" IS NOT DISTINCT FROM ${current.projectId}
+            AND child."deletedAt" IS NULL
+        )
+        SELECT "id" FROM subtree
+      `);
+      const ids = subtree.map(({ id }) => id);
+      const lastRoot = await tx.note.findFirst({
+        where: {
+          projectId,
+          parentId: null,
+          deletedAt: null,
+          ...(projectId ? {} : { userId }),
+          id: { notIn: ids },
+        },
+        orderBy: { position: 'desc' },
+        select: { position: true },
+      });
+
+      await tx.note.updateMany({
+        where: { id: { in: ids } },
+        data: {
+          projectId,
+          ...(projectId ? {} : { userId }),
+          version: { increment: 1 },
+        },
+      });
+      await tx.note.update({
+        where: { id: data.noteId },
+        data: { parentId: null, position: (lastRoot?.position ?? -1) + 1 },
+      });
+      await tx.noteShare.deleteMany({ where: { noteId: { in: ids } } });
+      await tx.activityLog.create({
+        data: {
+          userId,
+          action: 'note.project-assigned',
+          entity: 'note',
+          entityId: data.noteId,
+          meta: { projectId, subtreeSize: ids.length },
+        },
+      });
+      return tx.note.findUniqueOrThrow({ where: { id: data.noteId } });
+    });
   }
 
   async setPinned(userId: string, id: string, isPinned: boolean) {
@@ -258,17 +364,11 @@ export class PrismaNoteRepository implements INoteRepository {
     return isPinned;
   }
 
-  async move(userId: string, data: MoveNoteInput) {
+  async move(userId: string, projectId: string | null, data: MoveNoteInput) {
     return this.prisma.$transaction(async (tx) => {
       const current = await tx.note.findFirstOrThrow({
-        where: { id: data.id, userId, deletedAt: null },
+        where: { id: data.id, projectId, deletedAt: null },
       });
-      const oldInheritedSources = current.parentId
-        ? await tx.noteShare.findMany({
-            where: { noteId: current.parentId, includeChildren: true },
-            select: { sourceNoteId: true },
-          })
-        : [];
       const destinationParentId = data.parentId ?? null;
 
       await tx.note.update({
@@ -285,7 +385,7 @@ export class PrismaNoteRepository implements INoteRepository {
       if (current.parentId !== destinationParentId) {
         const oldSiblings = await tx.note.findMany({
           where: {
-            userId,
+            projectId,
             parentId: current.parentId,
             deletedAt: null,
             id: { not: data.id },
@@ -298,49 +398,6 @@ export class PrismaNoteRepository implements INoteRepository {
             tx.note.update({ where: { id }, data: { position } }),
           ),
         );
-
-        const subtree = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
-          WITH RECURSIVE subtree AS (
-            SELECT "id" FROM "Note" WHERE "id" = ${data.id}
-            UNION ALL
-            SELECT child."id" FROM "Note" child
-            INNER JOIN subtree parent ON child."parentId" = parent."id"
-            WHERE child."userId" = ${userId} AND child."deletedAt" IS NULL
-          )
-          SELECT "id" FROM subtree
-        `);
-        const subtreeIds = subtree.map(({ id }) => id);
-        const oldSourceIds = oldInheritedSources.map(
-          ({ sourceNoteId }) => sourceNoteId,
-        );
-        if (oldSourceIds.length > 0) {
-          await tx.noteShare.deleteMany({
-            where: {
-              noteId: { in: subtreeIds },
-              sourceNoteId: { in: oldSourceIds },
-            },
-          });
-        }
-
-        if (destinationParentId) {
-          const destinationShares = await tx.noteShare.findMany({
-            where: { noteId: destinationParentId, includeChildren: true },
-            select: {
-              userId: true,
-              sourceNoteId: true,
-              permission: true,
-              includeChildren: true,
-            },
-          });
-          if (destinationShares.length > 0) {
-            await tx.noteShare.createMany({
-              data: subtreeIds.flatMap((noteId) =>
-                destinationShares.map((share) => ({ noteId, ...share })),
-              ),
-              skipDuplicates: true,
-            });
-          }
-        }
       }
 
       await tx.activityLog.create({
@@ -356,14 +413,14 @@ export class PrismaNoteRepository implements INoteRepository {
     });
   }
 
-  async remove(userId: string, id: string) {
+  async remove(userId: string, projectId: string | null, id: string) {
     const deletedAt = new Date();
     await this.prisma.$executeRaw(Prisma.sql`
       WITH RECURSIVE subtree AS (
         SELECT "id"
         FROM "Note"
         WHERE "id" = ${id}
-          AND "userId" = ${userId}
+          AND "projectId" IS NOT DISTINCT FROM ${projectId}
           AND "deletedAt" IS NULL
 
         UNION ALL
@@ -371,7 +428,7 @@ export class PrismaNoteRepository implements INoteRepository {
         SELECT child."id"
         FROM "Note" child
         INNER JOIN subtree parent ON child."parentId" = parent."id"
-        WHERE child."userId" = ${userId}
+        WHERE child."projectId" IS NOT DISTINCT FROM ${projectId}
           AND child."deletedAt" IS NULL
       )
       UPDATE "Note"

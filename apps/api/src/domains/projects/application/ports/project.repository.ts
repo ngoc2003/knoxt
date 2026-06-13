@@ -21,15 +21,17 @@ import type {
   ReorderProjectColumnsInput,
   UpdateProjectMemberRoleInput,
   UpdateProjectInput,
+  ProjectListFilterInput,
 } from '../../dto/project.dto';
 
 export type ProjectWithRelations = Project & {
   user: User;
-  customer: Customer;
+  customer: Customer | null;
   tasks: Task[];
   columns: ProjectColumn[];
   members: (ProjectMember & { user: User })[];
   invitations: ProjectInvitation[];
+  noteCount?: number;
 };
 
 export interface IProjectRepository {
@@ -37,7 +39,7 @@ export interface IProjectRepository {
   findAll(
     userId: string,
     pagination: PaginationInput,
-    customerId?: string,
+    filter?: ProjectListFilterInput,
   ): Promise<PageResult<ProjectWithRelations>>;
   findOne(userId: string, id: string): Promise<ProjectWithRelations | null>;
   update(

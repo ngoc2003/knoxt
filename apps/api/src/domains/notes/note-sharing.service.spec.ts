@@ -40,7 +40,10 @@ describe('NoteSharingService', () => {
     $queryRaw: jest.fn(),
     $transaction: jest.fn(),
   } as unknown as jest.Mocked<PrismaService>;
-  const service = new NoteSharingService(prisma);
+  const projectAuthorization = {
+    assertPermission: jest.fn(),
+  };
+  const service = new NoteSharingService(prisma, projectAuthorization as never);
 
   beforeEach(() => jest.clearAllMocks());
 

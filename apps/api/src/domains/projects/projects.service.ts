@@ -17,11 +17,13 @@ import {
   ReorderProjectColumnsInput,
   UpdateProjectMemberRoleInput,
   UpdateProjectInput,
+  ProjectListFilterInput,
 } from './dto/project.dto';
 import { PaginationInput } from '../../core/common/dtos/pagination.dto';
 import { MailService } from '../../infrastructure/mail/mail.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../../core/common/enum/enums';
+import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 
 @Injectable()
 export class ProjectsService {
@@ -30,6 +32,7 @@ export class ProjectsService {
     private readonly projectRepo: IProjectRepository,
     private readonly mailService: MailService,
     private readonly notificationsService: NotificationsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async create(userId: string, data: CreateProjectInput) {
@@ -39,9 +42,41 @@ export class ProjectsService {
   async findAll(
     userId: string,
     pagination: PaginationInput,
-    customerId?: string,
+    filter: ProjectListFilterInput = {},
   ) {
-    return this.projectRepo.findAll(userId, pagination, customerId);
+    return this.projectRepo.findAll(userId, pagination, filter);
+  }
+
+  async overview(userId: string, projectId: string) {
+    await this.findOne(userId, projectId);
+    const [recentNotes, pinnedNotes, attachments] = await Promise.all([
+      this.prisma.note.findMany({
+        where: { projectId, deletedAt: null },
+        orderBy: { updatedAt: 'desc' },
+        take: 6,
+        select: { id: true, title: true, updatedAt: true },
+      }),
+      this.prisma.note.findMany({
+        where: { projectId, deletedAt: null, pins: { some: { userId } } },
+        orderBy: { updatedAt: 'desc' },
+        take: 6,
+        select: { id: true, title: true, updatedAt: true },
+      }),
+      this.prisma.attachment.findMany({
+        where: { note: { projectId, deletedAt: null } },
+        orderBy: { createdAt: 'desc' },
+        take: 6,
+        include: { note: { select: { title: true } } },
+      }),
+    ]);
+    return {
+      recentNotes,
+      pinnedNotes,
+      recentAttachments: attachments.map(({ note, ...attachment }) => ({
+        ...attachment,
+        noteTitle: note.title,
+      })),
+    };
   }
 
   async findOne(userId: string, id: string) {
