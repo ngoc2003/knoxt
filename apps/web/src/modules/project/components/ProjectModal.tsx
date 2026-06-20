@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { CustomerSelect } from "../../customer/components/CustomerSelect";
+import { RichTextEditor } from "@/modules/notes/components/RichTextEditor";
 import { Button } from "../../../shared/ui/button";
 import { Input } from "../../../shared/ui/input";
 import { Label } from "../../../shared/ui/label";
-import { Textarea } from "../../../shared/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -241,13 +241,12 @@ export function ProjectModal({
             <Label htmlFor="description" className="text-gray-700 mb-2 block">
               Description
             </Label>
-            <Textarea
-              id="description"
-              placeholder="Add project details, requirements, or notes..."
-              value={formData.description}
-              onChange={(e) => updateField("description", e.target.value)}
-              className="min-h-[100px] border-gray-300 focus-visible:ring-blue-500"
-            />
+            <div className="flex h-64 overflow-hidden rounded-md border border-gray-300 bg-white">
+              <RichTextEditor
+                content={formData.description ?? ""}
+                onChange={(value) => updateField("description", value)}
+              />
+            </div>
           </div>
 
           {/* Footer Buttons */}

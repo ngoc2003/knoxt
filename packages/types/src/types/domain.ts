@@ -31,6 +31,7 @@ export enum NotificationType {
   welcome = "welcome",
   projectMemberAdded = "project-member-added",
   projectDeleted = "project-deleted",
+  projectAccessRequest = "project-access-request",
 }
 
 export interface Notification {

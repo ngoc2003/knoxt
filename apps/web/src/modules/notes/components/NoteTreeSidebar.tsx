@@ -28,6 +28,11 @@ import type { NoteTreeItem, NoteTreeNode } from "../types/note";
 
 const NOTE_TREE_ITEM = "NOTE_TREE_ITEM";
 
+interface NoteProject {
+  id: string;
+  name: string;
+}
+
 function buildTree(notes: NoteTreeItem[]) {
   const nodes = new Map<string, NoteTreeNode>(
     notes.map((note) => [note.id, { ...note, children: [] }]),
@@ -209,6 +214,7 @@ function TreeRow({
 
 export function NoteTreeSidebar({
   notes,
+  projects,
   selectedId,
   search,
   onSearchChange,
@@ -224,6 +230,7 @@ export function NoteTreeSidebar({
   scopeControl,
 }: {
   notes: NoteTreeItem[];
+  projects: NoteProject[];
   selectedId?: string;
   search: string;
   onSearchChange: (value: string) => void;
@@ -244,6 +251,28 @@ export function NoteTreeSidebar({
 }) {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const tree = useMemo(() => buildTree(notes), [notes]);
+  const projectSections = useMemo(() => {
+    const notesByProject = new Map<string, NoteTreeNode[]>();
+    for (const note of tree) {
+      if (!note.projectId) continue;
+      const group = notesByProject.get(note.projectId) ?? [];
+      group.push(note);
+      notesByProject.set(note.projectId, group);
+    }
+
+    return projects
+      .map((project) => ({
+        ...project,
+        notes: notesByProject.get(project.id) ?? [],
+      }))
+      .filter((project) => project.notes.length > 0);
+  }, [projects, tree]);
+  const standaloneTree = useMemo(
+    () => tree.filter((note) => !note.projectId),
+    [tree],
+  );
+  const hasSectionedNotes =
+    projectSections.length > 0 || standaloneTree.length > 0;
   const [, rootDrop] = useDrop({
     accept: NOTE_TREE_ITEM,
     canDrop: () => canEdit,
@@ -342,26 +371,55 @@ export function NoteTreeSidebar({
         }}
         className="min-h-0 flex-1 overflow-y-auto p-2"
       >
-        {tree.map((note) => (
-          <TreeRow
-            key={note.id}
-            note={note}
-            depth={0}
-            selectedId={selectedId}
-            expanded={expanded}
-            onToggle={toggle}
-            onSelect={onSelect}
-            onCreateChild={createChild}
-            onDelete={onDelete}
-            onSetPinned={onSetPinned}
-            onDropInto={moveInto}
-            onMoveUp={(item) => reorder(item, -1)}
-            onMoveDown={(item) => reorder(item, 1)}
-            canEdit={canEdit}
-            editableNoteId={editableNoteId}
-          />
+        {projectSections.map((project) => (
+          <NoteSection key={project.id} title={project.name}>
+            {project.notes.map((note) => (
+              <TreeRow
+                key={note.id}
+                note={note}
+                depth={0}
+                selectedId={selectedId}
+                expanded={expanded}
+                onToggle={toggle}
+                onSelect={onSelect}
+                onCreateChild={createChild}
+                onDelete={onDelete}
+                onSetPinned={onSetPinned}
+                onDropInto={moveInto}
+                onMoveUp={(item) => reorder(item, -1)}
+                onMoveDown={(item) => reorder(item, 1)}
+                canEdit={canEdit}
+                editableNoteId={editableNoteId}
+              />
+            ))}
+          </NoteSection>
         ))}
-        {notes.length === 0 && (
+
+        {standaloneTree.length > 0 && (
+          <NoteSection title="Other notes">
+            {standaloneTree.map((note) => (
+              <TreeRow
+                key={note.id}
+                note={note}
+                depth={0}
+                selectedId={selectedId}
+                expanded={expanded}
+                onToggle={toggle}
+                onSelect={onSelect}
+                onCreateChild={createChild}
+                onDelete={onDelete}
+                onSetPinned={onSetPinned}
+                onDropInto={moveInto}
+                onMoveUp={(item) => reorder(item, -1)}
+                onMoveDown={(item) => reorder(item, 1)}
+                canEdit={canEdit}
+                editableNoteId={editableNoteId}
+              />
+            ))}
+          </NoteSection>
+        )}
+
+        {!hasSectionedNotes && (
           <div className="flex h-64 flex-col items-center justify-center px-6 text-center">
             <FolderInput className="mb-3 size-8 text-gray-300" />
             <p className="text-sm font-medium text-gray-700">
@@ -394,5 +452,22 @@ export function NoteTreeSidebar({
         </button>
       </div>
     </aside>
+  );
+}
+
+function NoteSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="mb-4 last:mb-0">
+      <div className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+        {title}
+      </div>
+      <div className="space-y-0.5">{children}</div>
+    </section>
   );
 }

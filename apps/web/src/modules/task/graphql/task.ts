@@ -94,3 +94,15 @@ export const UPDATE_TASK_MUTATION = gql`
     }
   }
 `;
+
+export const REQUEST_TASK_PROJECT_ACCESS_MUTATION = gql`
+  mutation RequestTaskProjectAccess($taskId: String!) {
+    requestTaskProjectAccess(taskId: $taskId)
+  }
+`;
+
+export const APPROVE_TASK_PROJECT_ACCESS_MUTATION = gql`
+  mutation ApproveTaskProjectAccess($projectId: String!, $requesterId: String!) {
+    approveTaskProjectAccess(projectId: $projectId, requesterId: $requesterId)
+  }
+`;

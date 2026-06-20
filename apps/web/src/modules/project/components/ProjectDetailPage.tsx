@@ -12,15 +12,21 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import {
   ArrowLeft,
+  BookOpen,
+  CalendarDays,
+  CheckCircle2,
+  ChevronDown,
   Columns3,
   FileText,
   ListChecks,
   MoreHorizontal,
   Pencil,
   Plus,
+  Library,
   Trash2,
+  UsersRound,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import {
   BULK_MOVE_TASKS_MUTATION,
   MOVE_TASK_MUTATION,
@@ -50,6 +56,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import { StructuredKnowledge } from "./StructuredKnowledge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/shared/ui/collapsible";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { cn } from "@/shared/ui/utils";
 
 interface Task {
   id: string;
@@ -108,17 +122,18 @@ interface Project {
 }
 
 export function ProjectDetailPage() {
-  const { projectId } = useParams();
+  const { projectId, taskId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { data: projectData, loading: projectLoading } = useQuery(
-    PROJECT_DETAIL_QUERY,
-    {
-      variables: { id: projectId },
-      skip: !projectId,
-    },
-  );
+  const {
+    data: projectData,
+    loading: projectLoading,
+    error: projectError,
+  } = useQuery(PROJECT_DETAIL_QUERY, {
+    variables: { id: projectId },
+    skip: !projectId,
+  });
 
   const [moveTaskMutation] = useMutation(MOVE_TASK_MUTATION);
   const [bulkMoveTasksMutation, { loading: bulkMoveLoading }] = useMutation(
@@ -148,16 +163,41 @@ export function ProjectDetailPage() {
     () => new Set(),
   );
   const [bulkStatus, setBulkStatus] = useState("");
+  const [documentsOverviewOpen, setDocumentsOverviewOpen] = useState(false);
+  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
+  const [workspaceView, setWorkspaceView] = useState<"tasks" | "resources">(
+    "tasks",
+  );
 
   const [tasksState, setTasksState] = useState([] as Task[]);
   const [columnsState, setColumnsState] = useState([] as ProjectColumn[]);
 
   // Update tasks state when project data changes
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (project?.tasks) {
       setTasksState(project.tasks);
     }
   }, [project]);
+
+  useEffect(() => {
+    if (!projectError || !projectId) return;
+    navigate("/projects", {
+      replace: true,
+      state: {
+        accessDeniedProjectId: projectId,
+        accessDeniedTaskId: taskId,
+      },
+    });
+  }, [navigate, projectError, projectId, taskId]);
+
+  useEffect(() => {
+    if (!taskId || tasksState.length === 0) return;
+    const routedTask = tasksState.find((task) => task.id === taskId);
+    if (!routedTask) return;
+    setSelectedTask(routedTask);
+    setIsTaskModalOpen(true);
+    setWorkspaceView("tasks");
+  }, [taskId, tasksState]);
 
   useEffect(() => {
     if (
@@ -168,7 +208,7 @@ export function ProjectDetailPage() {
     }
   }, [bulkStatus, columnsState]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (project?.columns) {
       setColumnsState(
         [...project.columns].sort(
@@ -389,6 +429,9 @@ export function ProjectDetailPage() {
   const closeTaskModal = () => {
     setIsTaskModalOpen(false);
     setSelectedTask(null);
+    if (taskId && projectId) {
+      navigate(`/projects/${projectId}`, { replace: true });
+    }
   };
 
   const handleDeleteProject = async () => {
@@ -397,7 +440,19 @@ export function ProjectDetailPage() {
     navigate("/projects");
   };
 
-  if (projectLoading) return <div>Loading...</div>;
+  if (projectLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-8 w-72" />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
+        </div>
+      </div>
+    );
+  }
   if (!project) return <div>Project not found.</div>;
 
   const membership = project.members.find(
@@ -406,16 +461,40 @@ export function ProjectDetailPage() {
   const isOwner = project.userId === user?.id;
   const canEdit =
     isOwner || membership?.role === "editor" || membership?.role === "admin";
+  const canViewActivity = isOwner || membership?.role === "admin";
+  const completedTasks = tasksState.filter((task) => {
+    const status = task.status.toLowerCase();
+    return status.includes("done") || status.includes("complete");
+  }).length;
+  const overdueTasks = tasksState.filter(
+    (task) => task.dueDate && new Date(task.dueDate) < new Date(),
+  ).length;
+  const projectDateRange = [project.startDate, project.endDate]
+    .filter(Boolean)
+    .map((date) =>
+      new Date(date as string).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      }),
+    )
+    .join(" - ");
+  const statusToneByStatus: Record<string, string> = {
+    active: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    completed: "border-sky-200 bg-sky-50 text-sky-700",
+    archived: "border-slate-200 bg-slate-50 text-slate-600",
+    paused: "border-amber-200 bg-amber-50 text-amber-700",
+  };
+  const statusTone =
+    statusToneByStatus[project.status?.toLowerCase?.() ?? ""] ??
+    "border-indigo-200 bg-indigo-50 text-indigo-700";
 
   return (
-    <div className="p-6">
-      <nav className="sticky top-0 z-20 -mx-6 -mt-6 mb-4 flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 text-sm shadow-sm">
-        <div>
-          <Button variant="ghost" onClick={() => navigate("/projects")}>
-            <ArrowLeft />
-            Project List
-          </Button>
-        </div>
+    <div className="min-h-full bg-[#f6f8fb]">
+      <nav className="sticky top-0 z-20 flex items-center justify-between border-b border-white/80 bg-white/90 px-6 py-3 text-sm shadow-sm backdrop-blur">
+        <Button variant="ghost" onClick={() => navigate("/projects")}>
+          <ArrowLeft />
+          Projects
+        </Button>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -434,7 +513,7 @@ export function ProjectDetailPage() {
               invitations={project.invitations}
             />
           )}
-          {canEdit && (
+          {canEdit && workspaceView === "tasks" && (
             <>
               <Button
                 variant={selectionMode ? "secondary" : "outline"}
@@ -444,12 +523,10 @@ export function ProjectDetailPage() {
                 }}
               >
                 <ListChecks />
-                {selectionMode ? "Cancel selection" : "Select tasks"}
+                {selectionMode ? "Cancel" : "Select"}
               </Button>
               <Button
-                size="icon"
-                className="min-w-36"
-                variant="default"
+                className="bg-indigo-600 hover:bg-indigo-700"
                 aria-label="Add new task"
                 onClick={() => {
                   setSelectedTask(null);
@@ -457,7 +534,7 @@ export function ProjectDetailPage() {
                 }}
               >
                 <Plus />
-                Add new task
+                Add task
               </Button>
             </>
           )}
@@ -491,63 +568,183 @@ export function ProjectDetailPage() {
           )}
         </div>
       </nav>
-      <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-        {project.name}
-      </h1>
-      <ProjectOverview
-        projectId={project.id}
-        onOpenDocument={(noteId) => {
-          setFocusedProjectNoteId(noteId);
-          setIsProjectNotesOpen(true);
-        }}
-      />
-      {selectionMode && (
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md border border-indigo-100 bg-indigo-50 p-3">
-          <span className="text-sm font-medium text-indigo-900">
-            {selectedTaskIds.size} selected
-          </span>
-          <Select value={bulkStatus} onValueChange={setBulkStatus}>
-            <SelectTrigger className="w-48 bg-white">
-              <SelectValue placeholder="Move to status" />
-            </SelectTrigger>
-            <SelectContent>
-              {columnsState.map((column) => (
-                <SelectItem key={column.id} value={column.key}>
-                  {column.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            onClick={() => void handleBulkMoveTasks()}
-            disabled={
-              selectedTaskIds.size === 0 || !bulkStatus || bulkMoveLoading
-            }
-          >
-            {bulkMoveLoading ? "Applying..." : "Apply"}
-          </Button>
-          <Button variant="ghost" onClick={exitSelectionMode}>
-            Cancel
-          </Button>
+
+      <div className="space-y-5 p-6">
+        <section className="rounded-lg border border-white bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className="min-w-0">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    "rounded-md border px-2.5 py-1 text-xs font-semibold capitalize",
+                    statusTone,
+                  )}
+                >
+                  {project.status}
+                </span>
+                {projectDateRange && (
+                  <span className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600">
+                    <CalendarDays className="size-3.5" />
+                    {projectDateRange}
+                  </span>
+                )}
+              </div>
+              <h1 className="truncate text-2xl font-semibold text-gray-950">
+                {project.name}
+              </h1>
+              {project.description && (
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-500">
+                  {project.description}
+                </p>
+              )}
+            </div>
+            <div className="grid min-w-full grid-cols-2 gap-3 sm:grid-cols-4 xl:min-w-[33rem]">
+              <ProjectMetric
+                label="Tasks"
+                value={tasksState.length}
+                icon={<Columns3 className="size-4" />}
+                className="bg-indigo-50 text-indigo-700"
+              />
+              <ProjectMetric
+                label="Done"
+                value={completedTasks}
+                icon={<CheckCircle2 className="size-4" />}
+                className="bg-emerald-50 text-emerald-700"
+              />
+              <ProjectMetric
+                label="Due"
+                value={overdueTasks}
+                icon={<CalendarDays className="size-4" />}
+                className="bg-rose-50 text-rose-700"
+              />
+              <ProjectMetric
+                label="Members"
+                value={project.members.length + 1}
+                icon={<UsersRound className="size-4" />}
+                className="bg-amber-50 text-amber-700"
+              />
+            </div>
+          </div>
+        </section>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex w-fit rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+            <Button
+              size="sm"
+              variant={workspaceView === "tasks" ? "default" : "ghost"}
+              onClick={() => setWorkspaceView("tasks")}
+            >
+              <Columns3 />
+              Board
+            </Button>
+            <Button
+              size="sm"
+              variant={workspaceView === "resources" ? "default" : "ghost"}
+              onClick={() => setWorkspaceView("resources")}
+            >
+              <Library />
+              Resources
+            </Button>
+          </div>
+          {workspaceView === "tasks" && (
+            <p className="text-sm text-gray-500">
+              Drag cards to reorder work. Drag column headers to tune the flow.
+            </p>
+          )}
         </div>
-      )}
-      <DndProvider backend={HTML5Backend}>
-        <KanbanBoard
-          tasks={tasksState}
-          columns={columnsState}
-          moveTask={handleMoveTask}
-          moveColumn={handleMoveColumn}
-          canEdit={canEdit}
-          canManageColumns={isOwner}
-          selectionMode={selectionMode}
-          selectedTaskIds={selectedTaskIds}
-          onTaskSelectionChange={handleTaskSelectionChange}
-          onTaskClick={(task) => {
-            setSelectedTask(task as Task);
-            setIsTaskModalOpen(true);
-          }}
-        />
-      </DndProvider>
+
+        {workspaceView === "tasks" && selectionMode && (
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-indigo-100 bg-indigo-50 p-3 shadow-sm">
+            <span className="rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-indigo-900">
+              {selectedTaskIds.size} selected
+            </span>
+            <Select value={bulkStatus} onValueChange={setBulkStatus}>
+              <SelectTrigger className="w-48 bg-white">
+                <SelectValue placeholder="Move to status" />
+              </SelectTrigger>
+              <SelectContent>
+                {columnsState.map((column) => (
+                  <SelectItem key={column.id} value={column.key}>
+                    {column.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={() => void handleBulkMoveTasks()}
+              disabled={
+                selectedTaskIds.size === 0 || !bulkStatus || bulkMoveLoading
+              }
+            >
+              {bulkMoveLoading ? "Applying..." : "Apply move"}
+            </Button>
+            <Button variant="ghost" onClick={exitSelectionMode}>
+              Cancel
+            </Button>
+          </div>
+        )}
+
+        {workspaceView === "tasks" && (
+          <DndProvider backend={HTML5Backend}>
+            <KanbanBoard
+              tasks={tasksState}
+              columns={columnsState}
+              moveTask={handleMoveTask}
+              moveColumn={handleMoveColumn}
+              canEdit={canEdit}
+              canManageColumns={isOwner}
+              selectionMode={selectionMode}
+              selectedTaskIds={selectedTaskIds}
+              onTaskSelectionChange={handleTaskSelectionChange}
+              onTaskClick={(task) => {
+                setSelectedTask(task as Task);
+                setIsTaskModalOpen(true);
+              }}
+            />
+          </DndProvider>
+        )}
+        {workspaceView === "resources" && (
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Project resources
+              </h2>
+              <p className="text-sm text-gray-500">
+                Open supporting documents and structured knowledge only when you
+                need them.
+              </p>
+            </div>
+            <ResourcePanel
+              icon={<BookOpen className="size-4" />}
+              title="Document overview"
+              description="Recent documents, pinned documents and attachments"
+              open={documentsOverviewOpen}
+              onOpenChange={setDocumentsOverviewOpen}
+            >
+              <ProjectOverview
+                projectId={project.id}
+                onOpenDocument={(noteId) => {
+                  setFocusedProjectNoteId(noteId);
+                  setIsProjectNotesOpen(true);
+                }}
+              />
+            </ResourcePanel>
+            <ResourcePanel
+              icon={<Library className="size-4" />}
+              title="Structured Knowledge"
+              description="Decisions, meetings, requirements, search and activity"
+              open={knowledgeOpen}
+              onOpenChange={setKnowledgeOpen}
+            >
+              <StructuredKnowledge
+                projectId={project.id}
+                canEdit={canEdit}
+                canViewActivity={canViewActivity}
+              />
+            </ResourcePanel>
+          </section>
+        )}
+      </div>
       <ProjectModal
         isOpen={isProjectModalOpen}
         onClose={() => setIsProjectModalOpen(false)}
@@ -604,5 +801,84 @@ export function ProjectDetailPage() {
         onOpenChange={setIsProjectNotesOpen}
       />
     </div>
+  );
+}
+
+function ProjectMetric({
+  label,
+  value,
+  icon,
+  className,
+}: {
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  className: string;
+}) {
+  return (
+    <div className="rounded-lg border border-gray-100 bg-gray-50/60 p-3">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-gray-500">{label}</span>
+        <span
+          className={cn(
+            "flex size-7 items-center justify-center rounded-md",
+            className,
+          )}
+        >
+          {icon}
+        </span>
+      </div>
+      <p className="text-xl font-semibold text-gray-950">{value}</p>
+    </div>
+  );
+}
+
+function ResourcePanel({
+  icon,
+  title,
+  description,
+  open,
+  onOpenChange,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Collapsible open={open} onOpenChange={onOpenChange}>
+      <div className="rounded-xl border bg-white">
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-4 p-4 text-left hover:bg-gray-50"
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="rounded-md bg-gray-100 p-2 text-gray-600">
+                {icon}
+              </span>
+              <span className="min-w-0">
+                <span className="block font-medium text-gray-900">{title}</span>
+                <span className="block truncate text-sm text-gray-500">
+                  {description}
+                </span>
+              </span>
+            </span>
+            <ChevronDown
+              className={cn(
+                "size-4 shrink-0 text-gray-500 transition-transform",
+                open && "rotate-180",
+              )}
+            />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="border-t p-4">{open ? children : null}</div>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
   );
 }

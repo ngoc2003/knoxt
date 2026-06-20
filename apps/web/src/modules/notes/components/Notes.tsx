@@ -265,6 +265,7 @@ export function Notes() {
           {!isFullScreen && (
             <NoteTreeSidebar
               notes={notes}
+              projects={projects}
               selectedId={noteId}
               search={search}
               onSearchChange={setSearch}

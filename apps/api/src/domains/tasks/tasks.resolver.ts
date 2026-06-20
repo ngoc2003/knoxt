@@ -79,4 +79,25 @@ export class TasksResolver {
   deleteTask(@CurrentUser() user: AuthUser, @Args('id') id: string) {
     return this.tasksService.remove(user.id, id);
   }
+
+  @Mutation(() => Boolean)
+  requestTaskProjectAccess(
+    @CurrentUser() user: AuthUser,
+    @Args('taskId') taskId: string,
+  ) {
+    return this.tasksService.requestProjectAccess(user.id, taskId);
+  }
+
+  @Mutation(() => Boolean)
+  approveTaskProjectAccess(
+    @CurrentUser() user: AuthUser,
+    @Args('projectId') projectId: string,
+    @Args('requesterId') requesterId: string,
+  ) {
+    return this.tasksService.approveProjectAccess(
+      user.id,
+      projectId,
+      requesterId,
+    );
+  }
 }

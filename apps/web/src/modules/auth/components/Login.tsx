@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -14,6 +14,10 @@ export function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (
+    location.state as { from?: { pathname?: string; search?: string } }
+  )?.from;
 
   const formik = useFormik({
     initialValues: {
@@ -35,7 +39,9 @@ export function Login() {
           email: values.email,
           password: values.password,
         });
-        navigate("/dashboard");
+        navigate(`${from?.pathname ?? "/dashboard"}${from?.search ?? ""}`, {
+          replace: true,
+        });
       } catch {
         // The Apollo error link shows the server-provided user message.
       } finally {
@@ -173,6 +179,7 @@ export function Login() {
               Don't have an account?{" "}
               <Link
                 to="/register"
+                state={{ from }}
                 className="text-blue-500 hover:text-blue-600 font-medium"
               >
                 Sign up

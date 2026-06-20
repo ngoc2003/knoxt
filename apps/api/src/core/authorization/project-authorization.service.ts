@@ -9,6 +9,7 @@ const ROLE_PERMISSIONS: Record<ProjectRole, Permission[]> = {
     Permission.projectRead,
     Permission.projectEdit,
     Permission.projectManageMembers,
+    Permission.projectViewAudit,
   ],
 };
 

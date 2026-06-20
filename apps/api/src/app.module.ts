@@ -20,6 +20,7 @@ import { NotificationsModule } from './domains/notifications/notifications.modul
 import { validateEnvironment } from './config/env.validation';
 import { HealthModule } from './infrastructure/health/health.module';
 import { LoggingModule } from './infrastructure/logging/logging.module';
+import { ProjectKnowledgeModule } from './domains/project-knowledge/project-knowledge.module';
 
 @Module({
   controllers: [VoyagerController],
@@ -51,6 +52,7 @@ import { LoggingModule } from './infrastructure/logging/logging.module';
     ProjectsModule,
     TasksModule,
     NotesModule,
+    ProjectKnowledgeModule,
     AiModule,
   ],
 })
