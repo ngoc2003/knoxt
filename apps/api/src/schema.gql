@@ -2,6 +2,36 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type ActionItem {
+  assignee: User
+  assigneeId: ID
+  createdAt: DateTime!
+  deletedAt: DateTime
+  description: String
+  dueDate: DateTime
+  externalAssigneeName: String
+  id: ID!
+  meetingId: ID!
+  promotedTask: Task
+  promotedTaskId: ID
+  status: ActionItemStatus!
+  title: String!
+  updatedAt: DateTime!
+}
+
+enum ActionItemStatus {
+  cancelled
+  completed
+  open
+}
+
+input AddMeetingParticipantInput {
+  externalEmail: String
+  externalName: String
+  meetingId: String!
+  userId: String
+}
+
 input AddNoteAttachmentInput {
   filename: String!
   mimeType: String
@@ -53,6 +83,16 @@ input CancelProjectInvitationInput {
   projectId: String!
 }
 
+input CreateActionItemInput {
+  assigneeId: String
+  description: String
+  dueDate: DateTime
+  externalAssigneeName: String
+  meetingId: String!
+  status: ActionItemStatus
+  title: String!
+}
+
 input CreateAiSessionInput {
   title: String
 }
@@ -62,6 +102,27 @@ input CreateCustomerInput {
   email: String
   name: String!
   phone: String
+}
+
+input CreateDecisionInput {
+  decidedAt: DateTime
+  description: String!
+  impact: String
+  projectId: String!
+  reason: String
+  sourceNoteId: String
+  status: DecisionStatus
+  title: String!
+}
+
+input CreateMeetingInput {
+  projectId: String!
+  recordingUrl: String
+  scheduledAt: DateTime!
+  sourceNoteId: String
+  status: MeetingStatus
+  summary: String
+  title: String!
 }
 
 input CreateNoteInput {
@@ -91,6 +152,15 @@ input CreateProjectInput {
   name: String!
   startDate: String
   status: ProjectStatus = active
+}
+
+input CreateRequirementInput {
+  description: String!
+  priority: RequirementPriority
+  projectId: String!
+  sourceNoteId: String
+  status: RequirementStatus
+  title: String!
 }
 
 input CreateTaskInput {
@@ -143,6 +213,36 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type Decision {
+  createdAt: DateTime!
+  decidedAt: DateTime
+  deletedAt: DateTime
+  description: String!
+  id: ID!
+  impact: String
+  projectId: ID!
+  reason: String
+  sourceNoteId: ID
+  status: DecisionStatus!
+  title: String!
+  updatedAt: DateTime!
+}
+
+type DecisionPage {
+  hasMore: Boolean!
+  items: [Decision!]!
+  skip: Int!
+  take: Int!
+  total: Int!
+}
+
+enum DecisionStatus {
+  accepted
+  proposed
+  rejected
+  superseded
+}
+
 input DeleteProjectColumnInput {
   columnId: String!
   projectId: String!
@@ -173,6 +273,44 @@ input LoginInput {
   password: String!
 }
 
+type Meeting {
+  actionItems: [ActionItem!]!
+  createdAt: DateTime!
+  deletedAt: DateTime
+  id: ID!
+  participants: [MeetingParticipant!]!
+  projectId: ID!
+  recordingUrl: String
+  scheduledAt: DateTime!
+  sourceNoteId: ID
+  status: MeetingStatus!
+  summary: String
+  title: String!
+  updatedAt: DateTime!
+}
+
+type MeetingPage {
+  hasMore: Boolean!
+  items: [Meeting!]!
+  skip: Int!
+  take: Int!
+  total: Int!
+}
+
+type MeetingParticipant {
+  externalEmail: String
+  externalName: String
+  id: ID!
+  user: User
+  userId: ID
+}
+
+enum MeetingStatus {
+  cancelled
+  completed
+  scheduled
+}
+
 input MoveNoteInput {
   id: String!
   orderedSiblingIds: [String!]!
@@ -186,43 +324,64 @@ input MoveTaskInput {
 }
 
 type Mutation {
+  addMeetingParticipant(data: AddMeetingParticipantInput!): MeetingParticipant!
   addNoteAttachment(data: AddNoteAttachmentInput!): NoteAttachment!
   addProjectMember(data: AddProjectMemberInput!): ProjectShareResult!
+  approveTaskProjectAccess(projectId: String!, requesterId: String!): Boolean!
   assignNoteToProject(data: AssignNoteProjectInput!): Note!
   bulkMoveTasks(input: BulkMoveTasksInput!): [Task!]!
   cancelProjectInvitation(data: CancelProjectInvitationInput!): ProjectInvitation!
+  createActionItem(data: CreateActionItemInput!): ActionItem!
   createAiSession(data: CreateAiSessionInput!): AiSession!
   createCustomer(data: CreateCustomerInput!): Customer!
+  createDecision(data: CreateDecisionInput!): Decision!
+  createMeeting(data: CreateMeetingInput!): Meeting!
   createNote(data: CreateNoteInput!): Note!
   createNotePublicLink(data: CreateNotePublicLinkInput!): NotePublicLinkResult!
   createProject(data: CreateProjectInput!): Project!
   createProjectColumn(data: CreateProjectColumnInput!): ProjectColumn!
+  createRequirement(data: CreateRequirementInput!): Requirement!
   createTask(data: CreateTaskInput!): Task!
+  deleteActionItem(id: String!): ActionItem!
   deleteAiSession(id: String!): AiSession!
   deleteCustomer(id: String!): Customer!
+  deleteDecision(id: String!): Decision!
+  deleteMeeting(id: String!): Meeting!
   deleteNote(id: String!): Note!
   deleteProject(id: String!): Project!
   deleteProjectColumn(data: DeleteProjectColumnInput!): ProjectColumn!
+  deleteRequirement(id: String!): Requirement!
   deleteTask(id: String!): Task!
   login(data: LoginInput!): AuthResponse!
   markAllNotificationsRead: Boolean!
   moveNote(data: MoveNoteInput!): Note!
   moveTask(input: MoveTaskInput!): Task!
+  promoteActionItem(id: String!): Task!
   register(data: RegisterInput!): AuthResponse!
+  removeMeetingParticipant(id: String!): MeetingParticipant!
   removeNoteAttachment(id: String!): NoteAttachment!
   removeNoteShare(noteId: String!, userId: String!): Boolean!
   removeProjectMember(data: RemoveProjectMemberInput!): ProjectMember!
   reorderProjectColumns(data: ReorderProjectColumnsInput!): [ProjectColumn!]!
+  requestTaskProjectAccess(taskId: String!): Boolean!
+  restoreActionItem(id: String!): ActionItem!
+  restoreDecision(id: String!): Decision!
+  restoreMeeting(id: String!): Meeting!
   restoreNote(id: String!): Note!
+  restoreRequirement(id: String!): Requirement!
   revokeNotePublicLink(noteId: String!): Boolean!
   sendAiMessage(input: SendAiMessageInput!): AiMessage!
   setNotePinned(id: String!, isPinned: Boolean!): Boolean!
   setNoteTags(data: SetNoteTagsInput!): [NoteTag!]!
   shareNoteWithUser(data: ShareNoteInput!): NoteShare!
+  updateActionItem(data: UpdateActionItemInput!, id: String!): ActionItem!
   updateCustomer(data: UpdateCustomerInput!, id: String!): Customer!
+  updateDecision(data: UpdateDecisionInput!, id: String!): Decision!
+  updateMeeting(data: UpdateMeetingInput!, id: String!): Meeting!
   updateNote(data: UpdateNoteInput!, id: String!): Note!
   updateProject(data: UpdateProjectInput!, id: String!): Project!
   updateProjectMemberRole(data: UpdateProjectMemberRoleInput!): ProjectMember!
+  updateRequirement(data: UpdateRequirementInput!, id: String!): Requirement!
   updateTask(data: UpdateTaskInput!, id: String!): Task!
 }
 
@@ -337,6 +496,7 @@ type Notification {
 }
 
 enum NotificationType {
+  projectAccessRequest
   projectDeleted
   projectMemberAdded
   welcome
@@ -372,6 +532,24 @@ type Project {
   userId: ID!
 }
 
+type ProjectActivity {
+  action: String!
+  createdAt: DateTime!
+  entity: String
+  entityId: ID
+  id: ID!
+  projectId: ID!
+  userId: ID!
+}
+
+type ProjectActivityPage {
+  hasMore: Boolean!
+  items: [ProjectActivity!]!
+  skip: Int!
+  take: Int!
+  total: Int!
+}
+
 type ProjectColumn {
   id: ID!
   key: String!
@@ -383,6 +561,37 @@ type ProjectInvitation {
   email: String!
   id: ID!
   role: ProjectRole!
+}
+
+input ProjectKnowledgeSearchInput {
+  projectId: String!
+  query: String!
+  types: [ProjectKnowledgeType!]
+}
+
+type ProjectKnowledgeSearchPage {
+  hasMore: Boolean!
+  items: [ProjectKnowledgeSearchResult!]!
+  skip: Int!
+  take: Int!
+  total: Int!
+}
+
+type ProjectKnowledgeSearchResult {
+  id: ID!
+  projectId: ID!
+  snippet: String!
+  status: String
+  title: String!
+  type: ProjectKnowledgeType!
+  updatedAt: DateTime!
+}
+
+enum ProjectKnowledgeType {
+  decision
+  meeting
+  note
+  requirement
 }
 
 input ProjectListFilterInput {
@@ -465,8 +674,12 @@ type Query {
   aiSession(id: String!): AiSession!
   aiSessions: [AiSession!]!
   customerDetail(id: String!): Customer!
+  decision(id: String!): Decision!
+  decisions(filter: StructuredFilterInput, pagination: PaginationInput, projectId: String!): DecisionPage!
   listCustomers(filter: ListCustomersInput, pagination: PaginationInput): CustomerPage!
   me: User!
+  meeting(id: String!): Meeting!
+  meetings(filter: StructuredFilterInput, pagination: PaginationInput, projectId: String!): MeetingPage!
   noteAccess(id: String!): NoteAccess!
   noteDetail(id: String!): Note!
   noteTags: [NoteTag!]!
@@ -475,11 +688,15 @@ type Query {
   noteWorkspaceMeta(noteId: String!): NoteWorkspaceMeta!
   notes(filter: ListNotesInput, pagination: PaginationInput): NotePage!
   notifications: [Notification!]!
+  projectActivity(pagination: PaginationInput, projectId: String!): ProjectActivityPage!
   projectDetail(id: String!): Project!
+  projectKnowledgeSearch(input: ProjectKnowledgeSearchInput!, pagination: PaginationInput): ProjectKnowledgeSearchPage!
   projectOverview(projectId: String!): ProjectOverview!
   projects(filter: ProjectListFilterInput, pagination: PaginationInput): ProjectPage!
   projectsByCustomer(customerId: String!, pagination: PaginationInput): ProjectPage!
   publicNote(token: String!): PublicNoteResult!
+  requirement(id: String!): Requirement!
+  requirements(filter: StructuredFilterInput, pagination: PaginationInput, projectId: String!): RequirementPage!
   searchNotes(input: SearchNotesInput, pagination: PaginationInput): NoteSearchPage!
   taskDetail(id: String!): Task!
   tasks(filter: ListTasksInput, pagination: PaginationInput): TaskPage!
@@ -500,6 +717,41 @@ input RemoveProjectMemberInput {
 input ReorderProjectColumnsInput {
   columnIds: [String!]!
   projectId: String!
+}
+
+type Requirement {
+  createdAt: DateTime!
+  deletedAt: DateTime
+  description: String!
+  id: ID!
+  priority: RequirementPriority!
+  projectId: ID!
+  sourceNoteId: ID
+  status: RequirementStatus!
+  title: String!
+  updatedAt: DateTime!
+}
+
+type RequirementPage {
+  hasMore: Boolean!
+  items: [Requirement!]!
+  skip: Int!
+  take: Int!
+  total: Int!
+}
+
+enum RequirementPriority {
+  critical
+  high
+  low
+  medium
+}
+
+enum RequirementStatus {
+  approved
+  draft
+  implemented
+  rejected
 }
 
 input SearchNotesInput {
@@ -524,6 +776,15 @@ input ShareNoteInput {
   includeChildren: Boolean = false
   noteId: String!
   permission: NotePermission!
+}
+
+input StructuredFilterInput {
+  from: DateTime
+  includeDeleted: Boolean
+  priorities: [String!]
+  search: String
+  statuses: [String!]
+  to: DateTime
 }
 
 type Tag {
@@ -556,12 +817,40 @@ type TaskPage {
   total: Int!
 }
 
+input UpdateActionItemInput {
+  assigneeId: String
+  description: String
+  dueDate: DateTime
+  externalAssigneeName: String
+  status: ActionItemStatus
+  title: String
+}
+
 input UpdateCustomerInput {
   company: String
   email: String
   name: String
   phone: String
   status: CustomerStatus
+}
+
+input UpdateDecisionInput {
+  decidedAt: DateTime
+  description: String
+  impact: String
+  reason: String
+  sourceNoteId: String
+  status: DecisionStatus
+  title: String
+}
+
+input UpdateMeetingInput {
+  recordingUrl: String
+  scheduledAt: DateTime
+  sourceNoteId: String
+  status: MeetingStatus
+  summary: String
+  title: String
 }
 
 input UpdateNoteInput {
@@ -584,6 +873,14 @@ input UpdateProjectMemberRoleInput {
   memberId: String!
   projectId: String!
   role: ProjectRole!
+}
+
+input UpdateRequirementInput {
+  description: String
+  priority: RequirementPriority
+  sourceNoteId: String
+  status: RequirementStatus
+  title: String
 }
 
 input UpdateTaskInput {

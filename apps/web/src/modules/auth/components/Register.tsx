@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import {
   Eye,
   EyeOff,
@@ -22,6 +22,10 @@ export function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (
+    location.state as { from?: { pathname?: string; search?: string } }
+  )?.from;
   const [searchParams] = useSearchParams();
   const invitedEmail = searchParams.get("email") || "";
   const invitationToken = searchParams.get("invitation") || undefined;
@@ -57,7 +61,8 @@ export function Register() {
           invitationToken,
         });
         navigate(
-          invitedProjectId ? `/projects/${invitedProjectId}` : "/dashboard",
+          `${from?.pathname ?? (invitedProjectId ? `/projects/${invitedProjectId}` : "/dashboard")}${from?.search ?? ""}`,
+          { replace: true },
         );
       } catch {
         // The Apollo error link shows the server-provided user message.
@@ -295,6 +300,7 @@ export function Register() {
               Already have an account?{" "}
               <Link
                 to="/login"
+                state={{ from }}
                 className="text-blue-500 hover:text-blue-600 font-medium"
               >
                 Login

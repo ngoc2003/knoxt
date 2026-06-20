@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
+import { useLocation } from "react-router";
 import {
   BriefcaseBusiness,
   CheckCircle2,
@@ -9,6 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { CREATE_PROJECT_MUTATION, PROJECTS_QUERY } from "../graphql/project";
+import { REQUEST_TASK_PROJECT_ACCESS_MUTATION } from "@/modules/task/graphql/task";
 import { ProjectCard } from "./ProjectCard";
 import { ProjectModal } from "./ProjectModal";
 import { Button } from "@/shared/ui/button";
@@ -20,13 +22,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
+import { toast } from "sonner";
 
 export function ProjectListPage() {
+  const location = useLocation();
+  const accessDeniedState = location.state as
+    | { accessDeniedTaskId?: string; accessDeniedProjectId?: string }
+    | undefined;
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [ownership, setOwnership] = useState("all");
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [accessDialogOpen, setAccessDialogOpen] = useState(
+    Boolean(accessDeniedState?.accessDeniedProjectId),
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(
@@ -48,6 +65,9 @@ export function ProjectListPage() {
     },
   });
   const [createProject] = useMutation(CREATE_PROJECT_MUTATION);
+  const [requestAccess, { loading: requestingAccess }] = useMutation(
+    REQUEST_TASK_PROJECT_ACCESS_MUTATION,
+  );
   const displayedData = data ?? previousData;
   const projects = useMemo(
     () => (displayedData as any)?.projects?.items ?? [],
@@ -85,6 +105,15 @@ export function ProjectListPage() {
     });
     await refetch();
     setIsProjectModalOpen(false);
+  };
+
+  const handleRequestAccess = async () => {
+    if (!accessDeniedState?.accessDeniedTaskId) return;
+    await requestAccess({
+      variables: { taskId: accessDeniedState.accessDeniedTaskId },
+    });
+    toast.success("Permission request sent to the project owner.");
+    setAccessDialogOpen(false);
   };
 
   return (
@@ -214,6 +243,30 @@ export function ProjectListPage() {
         onClose={() => setIsProjectModalOpen(false)}
         onSave={handleSaveProject}
       />
+      <Dialog open={accessDialogOpen} onOpenChange={setAccessDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>You do not have access</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm leading-6 text-gray-500">
+            You do not have permission to view that project or ticket. You can
+            request access from the project owner.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAccessDialogOpen(false)}>
+              Close
+            </Button>
+            <Button
+              onClick={() => void handleRequestAccess()}
+              disabled={
+                requestingAccess || !accessDeniedState?.accessDeniedTaskId
+              }
+            >
+              {requestingAccess ? "Sending..." : "Request permission"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

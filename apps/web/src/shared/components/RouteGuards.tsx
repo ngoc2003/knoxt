@@ -34,6 +34,10 @@ interface PublicRouteProps {
 
 export const PublicRoute = ({ children }: PublicRouteProps) => {
   const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+  const from = (
+    location.state as { from?: { pathname?: string; search?: string } }
+  )?.from;
 
   if (loading) {
     return (
@@ -47,7 +51,12 @@ export const PublicRoute = ({ children }: PublicRouteProps) => {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return (
+      <Navigate
+        to={`${from?.pathname ?? "/dashboard"}${from?.search ?? ""}`}
+        replace
+      />
+    );
   }
 
   return <>{children}</>;

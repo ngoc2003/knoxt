@@ -14,12 +14,17 @@ import {
   UpdateTaskInput,
 } from './dto/task.dto';
 import { PaginationInput } from '../../core/common/dtos/pagination.dto';
+import { PrismaService } from '../../infrastructure/prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType, ProjectRole } from '../../core/common/enum/enums';
 
 @Injectable()
 export class TasksService {
   constructor(
     @Inject(TASK_REPOSITORY)
     private readonly taskRepo: ITaskRepository,
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async create(userId: string, data: CreateTaskInput) {
@@ -95,6 +100,84 @@ export class TasksService {
   async remove(userId: string, id: string) {
     await this.findOne(userId, id);
     return this.taskRepo.remove(userId, id);
+  }
+
+  async requestProjectAccess(userId: string, taskId: string) {
+    const task = await this.prisma.task.findFirst({
+      where: { id: taskId, deletedAt: null },
+      select: {
+        id: true,
+        title: true,
+        projectId: true,
+        project: { select: { name: true, userId: true } },
+      },
+    });
+    if (!task) throw new NotFoundException(`Task not found: ${taskId}`);
+
+    const requester = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true },
+    });
+    if (!requester) throw new NotFoundException('Requester not found');
+
+    if (task.project.userId === userId) return true;
+
+    const existingMember = await this.prisma.projectMember.findFirst({
+      where: { projectId: task.projectId, userId },
+      select: { id: true },
+    });
+    if (existingMember) return true;
+
+    const payload = {
+      kind: 'project-access-request',
+      taskId: task.id,
+      taskTitle: task.title,
+      projectId: task.projectId,
+      projectName: task.project.name,
+      requesterId: requester.id,
+      requesterName: requester.name,
+      requesterEmail: requester.email,
+    };
+
+    await this.notifications.create(
+      task.project.userId,
+      NotificationType.projectAccessRequest,
+      `__KNOXT_NOTIFICATION__${JSON.stringify(payload)}`,
+    );
+    return true;
+  }
+
+  async approveProjectAccess(
+    ownerId: string,
+    projectId: string,
+    requesterId: string,
+  ) {
+    const project = await this.prisma.project.findFirst({
+      where: { id: projectId, deletedAt: null },
+      select: { id: true, name: true, userId: true },
+    });
+    if (!project) throw new NotFoundException(`Project not found: ${projectId}`);
+    if (project.userId !== ownerId) {
+      throw new BadRequestException('Only the project owner can approve access');
+    }
+    if (requesterId === ownerId) return true;
+
+    await this.prisma.projectMember.upsert({
+      where: { projectId_userId: { projectId, userId: requesterId } },
+      update: {},
+      create: {
+        projectId,
+        userId: requesterId,
+        role: ProjectRole.viewer,
+      },
+    });
+
+    await this.notifications.create(
+      requesterId,
+      NotificationType.projectMemberAdded,
+      `You now have access to "${project.name}".`,
+    );
+    return true;
   }
 
   private async ensureProjectColumn(

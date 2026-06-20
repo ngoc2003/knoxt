@@ -2,11 +2,14 @@ import { useDrop, useDrag } from "react-dnd";
 import { useRef } from "react";
 import { Badge } from "../../../shared/ui/badge";
 import { Checkbox } from "../../../shared/ui/checkbox";
+import { cn } from "../../../shared/ui/utils";
 import {
   Calendar,
   ClipboardList,
   Flag,
   GripVertical,
+  MessageSquare,
+  Paperclip,
   UserRound,
 } from "lucide-react";
 
@@ -23,7 +26,8 @@ interface ProjectColumn {
 interface Task {
   id: string;
   title: string;
-  tags?: { id: string; name: string }[];
+  description?: string;
+  tags?: { id: string; name: string; color?: string | null }[];
   priority: Priority;
   status: Status;
   orderKey: string;
@@ -54,8 +58,8 @@ export function KanbanBoard({
   onTaskClick: (task: Task) => void;
 }) {
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
-      {columns.map((column) => {
+    <div className="flex min-h-[calc(100vh-17rem)] gap-4 overflow-x-auto pb-5">
+      {columns.map((column, index) => {
         const columnTasks = tasks
           .filter((task) => task.status === column.key)
           .sort((a, b) =>
@@ -78,13 +82,66 @@ export function KanbanBoard({
             selectedTaskIds={selectedTaskIds}
             onTaskSelectionChange={onTaskSelectionChange}
             onTaskClick={onTaskClick}
-            badgeClass="bg-indigo-50 text-indigo-600"
+            palette={columnPalettes[index % columnPalettes.length]}
           />
         );
       })}
     </div>
   );
 }
+
+const columnPalettes = [
+  {
+    dot: "bg-sky-500",
+    badge: "bg-sky-50 text-sky-700 border-sky-100",
+    shell: "border-sky-100 bg-sky-50/70",
+    header: "from-sky-50 to-white",
+    lane: "bg-sky-50/45",
+    drop: "bg-sky-100/75 ring-sky-200",
+    icon: "bg-sky-100 text-sky-700",
+    indicator: "text-sky-700 bg-sky-500",
+  },
+  {
+    dot: "bg-violet-500",
+    badge: "bg-violet-50 text-violet-700 border-violet-100",
+    shell: "border-violet-100 bg-violet-50/70",
+    header: "from-violet-50 to-white",
+    lane: "bg-violet-50/45",
+    drop: "bg-violet-100/75 ring-violet-200",
+    icon: "bg-violet-100 text-violet-700",
+    indicator: "text-violet-700 bg-violet-500",
+  },
+  {
+    dot: "bg-amber-500",
+    badge: "bg-amber-50 text-amber-700 border-amber-100",
+    shell: "border-amber-100 bg-amber-50/70",
+    header: "from-amber-50 to-white",
+    lane: "bg-amber-50/45",
+    drop: "bg-amber-100/75 ring-amber-200",
+    icon: "bg-amber-100 text-amber-700",
+    indicator: "text-amber-700 bg-amber-500",
+  },
+  {
+    dot: "bg-emerald-500",
+    badge: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    shell: "border-emerald-100 bg-emerald-50/70",
+    header: "from-emerald-50 to-white",
+    lane: "bg-emerald-50/45",
+    drop: "bg-emerald-100/75 ring-emerald-200",
+    icon: "bg-emerald-100 text-emerald-700",
+    indicator: "text-emerald-700 bg-emerald-500",
+  },
+  {
+    dot: "bg-rose-500",
+    badge: "bg-rose-50 text-rose-700 border-rose-100",
+    shell: "border-rose-100 bg-rose-50/70",
+    header: "from-rose-50 to-white",
+    lane: "bg-rose-50/45",
+    drop: "bg-rose-100/75 ring-rose-200",
+    icon: "bg-rose-100 text-rose-700",
+    indicator: "text-rose-700 bg-rose-500",
+  },
+];
 
 interface ColumnProps {
   id: string;
@@ -101,7 +158,7 @@ interface ColumnProps {
   selectedTaskIds: Set<string>;
   onTaskSelectionChange: (taskId: string, selected: boolean) => void;
   onTaskClick: (task: Task) => void;
-  badgeClass: string;
+  palette: (typeof columnPalettes)[number];
 }
 
 const ITEM_TYPE = "TASK";
@@ -122,7 +179,7 @@ function Column({
   selectedTaskIds,
   onTaskSelectionChange,
   onTaskClick,
-  badgeClass,
+  palette,
 }: ColumnProps) {
   const [{ isOver }, drop] = useDrop({
     accept: ITEM_TYPE,
@@ -157,29 +214,39 @@ function Column({
       ref={(node) => {
         columnDrop(node as unknown as HTMLDivElement | null);
       }}
-      className={`w-80 min-w-80 rounded-md transition-opacity bg-white p-3 ${
-        isColumnDragging ? "opacity-50" : ""
-      } ${isColumnOver ? "ring-2 ring-indigo-300" : ""}`}
+      className={cn(
+        "w-[21rem] min-w-[21rem] rounded-lg border p-3 shadow-sm transition-all",
+        palette.shell,
+        isColumnDragging && "opacity-50",
+        isColumnOver && "ring-2 ring-indigo-300",
+      )}
     >
       <div
         ref={(node) => {
           columnDrag(node as unknown as HTMLDivElement | null);
         }}
-        className={`flex items-center gap-2 mb-4 ${canManageColumns ? "cursor-grab active:cursor-grabbing" : ""}`}
+        className={cn(
+          "mb-3 rounded-md bg-gradient-to-r px-3 py-2.5",
+          palette.header,
+          canManageColumns && "cursor-grab active:cursor-grabbing",
+        )}
       >
         <div
           role={canManageColumns ? "button" : undefined}
           tabIndex={canManageColumns ? 0 : undefined}
           aria-label={canManageColumns ? `Drag ${title} column` : undefined}
-          className="flex items-center gap-2"
+          className="flex min-w-0 items-center gap-2"
         >
           {canManageColumns && (
             <GripVertical className="h-4 w-4 text-gray-400" />
           )}
+          <span className={cn("h-2.5 w-2.5 rounded-full", palette.dot)} />
           {icon}
-          <span className="text-sm font-medium text-gray-700">{title}</span>
+          <span className="truncate text-sm font-semibold text-gray-800">
+            {title}
+          </span>
         </div>
-        <Badge variant="secondary" className={`ml-auto ${badgeClass}`}>
+        <Badge variant="outline" className={cn("ml-auto", palette.badge)}>
           {count}
         </Badge>
       </div>
@@ -188,7 +255,10 @@ function Column({
         ref={(node) => {
           drop(node as unknown as HTMLDivElement | null);
         }}
-        className={`space-y-3 min-h-[500px] p-3 rounded-sm transition-colors ${isOver ? "bg-indigo-50/70 ring-1 ring-inset ring-indigo-200" : "bg-gray-50/50"}`}
+        className={cn(
+          "min-h-[500px] space-y-3 rounded-md p-2.5 transition-colors",
+          isOver ? cn("ring-1 ring-inset", palette.drop) : palette.lane,
+        )}
       >
         {tasks.map((task, orderIndex) => (
           <TaskCard
@@ -202,6 +272,7 @@ function Column({
             selected={selectedTaskIds.has(task.id)}
             onSelectionChange={onTaskSelectionChange}
             onClick={onTaskClick}
+            palette={palette}
           />
         ))}
 
@@ -216,9 +287,16 @@ function Column({
             }`}
           >
             <div className="relative mb-4">
-              <div className="absolute inset-0 rotate-3 rounded-md bg-indigo-100" />
-              <div className="relative rounded-md border border-indigo-100 bg-white p-3">
-                <ClipboardList className="h-6 w-6 text-indigo-500" />
+              <div
+                className={cn("absolute inset-0 rotate-3 rounded-md", palette.icon)}
+              />
+              <div
+                className={cn(
+                  "relative rounded-md border border-white/80 p-3",
+                  palette.icon,
+                )}
+              >
+                <ClipboardList className="h-6 w-6" />
               </div>
             </div>
             <p className="text-sm font-medium text-gray-700">
@@ -246,14 +324,26 @@ interface TaskCardProps {
   selected: boolean;
   onSelectionChange: (taskId: string, selected: boolean) => void;
   onClick: (task: Task) => void;
+  palette: (typeof columnPalettes)[number];
 }
 
-function DropIndicator({ label }: { label: string }) {
+function DropIndicator({
+  label,
+  palette = columnPalettes[0],
+}: {
+  label: string;
+  palette?: (typeof columnPalettes)[number];
+}) {
   return (
-    <div className="flex h-5 items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-600">
-      <div className="h-0.5 flex-1 bg-indigo-500" />
+    <div
+      className={cn(
+        "flex h-5 items-center gap-2 text-[10px] font-semibold uppercase tracking-wide",
+        palette.indicator.split(" ")[0],
+      )}
+    >
+      <div className={cn("h-0.5 flex-1", palette.indicator.split(" ")[1])} />
       <span>{label}</span>
-      <div className="h-0.5 flex-1 bg-indigo-500" />
+      <div className={cn("h-0.5 flex-1", palette.indicator.split(" ")[1])} />
     </div>
   );
 }
@@ -268,6 +358,7 @@ function TaskCard({
   selected,
   onSelectionChange,
   onClick,
+  palette,
 }: TaskCardProps) {
   const suppressClick = useRef(false);
   const [{ isOver }, drop] = useDrop({
@@ -295,17 +386,25 @@ function TaskCard({
   });
 
   const priorityColors = {
-    low: "bg-gray-100 text-gray-700",
-    medium: "bg-yellow-50 text-yellow-700",
-    high: "bg-red-50 text-red-700",
+    low: "bg-slate-50 text-slate-600 border-slate-200",
+    medium: "bg-amber-50 text-amber-700 border-amber-200",
+    high: "bg-rose-50 text-rose-700 border-rose-200",
   };
 
   const tagColors = [
-    "bg-purple-50 text-purple-700",
-    "bg-blue-50 text-blue-700",
-    "bg-green-50 text-green-700",
-    "bg-orange-50 text-orange-700",
+    "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100",
+    "bg-cyan-50 text-cyan-700 border-cyan-100",
+    "bg-lime-50 text-lime-700 border-lime-100",
+    "bg-orange-50 text-orange-700 border-orange-100",
   ];
+  const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+  const initials =
+    task.assignee?.name
+      .split(" ")
+      .map((part) => part.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) ?? "";
 
   return (
     <div
@@ -316,7 +415,10 @@ function TaskCard({
     >
       {isOver && (
         <div className="absolute inset-x-0 -top-3 z-10">
-          <DropIndicator label={`Position ${orderIndex + 1}`} />
+          <DropIndicator
+            label={`Position ${orderIndex + 1}`}
+            palette={palette}
+          />
         </div>
       )}
       <div
@@ -340,67 +442,108 @@ function TaskCard({
             }
           }
         }}
-        className={`p-4 bg-white rounded-sm border shadow-sm transition-all ${
+        className={cn(
+          "group overflow-hidden rounded-md border bg-white shadow-sm transition-all",
           isOver
             ? "border-indigo-300 shadow-md -translate-y-0.5"
-            : "border-gray-200 hover:shadow-md"
-        } ${selected ? "border-indigo-500 ring-2 ring-indigo-100" : ""} ${
-          canEdit ? "cursor-pointer" : ""
-        } ${isDragging ? "opacity-40" : ""}`}
-      >
-        <div className="flex items-start gap-2 mb-3">
-          {selectionMode && (
-            <Checkbox
-              checked={selected}
-              aria-label={`Select ${task.title}`}
-              onClick={(event) => event.stopPropagation()}
-              onCheckedChange={(checked) =>
-                onSelectionChange(task.id, checked === true)
-              }
-            />
-          )}
-          <p className="text-sm font-medium text-gray-900 flex-1">
-            {task.title}
-          </p>
-          {task.priority === "high" && (
-            <Flag className="w-4 h-4 text-red-500 flex-shrink-0" />
-          )}
-        </div>
-
-        {(task.tags?.length ?? 0) > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
-            {task.tags?.map((tag, idx) => (
-              <Badge
-                key={tag.id}
-                variant="secondary"
-                className={`text-xs ${tagColors[idx % tagColors.length]}`}
-              >
-                {tag.name}
-              </Badge>
-            ))}
-          </div>
+            : "border-gray-200 hover:-translate-y-0.5 hover:shadow-md",
+          selected && "border-indigo-500 ring-2 ring-indigo-100",
+          canEdit && "cursor-pointer",
+          isDragging && "opacity-40",
         )}
+      >
+        <div className={cn("h-1 w-full", palette.dot)} />
+        <div className="p-3.5">
+          <div className="mb-3 flex items-start gap-2">
+            {selectionMode && (
+              <Checkbox
+                checked={selected}
+                aria-label={`Select ${task.title}`}
+                onClick={(event) => event.stopPropagation()}
+                onCheckedChange={(checked) =>
+                  onSelectionChange(task.id, checked === true)
+                }
+              />
+            )}
+            <p className="min-w-0 flex-1 text-sm font-semibold leading-5 text-gray-900">
+              {task.title}
+            </p>
+            {task.priority === "high" && (
+              <Flag className="h-4 w-4 flex-shrink-0 text-rose-500" />
+            )}
+          </div>
 
-        <div className="flex items-center justify-between">
-          <Badge
-            variant="secondary"
-            className={`text-xs ${priorityColors[task.priority]}`}
-          >
-            {task.priority}
-          </Badge>
-          <div className="flex items-center gap-3 text-xs text-gray-500">
-            {task.assignee && (
-              <span className="flex items-center gap-1">
-                <UserRound className="w-3 h-3" />
-                {task.assignee.name}
-              </span>
-            )}
-            {task.dueDate && (
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {new Date(task.dueDate).toLocaleDateString()}
-              </span>
-            )}
+          {task.description && (
+            <p className="mb-3 line-clamp-2 text-xs leading-5 text-gray-500">
+              {task.description}
+            </p>
+          )}
+
+          {(task.tags?.length ?? 0) > 0 && (
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {task.tags?.slice(0, 3).map((tag, idx) => (
+                <Badge
+                  key={tag.id}
+                  variant="outline"
+                  className={cn(
+                    "max-w-28 truncate text-[11px]",
+                    tagColors[idx % tagColors.length],
+                  )}
+                >
+                  {tag.name}
+                </Badge>
+              ))}
+              {(task.tags?.length ?? 0) > 3 && (
+                <Badge
+                  variant="outline"
+                  className="bg-gray-50 text-[11px] text-gray-500"
+                >
+                  +{(task.tags?.length ?? 0) - 3}
+                </Badge>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-3">
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[11px] capitalize",
+                priorityColors[task.priority],
+              )}
+            >
+              {task.priority}
+            </Badge>
+            <div className="flex min-w-0 items-center justify-end gap-2 text-xs text-gray-500">
+              {task.description && (
+                <MessageSquare className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+              )}
+              {(task.tags?.length ?? 0) > 0 && (
+                <Paperclip className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+              )}
+              {dueDate && (
+                <span className="flex shrink-0 items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5" />
+                  {dueDate.toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
+              )}
+              {task.assignee ? (
+                <span
+                  className={cn(
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold",
+                    palette.icon,
+                  )}
+                  title={task.assignee.name}
+                >
+                  {initials || <UserRound className="h-3.5 w-3.5" />}
+                </span>
+              ) : (
+                <UserRound className="h-3.5 w-3.5 shrink-0 text-gray-300" />
+              )}
+            </div>
           </div>
         </div>
       </div>
