@@ -156,9 +156,12 @@ export class TasksService {
       where: { id: projectId, deletedAt: null },
       select: { id: true, name: true, userId: true },
     });
-    if (!project) throw new NotFoundException(`Project not found: ${projectId}`);
+    if (!project)
+      throw new NotFoundException(`Project not found: ${projectId}`);
     if (project.userId !== ownerId) {
-      throw new BadRequestException('Only the project owner can approve access');
+      throw new BadRequestException(
+        'Only the project owner can approve access',
+      );
     }
     if (requesterId === ownerId) return true;
 
