@@ -740,6 +740,26 @@ export function ProjectDetailPage() {
                 projectId={project.id}
                 canEdit={canEdit}
                 canViewActivity={canViewActivity}
+                onTaskCreated={(task) => {
+                  const promotedTask: Task = {
+                    ...task,
+                    description: task.description ?? undefined,
+                    dueDate: task.dueDate ?? undefined,
+                    tags: task.tags ?? [],
+                  };
+                  setTasksState((currentTasks) => {
+                    if (
+                      currentTasks.some((item) => item.id === promotedTask.id)
+                    ) {
+                      return currentTasks.map((item) =>
+                        item.id === promotedTask.id
+                          ? { ...item, ...promotedTask }
+                          : item,
+                      );
+                    }
+                    return [...currentTasks, promotedTask];
+                  });
+                }}
               />
             </ResourcePanel>
           </section>

@@ -1,6 +1,7 @@
 import { Field, GraphQLISODateTime, InputType } from '@nestjs/graphql';
 import {
   IsArray,
+  IsDate,
   IsEmail,
   IsEnum,
   IsOptional,
@@ -43,6 +44,7 @@ export class CreateDecisionInput extends ProjectEntityInput {
   impact?: string;
   @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()
+  @IsDate()
   decidedAt?: Date;
   @Field(() => DecisionStatus, { nullable: true })
   @IsOptional()
@@ -74,6 +76,7 @@ export class UpdateDecisionInput {
   impact?: string | null;
   @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()
+  @IsDate()
   decidedAt?: Date | null;
   @Field(() => DecisionStatus, { nullable: true })
   @IsOptional()
@@ -87,7 +90,9 @@ export class UpdateDecisionInput {
 
 @InputType()
 export class CreateMeetingInput extends ProjectEntityInput {
-  @Field(() => GraphQLISODateTime) scheduledAt: Date;
+  @Field(() => GraphQLISODateTime)
+  @IsDate()
+  scheduledAt: Date;
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
@@ -113,6 +118,7 @@ export class UpdateMeetingInput {
   title?: string;
   @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()
+  @IsDate()
   scheduledAt?: Date;
   @Field(() => String, { nullable: true })
   @IsOptional()
@@ -193,10 +199,12 @@ export class StructuredFilterInput {
 
   @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()
+  @IsDate()
   from?: Date;
 
   @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()
+  @IsDate()
   to?: Date;
   @Field(() => Boolean, { nullable: true })
   @IsOptional()
@@ -241,6 +249,7 @@ export class CreateActionItemInput {
   externalAssigneeName?: string;
   @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()
+  @IsDate()
   dueDate?: Date;
   @Field(() => ActionItemStatus, { nullable: true })
   @IsOptional()
@@ -270,6 +279,7 @@ export class UpdateActionItemInput {
   externalAssigneeName?: string | null;
   @Field(() => GraphQLISODateTime, { nullable: true })
   @IsOptional()
+  @IsDate()
   dueDate?: Date | null;
   @Field(() => ActionItemStatus, { nullable: true })
   @IsOptional()

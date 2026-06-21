@@ -19,6 +19,11 @@ export interface LoginInput {
   password: string;
 }
 
+export interface GoogleLoginInput {
+  credential: string;
+  invitationToken?: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
   user: User;

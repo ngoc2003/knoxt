@@ -42,6 +42,18 @@ export class LoginInput {
   password: string;
 }
 
+@InputType()
+export class GoogleLoginInput {
+  @Field()
+  @IsString()
+  credential: string;
+
+  @Field(() => String, { nullable: true })
+  @IsString()
+  @IsOptional()
+  invitationToken?: string;
+}
+
 @ObjectType()
 export class AuthResponse {
   @Field()

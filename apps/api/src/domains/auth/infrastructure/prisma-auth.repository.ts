@@ -10,12 +10,28 @@ export class PrismaAuthRepository implements IAuthRepository {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  async findByGoogleSubject(googleSubject: string) {
+    return this.prisma.user.findUnique({ where: { googleSubject } });
+  }
+
   async createUser(data: {
     email: string;
     name: string;
-    passwordHash: string;
+    passwordHash: string | null;
+    googleSubject?: string | null;
+    avatarUrl?: string | null;
   }) {
     return this.prisma.user.create({ data });
+  }
+
+  async updateUser(
+    id: string,
+    data: {
+      googleSubject?: string | null;
+      avatarUrl?: string | null;
+    },
+  ) {
+    return this.prisma.user.update({ where: { id }, data });
   }
 
   async claimProjectInvitations(userId: string, email: string, token?: string) {
