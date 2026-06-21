@@ -54,10 +54,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const passwordValid = await bcrypt.compare(
-      data.password,
-      user.passwordHash,
-    );
+    if (!user.passwordHash) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    const passwordValid = await bcrypt.compare(data.password, user.passwordHash);
     if (!passwordValid) {
       throw new UnauthorizedException('Invalid email or password');
     }

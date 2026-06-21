@@ -69,6 +69,7 @@ export enum RequirementStatus {
 
 export enum ProjectKnowledgeType {
   note = 'note',
+  action = 'action',
   decision = 'decision',
   meeting = 'meeting',
   requirement = 'requirement',

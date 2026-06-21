@@ -1,6 +1,7 @@
 import { Field, GraphQLISODateTime, InputType } from '@nestjs/graphql';
 import {
   IsArray,
+  IsDate,
   IsEmail,
   IsEnum,
   IsOptional,
@@ -8,6 +9,7 @@ import {
   IsUUID,
   IsUrl,
   MaxLength,
+  MinLength,
 } from 'class-validator';
 import {
   ActionItemStatus,
@@ -286,4 +288,80 @@ export class ProjectKnowledgeSearchInput {
   @IsArray()
   @IsEnum(ProjectKnowledgeType, { each: true })
   types?: ProjectKnowledgeType[];
+}
+
+@InputType()
+export class AnalyzeMeetingTranscriptInput {
+  @Field() @IsUUID() projectId: string;
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  title?: string;
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  @IsOptional()
+  @IsDate()
+  scheduledAt?: Date;
+  @Field()
+  @IsString()
+  @MinLength(20)
+  @MaxLength(50000)
+  transcript: string;
+}
+
+@InputType()
+export class DraftDecisionInput {
+  @Field() @IsString() @MaxLength(500) title: string;
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50000)
+  description?: string;
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50000)
+  reason?: string;
+}
+
+@InputType()
+export class DraftActionItemInput {
+  @Field() @IsString() @MaxLength(500) title: string;
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50000)
+  description?: string;
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  externalAssigneeName?: string;
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  @IsOptional()
+  @IsDate()
+  dueDate?: Date;
+}
+
+@InputType()
+export class SaveMeetingIntelligenceDraftInput {
+  @Field() @IsUUID() projectId: string;
+  @Field() @IsString() @MaxLength(500) title: string;
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  @IsOptional()
+  @IsDate()
+  scheduledAt?: Date;
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50000)
+  summary?: string;
+  @Field(() => [DraftDecisionInput], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  decisions?: DraftDecisionInput[];
+  @Field(() => [DraftActionItemInput], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  actionItems?: DraftActionItemInput[];
 }

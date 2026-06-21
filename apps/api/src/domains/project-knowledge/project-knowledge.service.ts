@@ -1,7 +1,9 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Prisma } from 'database/generated/client';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
@@ -10,10 +12,12 @@ import { PaginationInput } from '../../core/common/dtos/pagination.dto';
 import { Permission, ProjectKnowledgeType } from '../../core/common/enum/enums';
 import {
   AddMeetingParticipantInput,
+  AnalyzeMeetingTranscriptInput,
   CreateActionItemInput,
   CreateDecisionInput,
   CreateMeetingInput,
   CreateRequirementInput,
+  SaveMeetingIntelligenceDraftInput,
   ProjectKnowledgeSearchInput,
   StructuredFilterInput,
   UpdateActionItemInput,
@@ -22,6 +26,13 @@ import {
   UpdateRequirementInput,
 } from './project-knowledge.dto';
 import { nextOrderKey } from '../tasks/infrastructure/task-order-key';
+import {
+  MEETING_INTELLIGENCE_PROVIDER,
+} from './meeting-intelligence.provider';
+import type {
+  MeetingIntelligenceProvider,
+  MeetingIntelligenceProviderDraft,
+} from './meeting-intelligence.provider';
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-function-type */
 @Injectable()
@@ -29,7 +40,117 @@ export class ProjectKnowledgeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly authorization: ProjectAuthorizationService,
+    @Optional()
+    @Inject(MEETING_INTELLIGENCE_PROVIDER)
+    private readonly meetingIntelligence?: MeetingIntelligenceProvider,
   ) {}
+
+  async analyzeMeetingTranscript(
+    userId: string,
+    input: AnalyzeMeetingTranscriptInput,
+  ) {
+    await this.read(userId, input.projectId);
+    const transcript = input.transcript.trim();
+    if (transcript.length < 20)
+      throw new BadRequestException(
+        'Transcript must contain at least 20 characters',
+      );
+    if (!this.meetingIntelligence)
+      throw new BadRequestException('Meeting intelligence is not configured');
+    try {
+      const draft = await this.meetingIntelligence.analyzeTranscript({
+        title: input.title,
+        scheduledAt: input.scheduledAt,
+        transcript,
+      });
+      return this.normalizeMeetingDraft(draft, input.title);
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Unable to analyze meeting transcript';
+      throw new BadRequestException(message);
+    }
+  }
+
+  async saveMeetingIntelligenceDraft(
+    userId: string,
+    input: SaveMeetingIntelligenceDraftInput,
+  ) {
+    await this.edit(userId, input.projectId);
+    const title = this.title(input.title);
+    const summary = input.summary?.trim() || null;
+    const decisions = (input.decisions ?? []).map((decision) => ({
+      title: this.title(decision.title),
+      description: decision.description?.trim() || decision.title.trim(),
+      reason: decision.reason?.trim() || null,
+    }));
+    const actionItems = (input.actionItems ?? []).map((item) => ({
+      title: this.title(item.title),
+      description: item.description?.trim() || null,
+      externalAssigneeName: item.externalAssigneeName?.trim() || null,
+      dueDate: item.dueDate ?? null,
+    }));
+    if (!summary && decisions.length === 0 && actionItems.length === 0) {
+      throw new BadRequestException(
+        'Select a summary, decision or action item before saving',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const meeting = await tx.meeting.create({
+        data: {
+          projectId: input.projectId,
+          createdById: userId,
+          title,
+          summary,
+          scheduledAt: input.scheduledAt ?? new Date(),
+          status: 'completed',
+        },
+      });
+      await Promise.all([
+        ...decisions.map((decision) =>
+          tx.decision.create({
+            data: {
+              projectId: input.projectId,
+              createdById: userId,
+              title: decision.title,
+              description: decision.description,
+              reason: decision.reason,
+              status: 'accepted',
+            },
+          }),
+        ),
+        ...actionItems.map((item) =>
+          tx.actionItem.create({
+            data: {
+              meetingId: meeting.id,
+              createdById: userId,
+              title: item.title,
+              description: item.description,
+              externalAssigneeName: item.externalAssigneeName,
+              dueDate: item.dueDate,
+              status: 'open',
+            },
+          }),
+        ),
+        tx.activityLog.create({
+          data: {
+            userId,
+            projectId: input.projectId,
+            action: 'meeting-intelligence.saved',
+            entity: 'meeting',
+            entityId: meeting.id,
+          },
+        }),
+      ]);
+      return tx.meeting.findUniqueOrThrow({
+        where: { id: meeting.id },
+        include: this.meetingInclude(),
+      });
+    });
+  }
 
   async decisions(
     userId: string,
@@ -539,13 +660,27 @@ export class ProjectKnowledgeService {
       input.types?.length ? input.types : Object.values(ProjectKnowledgeType),
     );
     const contains = { contains: query, mode: Prisma.QueryMode.insensitive };
-    const [notes, decisions, meetings, requirements] = await Promise.all([
+    const [notes, actions, decisions, meetings, requirements] =
+      await Promise.all([
       types.has(ProjectKnowledgeType.note)
         ? this.prisma.note.findMany({
             where: {
               projectId: input.projectId,
               deletedAt: null,
               OR: [{ title: contains }, { content: contains }],
+            },
+          })
+        : [],
+      types.has(ProjectKnowledgeType.action)
+        ? this.prisma.actionItem.findMany({
+            where: {
+              deletedAt: null,
+              meeting: { projectId: input.projectId, deletedAt: null },
+              OR: [
+                { title: contains },
+                { description: contains },
+                { externalAssigneeName: contains },
+              ],
             },
           })
         : [],
@@ -581,13 +716,19 @@ export class ProjectKnowledgeService {
             },
           })
         : [],
-    ]);
+      ]);
     const rows = [
       ...notes.map((x) => ({
         ...x,
         type: ProjectKnowledgeType.note,
         text: x.content,
         status: null,
+      })),
+      ...actions.map((x) => ({
+        ...x,
+        type: ProjectKnowledgeType.action,
+        text: x.description ?? '',
+        status: x.status,
       })),
       ...decisions.map((x) => ({
         ...x,
@@ -684,6 +825,46 @@ export class ProjectKnowledgeService {
     const title = value.trim();
     if (!title) throw new BadRequestException('Title is required');
     return title;
+  }
+
+  private normalizeMeetingDraft(
+    draft: MeetingIntelligenceProviderDraft,
+    fallbackTitle?: string,
+  ) {
+    const title = this.title(
+      this.text(draft?.title, 500) || fallbackTitle || 'AI recap',
+    );
+    const summary = this.text(draft?.summary, 50000);
+    if (!summary && !draft?.decisions?.length && !draft?.actionItems?.length) {
+      throw new BadRequestException('AI returned an empty meeting draft');
+    }
+    return {
+      title,
+      summary,
+      decisions: (Array.isArray(draft.decisions) ? draft.decisions : [])
+        .map((decision) => ({
+          title: this.text(decision.title, 500),
+          description: this.text(decision.description, 50000),
+          reason: this.text(decision.reason, 50000) || null,
+        }))
+        .filter((decision) => decision.title),
+      actionItems: (Array.isArray(draft.actionItems) ? draft.actionItems : [])
+        .map((item) => ({
+          title: this.text(item.title, 500),
+          description: this.text(item.description, 50000) || null,
+          externalAssigneeName:
+            this.text(item.externalAssigneeName, 500) || null,
+          dueDate: item.dueDate ? new Date(item.dueDate) : null,
+        }))
+        .filter((item) => item.title),
+      warnings: (Array.isArray(draft.warnings) ? draft.warnings : [])
+        .map((warning) => this.text(warning, 500))
+        .filter(Boolean),
+    };
+  }
+
+  private text(value: unknown, max: number) {
+    return typeof value === 'string' ? value.trim().slice(0, max) : '';
   }
 
   private assignee(userId?: string | null, external?: string | null) {

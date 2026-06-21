@@ -9,11 +9,13 @@ import { PaginationInput } from '../../core/common/dtos/pagination.dto';
 import { ProjectKnowledgeService } from './project-knowledge.service';
 import {
   AddMeetingParticipantInput,
+  AnalyzeMeetingTranscriptInput,
   CreateActionItemInput,
   CreateDecisionInput,
   CreateMeetingInput,
   CreateRequirementInput,
   ProjectKnowledgeSearchInput,
+  SaveMeetingIntelligenceDraftInput,
   StructuredFilterInput,
   UpdateActionItemInput,
   UpdateDecisionInput,
@@ -27,6 +29,7 @@ import {
   Meeting,
   MeetingPage,
   MeetingParticipant,
+  MeetingIntelligenceDraft,
   ProjectActivityPage,
   ProjectKnowledgeSearchPage,
   Requirement,
@@ -215,5 +218,19 @@ export class ProjectKnowledgeResolver {
     @Args('pagination', { nullable: true }) p?: PaginationInput,
   ) {
     return this.service.activity(u.id, id, p ?? {});
+  }
+
+  @Mutation(() => MeetingIntelligenceDraft) analyzeMeetingTranscript(
+    @CurrentUser() u: AuthUser,
+    @Args('input') input: AnalyzeMeetingTranscriptInput,
+  ) {
+    return this.service.analyzeMeetingTranscript(u.id, input);
+  }
+
+  @Mutation(() => Meeting) saveMeetingIntelligenceDraft(
+    @CurrentUser() u: AuthUser,
+    @Args('input') input: SaveMeetingIntelligenceDraftInput,
+  ) {
+    return this.service.saveMeetingIntelligenceDraft(u.id, input);
   }
 }
