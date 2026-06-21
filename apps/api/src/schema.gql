@@ -594,6 +594,7 @@ type ProjectKnowledgeSearchResult {
 }
 
 enum ProjectKnowledgeType {
+  action
   decision
   meeting
   note

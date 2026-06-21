@@ -1,6 +1,7 @@
 import { ProjectKnowledgeService } from './project-knowledge.service';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { ProjectAuthorizationService } from '../../core/authorization/project-authorization.service';
+import { ProjectKnowledgeType } from '../../core/common/enum/enums';
 
 describe('ProjectKnowledgeService', () => {
   it('returns the linked task when an action item was already promoted', async () => {
@@ -97,6 +98,156 @@ describe('ProjectKnowledgeService', () => {
     );
     expect(tx.task.delete).toHaveBeenCalledWith({
       where: { id: 'task-duplicate' },
+    });
+  });
+
+  it('keeps search scoped to the requested project and ranks title matches first', async () => {
+    const older = new Date('2026-06-20T09:00:00.000Z');
+    const newer = new Date('2026-06-21T09:00:00.000Z');
+    const prisma = {
+      note: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'note-1',
+            projectId: 'project-1',
+            title: 'Weekly notes',
+            content: 'Launch checklist',
+            updatedAt: newer,
+          },
+        ]),
+      },
+      actionItem: { findMany: jest.fn().mockResolvedValue([]) },
+      decision: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'decision-1',
+            projectId: 'project-1',
+            title: 'Launch approval',
+            description: 'Approved',
+            status: 'accepted',
+            updatedAt: older,
+          },
+        ]),
+      },
+      meeting: { findMany: jest.fn().mockResolvedValue([]) },
+      requirement: { findMany: jest.fn().mockResolvedValue([]) },
+    } as unknown as PrismaService;
+    const authorization = {
+      assertPermission: jest.fn().mockResolvedValue(undefined),
+    } as unknown as ProjectAuthorizationService;
+    const service = new ProjectKnowledgeService(prisma, authorization);
+
+    const result = await service.search(
+      'user-1',
+      { projectId: 'project-1', query: 'launch' },
+      {},
+    );
+
+    expect(prisma.note.findMany).toHaveBeenCalledWith({
+      where: {
+        projectId: 'project-1',
+        deletedAt: null,
+        OR: [
+          { title: { contains: 'launch', mode: 'insensitive' } },
+          { content: { contains: 'launch', mode: 'insensitive' } },
+        ],
+      },
+    });
+    expect(result.items.map((item) => item.id)).toEqual([
+      'decision-1',
+      'note-1',
+    ]);
+    expect(result.items.every((item) => item.projectId === 'project-1')).toBe(
+      true,
+    );
+  });
+
+  it('searches only the requested knowledge types', async () => {
+    const prisma = {
+      note: { findMany: jest.fn() },
+      actionItem: { findMany: jest.fn() },
+      decision: { findMany: jest.fn().mockResolvedValue([]) },
+      meeting: { findMany: jest.fn() },
+      requirement: { findMany: jest.fn() },
+    } as unknown as PrismaService;
+    const authorization = {
+      assertPermission: jest.fn().mockResolvedValue(undefined),
+    } as unknown as ProjectAuthorizationService;
+    const service = new ProjectKnowledgeService(prisma, authorization);
+
+    await service.search(
+      'user-1',
+      {
+        projectId: 'project-1',
+        query: 'launch',
+        types: [ProjectKnowledgeType.decision],
+      },
+      {},
+    );
+
+    expect(prisma.decision.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.note.findMany).not.toHaveBeenCalled();
+    expect(prisma.actionItem.findMany).not.toHaveBeenCalled();
+    expect(prisma.meeting.findMany).not.toHaveBeenCalled();
+    expect(prisma.requirement.findMany).not.toHaveBeenCalled();
+  });
+
+  it('includes action items in project-scoped search', async () => {
+    const updatedAt = new Date('2026-06-21T09:00:00.000Z');
+    const prisma = {
+      note: { findMany: jest.fn() },
+      actionItem: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'action-1',
+            title: 'Send launch proposal',
+            description: null,
+            status: 'open',
+            updatedAt,
+          },
+        ]),
+      },
+      decision: { findMany: jest.fn() },
+      meeting: { findMany: jest.fn() },
+      requirement: { findMany: jest.fn() },
+    } as unknown as PrismaService;
+    const authorization = {
+      assertPermission: jest.fn().mockResolvedValue(undefined),
+    } as unknown as ProjectAuthorizationService;
+    const service = new ProjectKnowledgeService(prisma, authorization);
+
+    const result = await service.search(
+      'user-1',
+      {
+        projectId: 'project-1',
+        query: 'launch',
+        types: [ProjectKnowledgeType.action],
+      },
+      {},
+    );
+
+    expect(prisma.actionItem.findMany).toHaveBeenCalledWith({
+      where: {
+        deletedAt: null,
+        meeting: { projectId: 'project-1', deletedAt: null },
+        OR: [
+          { title: { contains: 'launch', mode: 'insensitive' } },
+          { description: { contains: 'launch', mode: 'insensitive' } },
+          {
+            externalAssigneeName: {
+              contains: 'launch',
+              mode: 'insensitive',
+            },
+          },
+        ],
+      },
+    });
+    expect(result.items[0]).toMatchObject({
+      id: 'action-1',
+      projectId: 'project-1',
+      type: ProjectKnowledgeType.action,
+      title: 'Send launch proposal',
+      status: 'open',
     });
   });
 });

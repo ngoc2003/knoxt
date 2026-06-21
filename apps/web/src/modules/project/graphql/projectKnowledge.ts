@@ -58,6 +58,7 @@ export const PROJECT_KNOWLEDGE_QUERY = gql`
           externalAssigneeName
           dueDate
           status
+          deletedAt
           promotedTaskId
           assignee {
             id
@@ -189,12 +190,35 @@ export const DELETE_ACTION_ITEM = gql`
     }
   }
 `;
+export const RESTORE_ACTION_ITEM = gql`
+  mutation RestoreActionItem($id: String!) {
+    restoreActionItem(id: $id) {
+      id
+    }
+  }
+`;
 export const PROMOTE_ACTION_ITEM = gql`
   mutation PromoteActionItem($id: String!) {
     promoteActionItem(id: $id) {
       id
       title
+      description
+      priority
       status
+      orderKey
+      dueDate
+      projectId
+      assigneeId
+      assignee {
+        id
+        name
+        email
+      }
+      tags {
+        id
+        name
+        color
+      }
     }
   }
 `;
