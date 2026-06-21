@@ -44,6 +44,7 @@
     "database": "workspace:*",
     "graphql": "^16.13.2",
     "graphql-voyager": "^2.1.0",
+    "google-auth-library": "^10.5.0",
     "nestjs-pino": "^4.6.1",
     "nodemailer": "^9.0.1",
     "passport": "^0.7.0",

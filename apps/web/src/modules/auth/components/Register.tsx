@@ -16,11 +16,13 @@ import { Input } from "../../../shared/ui/input";
 import { Label } from "../../../shared/ui/label";
 import LogoSquare from "../../../shared/components/LogoSquare";
 import { useAuth } from "../context/AuthContext";
+import { GoogleAuthButton } from "./GoogleAuthButton";
 
 export function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { register } = useAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (
@@ -84,6 +86,27 @@ export function Register() {
   };
 
   const passwordStrength = getPasswordStrength(formik.values.password);
+  const navigateAfterAuth = () => {
+    navigate(
+      `${from?.pathname ?? (invitedProjectId ? `/projects/${invitedProjectId}` : "/dashboard")}${from?.search ?? ""}`,
+      { replace: true },
+    );
+  };
+
+  const handleGoogleCredential = async (credential: string) => {
+    setGoogleLoading(true);
+    try {
+      await loginWithGoogle({
+        credential,
+        invitationToken,
+      });
+      navigateAfterAuth();
+    } catch {
+      // The Apollo error link shows the server-provided user message.
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -99,6 +122,20 @@ export function Register() {
               Create an account
             </h2>
             <p className="text-gray-600">Get started with Knoxt.io</p>
+          </div>
+
+          <GoogleAuthButton
+            mode="register"
+            loading={googleLoading}
+            onCredential={handleGoogleCredential}
+          />
+
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gray-200" />
+            <span className="text-xs font-medium uppercase text-gray-400">
+              or
+            </span>
+            <div className="h-px flex-1 bg-gray-200" />
           </div>
 
           <form onSubmit={formik.handleSubmit} className="space-y-5">
