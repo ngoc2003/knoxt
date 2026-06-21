@@ -138,16 +138,18 @@ export function Layout() {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
               Projects
             </p>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              aria-label="Add project"
-              onClick={() => setIsProjectModalOpen(true)}
-            >
-              <Plus className="size-4" />
-            </Button>
+            {!!projects.length && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                aria-label="Add project"
+                onClick={() => setIsProjectModalOpen(true)}
+              >
+                <Plus className="size-4" />
+              </Button>
+            )}
           </div>
           <div className="space-y-1">
             {loading &&
@@ -199,14 +201,13 @@ export function Layout() {
               <button
                 type="button"
                 onClick={() => setIsProjectModalOpen(true)}
-                className="flex items-center gap-2 rounded-md border border-dashed border-gray-200 px-2.5 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50"
+                className="w-full flex items-center gap-2 rounded-md border border-dashed border-gray-200 px-2.5 py-3 text-xs font-medium text-gray-500 hover:bg-gray-50"
               >
                 <Plus className="size-4" />
                 Create your first project
               </button>
             )}
           </div>
-
         </div>
 
         {/* User Profile */}

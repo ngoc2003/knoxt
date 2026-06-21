@@ -64,6 +64,8 @@ jobs:
         env:
           POSTGRES_PASSWORD: ci-only-password
           JWT_SECRET: ci-only-jwt-secret
+          GOOGLE_CLIENT_ID: ci-only-google-client-id
+          VITE_GOOGLE_CLIENT_ID: ci-only-google-client-id
 
       - name: Lint
         run: pnpm lint

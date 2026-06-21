@@ -37,6 +37,7 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-freelancer_notebook}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?Set GOOGLE_CLIENT_ID in .env}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
       WEB_URL: ${WEB_URL:-http://localhost:8080}
     depends_on:
@@ -69,6 +70,7 @@ services:
       target: runner
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:?Set VITE_GOOGLE_CLIENT_ID in .env}
     depends_on:
       api:
         condition: service_healthy

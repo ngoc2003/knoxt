@@ -9,10 +9,12 @@ import { Label } from "../../../shared/ui/label";
 import { Checkbox } from "../../../shared/ui/checkbox";
 import LogoSquare from "../../../shared/components/LogoSquare";
 import { useAuth } from "../context/AuthContext";
+import { GoogleAuthButton } from "./GoogleAuthButton";
 
 export function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (
@@ -50,6 +52,20 @@ export function Login() {
     },
   });
 
+  const handleGoogleCredential = async (credential: string) => {
+    setGoogleLoading(true);
+    try {
+      await loginWithGoogle({ credential });
+      navigate(`${from?.pathname ?? "/dashboard"}${from?.search ?? ""}`, {
+        replace: true,
+      });
+    } catch {
+      // The Apollo error link shows the server-provided user message.
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-blue-50/50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -64,6 +80,20 @@ export function Login() {
               Welcome back
             </h2>
             <p className="text-gray-600">Login to your account</p>
+          </div>
+
+          <GoogleAuthButton
+            mode="login"
+            loading={googleLoading}
+            onCredential={handleGoogleCredential}
+          />
+
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gray-200" />
+            <span className="text-xs font-medium uppercase text-gray-400">
+              or
+            </span>
+            <div className="h-px flex-1 bg-gray-200" />
           </div>
 
           <form onSubmit={formik.handleSubmit} className="space-y-5">

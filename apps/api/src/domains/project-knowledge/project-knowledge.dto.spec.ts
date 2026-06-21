@@ -3,6 +3,7 @@ import {
   GraphQLSchemaFactory,
 } from '@nestjs/graphql';
 import { Test } from '@nestjs/testing';
+import { validate } from 'class-validator';
 import { GraphQLSchema } from 'graphql';
 import {
   CreateDecisionInput,
@@ -40,5 +41,20 @@ describe('project knowledge GraphQL inputs', () => {
     expect(fields).toHaveProperty('projectId');
     expect(fields).toHaveProperty('title');
     expect(fields).toHaveProperty('sourceNoteId');
+  });
+
+  it('allows scheduledAt on create meeting input validation', async () => {
+    const input = Object.assign(new CreateMeetingInput(), {
+      projectId: '550e8400-e29b-41d4-a716-446655440000',
+      title: 'Planning sync',
+      scheduledAt: new Date('2026-06-21T09:00:00.000Z'),
+    });
+
+    const errors = await validate(input, {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
+
+    expect(errors).toHaveLength(0);
   });
 });

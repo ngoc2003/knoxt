@@ -29,7 +29,7 @@ const errorLink = onError(({ error, operation }) => {
 
   if (CombinedGraphQLErrors.is(error)) {
     for (const err of error.errors) {
-      const isAuthMutation = ["Login", "Register"].includes(
+      const isAuthMutation = ["Login", "LoginWithGoogle", "Register"].includes(
         operation.operationName ?? "",
       );
       const hasAuthenticatedSession = Boolean(

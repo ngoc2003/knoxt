@@ -9,15 +9,23 @@ import { useQuery, useMutation } from "@apollo/client/react"; // Cleaned up impo
 
 import {
   LOGIN_MUTATION,
+  LOGIN_WITH_GOOGLE_MUTATION,
   REGISTER_MUTATION,
   GET_CURRENT_USER_QUERY,
 } from "../graphql/auth";
-import { User, LoginInput, RegisterInput, AuthResponse } from "@repo/types";
+import {
+  User,
+  LoginInput,
+  RegisterInput,
+  AuthResponse,
+  GoogleLoginInput,
+} from "@repo/types";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (data: LoginInput) => Promise<AuthResponse>;
+  loginWithGoogle: (data: GoogleLoginInput) => Promise<AuthResponse>;
   register: (data: RegisterInput) => Promise<AuthResponse>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -29,6 +37,10 @@ interface CurrentUserData {
 
 interface LoginData {
   login: AuthResponse;
+}
+
+interface LoginWithGoogleData {
+  loginWithGoogle: AuthResponse;
 }
 
 interface RegisterData {
@@ -54,6 +66,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [authLoading, setAuthLoading] = useState(true);
 
   const [loginMutation] = useMutation<LoginData>(LOGIN_MUTATION);
+  const [loginWithGoogleMutation] = useMutation<LoginWithGoogleData>(
+    LOGIN_WITH_GOOGLE_MUTATION,
+  );
   const [registerMutation] = useMutation<RegisterData>(REGISTER_MUTATION);
 
   // Modern Apollo useQuery: Handle results in useEffect or via 'data'
@@ -87,25 +102,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (data: LoginInput): Promise<AuthResponse> => {
     const result = await loginMutation({ variables: { data } });
     if (result.data?.login) {
-      const authResponse = result.data.login;
-      localStorage.setItem("accessToken", authResponse.accessToken);
-      localStorage.setItem("currentUser", JSON.stringify(authResponse.user));
-      setUser(authResponse.user);
-      return authResponse;
+      return storeAuthResponse(result.data.login);
     }
     throw new Error("Login failed");
+  };
+
+  const loginWithGoogle = async (
+    data: GoogleLoginInput,
+  ): Promise<AuthResponse> => {
+    const result = await loginWithGoogleMutation({ variables: { data } });
+    if (result.data?.loginWithGoogle) {
+      return storeAuthResponse(result.data.loginWithGoogle);
+    }
+    throw new Error("Google login failed");
   };
 
   const register = async (data: RegisterInput): Promise<AuthResponse> => {
     const result = await registerMutation({ variables: { data } });
     if (result.data?.register) {
-      const authResponse = result.data.register;
-      localStorage.setItem("accessToken", authResponse.accessToken);
-      localStorage.setItem("currentUser", JSON.stringify(authResponse.user));
-      setUser(authResponse.user);
-      return authResponse;
+      return storeAuthResponse(result.data.register);
     }
     throw new Error("Registration failed");
+  };
+
+  const storeAuthResponse = (authResponse: AuthResponse) => {
+    localStorage.setItem("accessToken", authResponse.accessToken);
+    localStorage.setItem("currentUser", JSON.stringify(authResponse.user));
+    setUser(authResponse.user);
+    return authResponse;
   };
 
   const logout = () => {
@@ -119,6 +143,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     loading: authLoading,
     login,
+    loginWithGoogle,
     register,
     logout,
     isAuthenticated: !!user,

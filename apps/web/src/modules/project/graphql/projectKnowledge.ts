@@ -58,6 +58,7 @@ export const PROJECT_KNOWLEDGE_QUERY = gql`
           externalAssigneeName
           dueDate
           status
+          deletedAt
           promotedTaskId
           assignee {
             id

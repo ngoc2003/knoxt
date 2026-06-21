@@ -281,7 +281,7 @@ export class ProjectKnowledgeService {
       {
         scheduledAt: 'desc',
       },
-      this.meetingInclude(),
+      this.meetingInclude(filter.includeDeleted),
     );
   }
 
@@ -660,62 +660,62 @@ export class ProjectKnowledgeService {
       input.types?.length ? input.types : Object.values(ProjectKnowledgeType),
     );
     const contains = { contains: query, mode: Prisma.QueryMode.insensitive };
-    const [notes, actions, decisions, meetings, requirements] =
+    const [notes, actionItems, decisions, meetings, requirements] =
       await Promise.all([
-      types.has(ProjectKnowledgeType.note)
-        ? this.prisma.note.findMany({
-            where: {
-              projectId: input.projectId,
-              deletedAt: null,
-              OR: [{ title: contains }, { content: contains }],
-            },
-          })
-        : [],
-      types.has(ProjectKnowledgeType.action)
-        ? this.prisma.actionItem.findMany({
-            where: {
-              deletedAt: null,
-              meeting: { projectId: input.projectId, deletedAt: null },
-              OR: [
-                { title: contains },
-                { description: contains },
-                { externalAssigneeName: contains },
-              ],
-            },
-          })
-        : [],
-      types.has(ProjectKnowledgeType.decision)
-        ? this.prisma.decision.findMany({
-            where: {
-              projectId: input.projectId,
-              deletedAt: null,
-              OR: [
-                { title: contains },
-                { description: contains },
-                { reason: contains },
-                { impact: contains },
-              ],
-            },
-          })
-        : [],
-      types.has(ProjectKnowledgeType.meeting)
-        ? this.prisma.meeting.findMany({
-            where: {
-              projectId: input.projectId,
-              deletedAt: null,
-              OR: [{ title: contains }, { summary: contains }],
-            },
-          })
-        : [],
-      types.has(ProjectKnowledgeType.requirement)
-        ? this.prisma.requirement.findMany({
-            where: {
-              projectId: input.projectId,
-              deletedAt: null,
-              OR: [{ title: contains }, { description: contains }],
-            },
-          })
-        : [],
+        types.has(ProjectKnowledgeType.note)
+          ? this.prisma.note.findMany({
+              where: {
+                projectId: input.projectId,
+                deletedAt: null,
+                OR: [{ title: contains }, { content: contains }],
+              },
+            })
+          : [],
+        types.has(ProjectKnowledgeType.action)
+          ? this.prisma.actionItem.findMany({
+              where: {
+                deletedAt: null,
+                meeting: { projectId: input.projectId, deletedAt: null },
+                OR: [
+                  { title: contains },
+                  { description: contains },
+                  { externalAssigneeName: contains },
+                ],
+              },
+            })
+          : [],
+        types.has(ProjectKnowledgeType.decision)
+          ? this.prisma.decision.findMany({
+              where: {
+                projectId: input.projectId,
+                deletedAt: null,
+                OR: [
+                  { title: contains },
+                  { description: contains },
+                  { reason: contains },
+                  { impact: contains },
+                ],
+              },
+            })
+          : [],
+        types.has(ProjectKnowledgeType.meeting)
+          ? this.prisma.meeting.findMany({
+              where: {
+                projectId: input.projectId,
+                deletedAt: null,
+                OR: [{ title: contains }, { summary: contains }],
+              },
+            })
+          : [],
+        types.has(ProjectKnowledgeType.requirement)
+          ? this.prisma.requirement.findMany({
+              where: {
+                projectId: input.projectId,
+                deletedAt: null,
+                OR: [{ title: contains }, { description: contains }],
+              },
+            })
+          : [],
       ]);
     const rows = [
       ...notes.map((x) => ({
@@ -724,10 +724,10 @@ export class ProjectKnowledgeService {
         text: x.content,
         status: null,
       })),
-      ...actions.map((x) => ({
+      ...actionItems.map((x) => ({
         ...x,
         type: ProjectKnowledgeType.action,
-        text: x.description ?? '',
+        text: x.description ?? x.title,
         status: x.status,
       })),
       ...decisions.map((x) => ({
@@ -785,11 +785,11 @@ export class ProjectKnowledgeService {
     });
   }
 
-  private meetingInclude() {
+  private meetingInclude(includeDeleted = false) {
     return {
       participants: { include: { user: true } },
       actionItems: {
-        where: { deletedAt: null },
+        where: includeDeleted ? undefined : { deletedAt: null },
         include: { assignee: true, promotedTask: true },
         orderBy: { createdAt: 'asc' as const },
       },

@@ -7,6 +7,7 @@ describe('validateEnvironment', () => {
     NODE_ENV: 'production',
     DATABASE_URL: 'postgresql://user:password@localhost:5432/database',
     JWT_SECRET: 'secret',
+    GOOGLE_CLIENT_ID: 'google-client-id',
     CORS_ORIGIN: 'https://app.example.com',
     WEB_URL: 'https://app.example.com',
   };
@@ -23,16 +24,17 @@ describe('validateEnvironment', () => {
         ...productionEnvironment,
         DATABASE_URL: undefined,
         JWT_SECRET: ' ',
+        GOOGLE_CLIENT_ID: '',
         CORS_ORIGIN: '',
       }),
     ).toThrow(
-      '[ENV VALIDATION] Missing required environment variables: DATABASE_URL, JWT_SECRET, CORS_ORIGIN',
+      '[ENV VALIDATION] Missing required environment variables: DATABASE_URL, JWT_SECRET, GOOGLE_CLIENT_ID, CORS_ORIGIN',
     );
   });
 
   it('rejects missing required variables in development', () => {
     expect(() => validateEnvironment({ NODE_ENV: 'development' })).toThrow(
-      '[ENV VALIDATION] Missing required environment variables: DATABASE_URL, JWT_SECRET, CORS_ORIGIN, WEB_URL',
+      '[ENV VALIDATION] Missing required environment variables: DATABASE_URL, JWT_SECRET, GOOGLE_CLIENT_ID, CORS_ORIGIN, WEB_URL',
     );
   });
 });

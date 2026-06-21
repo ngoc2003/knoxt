@@ -281,6 +281,11 @@ input DraftDecisionInput {
   title: String!
 }
 
+input GoogleLoginInput {
+  credential: String!
+  invitationToken: String
+}
+
 input ListCustomersInput {
   search: String
   status: CustomerStatus
@@ -395,6 +400,7 @@ type Mutation {
   deleteRequirement(id: String!): Requirement!
   deleteTask(id: String!): Task!
   login(data: LoginInput!): AuthResponse!
+  loginWithGoogle(data: GoogleLoginInput!): AuthResponse!
   markAllNotificationsRead: Boolean!
   moveNote(data: MoveNoteInput!): Note!
   moveTask(input: MoveTaskInput!): Task!

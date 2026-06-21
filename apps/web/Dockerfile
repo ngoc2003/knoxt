@@ -19,7 +19,9 @@ RUN pnpm install --frozen-lockfile --filter web...
 
 FROM dependencies AS builder
 ARG VITE_API_URL
+ARG VITE_GOOGLE_CLIENT_ID
 ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
 COPY apps/web apps/web
 COPY packages/config packages/config
 COPY packages/types packages/types
