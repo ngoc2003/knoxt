@@ -22,9 +22,7 @@ export class AuthResolver {
   }
 
   @Mutation(() => AuthResponse)
-  loginWithGoogle(
-    @Args('data') data: GoogleLoginInput,
-  ): Promise<AuthResponse> {
+  loginWithGoogle(@Args('data') data: GoogleLoginInput): Promise<AuthResponse> {
     return this.authService.loginWithGoogle(data);
   }
 }
