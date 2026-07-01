@@ -68,6 +68,18 @@ jobs:
             fi
 
             git fetch origin "$BRANCH"
+
+            REMOTE_SHA="$(git rev-parse "origin/$BRANCH")"
+            if [ -z "$EXPECTED_SHA" ]; then
+              EXPECTED_SHA="$REMOTE_SHA"
+            fi
+
+            if [ "$REMOTE_SHA" != "$EXPECTED_SHA" ]; then
+              echo "Skipping deploy: tested SHA $EXPECTED_SHA is no longer origin/$BRANCH ($REMOTE_SHA)."
+              echo "A newer commit exists on $BRANCH; its own CI run must pass before deployment."
+              exit 0
+            fi
+
             git checkout "$BRANCH"
             git pull --ff-only origin "$BRANCH"
 
