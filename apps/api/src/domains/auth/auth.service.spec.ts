@@ -68,9 +68,9 @@ describe('AuthService invitation acceptance', () => {
     authRepo.findByEmail.mockResolvedValue(null);
     authRepo.createUser.mockResolvedValue(
       createUser({
-      email: 'invited@example.com',
-      name: 'Invited User',
-      passwordHash: 'hash',
+        email: 'invited@example.com',
+        name: 'Invited User',
+        passwordHash: 'hash',
       }),
     );
 
