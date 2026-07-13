@@ -33,6 +33,11 @@ RUN pnpm --filter api --prod deploy /prod/api
 FROM node:${NODE_VERSION}-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
+# Keep the runtime OS packages patched. npm and Corepack are only needed by the
+# build stages; removing them also avoids shipping their unused dependency tree.
+RUN apk upgrade --no-cache \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 COPY --from=builder --chown=node:node /prod/api ./
 USER node
 EXPOSE 3000
