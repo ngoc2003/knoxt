@@ -16,7 +16,7 @@ concurrency:
 env:
   CI: true
   NODE_VERSION: 22.18.0
-  PNPM_VERSION: 9.0.0
+  PNPM_VERSION: 11.13.1
 
 jobs:
   quality:
