@@ -27,7 +27,9 @@ COPY packages/config packages/config
 COPY packages/types packages/types
 RUN pnpm --filter web build
 
-FROM nginxinc/nginx-unprivileged:1.27.5-alpine AS runner
+FROM nginxinc/nginx-unprivileged:1.30.3-alpine3.23 AS runner
+USER root
+RUN apk upgrade --no-cache
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder --chown=101:101 /app/apps/web/dist /usr/share/nginx/html
 USER 101
