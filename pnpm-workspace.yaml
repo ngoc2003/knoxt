@@ -16,3 +16,13 @@ overrides:
   "hono@<4.12.25": 4.12.25
   "multer@>=1.0.0 <2.2.0": 2.2.0
   "undici@>=7.0.0 <7.28.0": 7.28.0
+
+allowBuilds:
+  "@apollo/protobufjs": true
+  "@nestjs/core": true
+  "@prisma/engines": true
+  "@tailwindcss/oxide": true
+  bcrypt: true
+  esbuild: true
+  prisma: true
+  unrs-resolver: true
