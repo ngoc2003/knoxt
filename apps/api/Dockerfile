@@ -28,7 +28,7 @@ COPY apps/api apps/api
 RUN DATABASE_URL=postgresql://build:build@localhost:5432/build pnpm --filter database generate
 RUN pnpm --filter api build
 RUN find apps/api/dist -type f \( -name "*.d.ts" -o -name "*.js.map" -o -name "*.tsbuildinfo" \) -delete
-RUN pnpm --filter api --prod deploy /prod/api
+RUN pnpm --filter api --prod deploy --legacy /prod/api
 
 FROM node:${NODE_VERSION}-alpine AS runner
 ENV NODE_ENV=production
