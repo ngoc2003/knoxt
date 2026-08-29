@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, Plus } from "lucide-react";
+import { CalendarDays, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -8,6 +8,7 @@ export function ProjectMemoryQuickCapture({
   onQuickRecap,
   onQuickDecision,
   onQuickRequirement,
+  onOpenAiRecap,
 }: {
   onQuickRecap: (input: {
     title: string;
@@ -16,6 +17,7 @@ export function ProjectMemoryQuickCapture({
   }) => void;
   onQuickDecision: (title: string) => void;
   onQuickRequirement: (title: string) => void;
+  onOpenAiRecap: () => void;
 }) {
   const [recapTitle, setRecapTitle] = useState("");
   const [recapSummary, setRecapSummary] = useState("");
@@ -43,9 +45,20 @@ export function ProjectMemoryQuickCapture({
           setRecapActions("");
         }}
       >
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <CalendarDays className="size-4" />
-          New recap
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <CalendarDays className="size-4" />
+            New recap
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={onOpenAiRecap}
+          >
+            <Sparkles className="size-4" />
+            AI recap
+          </Button>
         </div>
         <Input
           placeholder="Meeting title"

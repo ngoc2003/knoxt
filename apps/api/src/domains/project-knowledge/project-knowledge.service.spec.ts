@@ -2,6 +2,7 @@ import { ProjectKnowledgeService } from './project-knowledge.service';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { ProjectAuthorizationService } from '../../core/authorization/project-authorization.service';
 import { ProjectKnowledgeType } from '../../core/common/enum/enums';
+import type { MeetingIntelligenceProvider } from './meeting-intelligence.provider';
 
 describe('ProjectKnowledgeService', () => {
   it('returns the linked task when an action item was already promoted', async () => {
@@ -248,6 +249,162 @@ describe('ProjectKnowledgeService', () => {
       type: ProjectKnowledgeType.action,
       title: 'Send launch proposal',
       status: 'open',
+    });
+  });
+
+  it('rejects short meeting transcripts', async () => {
+    const prisma = {} as unknown as PrismaService;
+    const authorization = {
+      assertPermission: jest.fn().mockResolvedValue(undefined),
+    } as unknown as ProjectAuthorizationService;
+    const provider = {
+      analyzeTranscript: jest.fn(),
+    } as unknown as MeetingIntelligenceProvider;
+    const service = new ProjectKnowledgeService(
+      prisma,
+      authorization,
+      provider,
+    );
+
+    await expect(
+      service.analyzeMeetingTranscript('user-1', {
+        projectId: 'project-1',
+        transcript: 'too short',
+      }),
+    ).rejects.toThrow('Transcript must contain at least 20 characters');
+    expect(provider.analyzeTranscript).not.toHaveBeenCalled();
+  });
+
+  it('normalizes a meeting intelligence draft from the provider', async () => {
+    const prisma = {} as unknown as PrismaService;
+    const authorization = {
+      assertPermission: jest.fn().mockResolvedValue(undefined),
+    } as unknown as ProjectAuthorizationService;
+    const provider = {
+      analyzeTranscript: jest.fn().mockResolvedValue({
+        title: ' Planning sync ',
+        summary: ' Agreed launch scope ',
+        decisions: [
+          {
+            title: ' Use Stripe ',
+            description: ' Stripe is simpler ',
+            reason: '',
+          },
+        ],
+        actionItems: [
+          {
+            title: ' Send proposal ',
+            description: ' Send by Friday ',
+            externalAssigneeName: ' Mina ',
+            dueDate: null,
+          },
+        ],
+        warnings: [' Check dates '],
+      }),
+    } as unknown as MeetingIntelligenceProvider;
+    const service = new ProjectKnowledgeService(
+      prisma,
+      authorization,
+      provider,
+    );
+
+    await expect(
+      service.analyzeMeetingTranscript('user-1', {
+        projectId: 'project-1',
+        transcript:
+          'Planning sync transcript with enough characters to analyze well.',
+      }),
+    ).resolves.toMatchObject({
+      title: 'Planning sync',
+      summary: 'Agreed launch scope',
+      decisions: [{ title: 'Use Stripe', reason: null }],
+      actionItems: [{ title: 'Send proposal', externalAssigneeName: 'Mina' }],
+      warnings: ['Check dates'],
+    });
+  });
+
+  it('throws a safe error when meeting intelligence returns malformed output', async () => {
+    const prisma = {} as unknown as PrismaService;
+    const authorization = {
+      assertPermission: jest.fn().mockResolvedValue(undefined),
+    } as unknown as ProjectAuthorizationService;
+    const provider = {
+      analyzeTranscript: jest.fn().mockResolvedValue({
+        title: '',
+        summary: '',
+        decisions: [],
+        actionItems: [],
+        warnings: [],
+      }),
+    } as unknown as MeetingIntelligenceProvider;
+    const service = new ProjectKnowledgeService(
+      prisma,
+      authorization,
+      provider,
+    );
+
+    await expect(
+      service.analyzeMeetingTranscript('user-1', {
+        projectId: 'project-1',
+        transcript:
+          'Planning sync transcript with enough characters to analyze well.',
+      }),
+    ).rejects.toThrow('AI returned an empty meeting draft');
+  });
+
+  it('saves meeting intelligence drafts transactionally', async () => {
+    const meeting = { id: 'meeting-1', projectId: 'project-1' };
+    const tx = {
+      meeting: {
+        create: jest.fn().mockResolvedValue(meeting),
+        findUniqueOrThrow: jest.fn().mockResolvedValue({
+          ...meeting,
+          title: 'Planning sync',
+          actionItems: [{ id: 'action-1' }],
+          participants: [],
+        }),
+      },
+      decision: { create: jest.fn().mockResolvedValue({ id: 'decision-1' }) },
+      actionItem: { create: jest.fn().mockResolvedValue({ id: 'action-1' }) },
+      activityLog: {
+        create: jest.fn().mockResolvedValue({ id: 'activity-1' }),
+      },
+    };
+    const prisma = {
+      $transaction: jest.fn((callback: (client: typeof tx) => unknown) =>
+        callback(tx),
+      ),
+    } as unknown as PrismaService;
+    const authorization = {
+      assertPermission: jest.fn().mockResolvedValue(undefined),
+    } as unknown as ProjectAuthorizationService;
+    const service = new ProjectKnowledgeService(prisma, authorization);
+
+    await expect(
+      service.saveMeetingIntelligenceDraft('user-1', {
+        projectId: 'project-1',
+        title: 'Planning sync',
+        summary: 'Agreed launch scope',
+        decisions: [{ title: 'Use Stripe', description: 'Stripe is simpler' }],
+        actionItems: [{ title: 'Send proposal', description: 'By Friday' }],
+      }),
+    ).resolves.toMatchObject({ id: 'meeting-1' });
+    expect(tx.meeting.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          projectId: 'project-1',
+          createdById: 'user-1',
+          status: 'completed',
+        }),
+      }),
+    );
+    expect(tx.decision.create).toHaveBeenCalledTimes(1);
+    expect(tx.actionItem.create).toHaveBeenCalledTimes(1);
+    expect(tx.activityLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: 'meeting-intelligence.saved',
+        entityId: 'meeting-1',
+      }),
     });
   });
 });

@@ -146,3 +146,27 @@ export class ProjectActivityPage {
   @Field(() => Int) take: number;
   @Field() hasMore: boolean;
 }
+
+@ObjectType()
+export class DraftDecision {
+  @Field() title: string;
+  @Field() description: string;
+  @Field(() => String, { nullable: true }) reason?: string | null;
+}
+
+@ObjectType()
+export class DraftActionItem {
+  @Field() title: string;
+  @Field(() => String, { nullable: true }) description?: string | null;
+  @Field(() => String, { nullable: true }) externalAssigneeName?: string | null;
+  @Field(() => GraphQLISODateTime, { nullable: true }) dueDate?: Date | null;
+}
+
+@ObjectType()
+export class MeetingIntelligenceDraft {
+  @Field() title: string;
+  @Field() summary: string;
+  @Field(() => [DraftDecision]) decisions: DraftDecision[];
+  @Field(() => [DraftActionItem]) actionItems: DraftActionItem[];
+  @Field(() => [String]) warnings: string[];
+}

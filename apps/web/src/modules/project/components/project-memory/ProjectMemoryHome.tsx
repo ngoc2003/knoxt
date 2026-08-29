@@ -16,6 +16,7 @@ export function ProjectMemoryHome({
   onQuickRecap,
   onQuickDecision,
   onQuickRequirement,
+  onOpenAiRecap,
   onQuickAction,
   onEditAction,
   onCompleteAction,
@@ -35,6 +36,7 @@ export function ProjectMemoryHome({
   }) => void;
   onQuickDecision: (title: string) => void;
   onQuickRequirement: (title: string) => void;
+  onOpenAiRecap: () => void;
   onQuickAction: (meetingId: string, title: string) => void;
   onEditAction: (meeting: MemoryEntity, action: ProjectAction) => void;
   onCompleteAction: (id: string) => void;
@@ -72,6 +74,7 @@ export function ProjectMemoryHome({
           onQuickRecap={onQuickRecap}
           onQuickDecision={onQuickDecision}
           onQuickRequirement={onQuickRequirement}
+          onOpenAiRecap={onOpenAiRecap}
         />
       ) : (
         <p className="rounded-md border border-dashed p-4 text-sm text-gray-500">

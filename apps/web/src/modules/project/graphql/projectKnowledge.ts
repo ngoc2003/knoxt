@@ -290,3 +290,76 @@ export const PROJECT_ACTIVITY = gql`
     }
   }
 `;
+
+export const ANALYZE_MEETING_TRANSCRIPT = gql`
+  mutation AnalyzeMeetingTranscript($input: AnalyzeMeetingTranscriptInput!) {
+    analyzeMeetingTranscript(input: $input) {
+      title
+      summary
+      warnings
+      decisions {
+        title
+        description
+        reason
+      }
+      actionItems {
+        title
+        description
+        externalAssigneeName
+        dueDate
+      }
+    }
+  }
+`;
+
+export const SAVE_MEETING_INTELLIGENCE_DRAFT = gql`
+  mutation SaveMeetingIntelligenceDraft(
+    $input: SaveMeetingIntelligenceDraftInput!
+  ) {
+    saveMeetingIntelligenceDraft(input: $input) {
+      id
+      projectId
+      title
+      scheduledAt
+      summary
+      status
+      createdAt
+      updatedAt
+      deletedAt
+      participants {
+        id
+        userId
+        externalName
+        externalEmail
+        user {
+          id
+          name
+          email
+          avatarUrl
+        }
+      }
+      actionItems {
+        id
+        meetingId
+        title
+        description
+        assigneeId
+        externalAssigneeName
+        dueDate
+        status
+        deletedAt
+        promotedTaskId
+        assignee {
+          id
+          name
+          email
+        }
+        promotedTask {
+          id
+          title
+          status
+        }
+      }
+    }
+  }
+`;

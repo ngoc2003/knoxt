@@ -22,6 +22,7 @@ const callbacks = {
   onQuickRecap: vi.fn(),
   onQuickDecision: vi.fn(),
   onQuickRequirement: vi.fn(),
+  onOpenAiRecap: vi.fn(),
   onQuickAction: vi.fn(),
   onEditAction: vi.fn(),
   onCompleteAction: vi.fn(),

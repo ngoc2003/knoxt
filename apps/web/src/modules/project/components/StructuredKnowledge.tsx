@@ -11,6 +11,7 @@ import { ProjectMemoryActivity } from "./project-memory/ProjectMemoryActivity";
 import { ProjectMemoryEntityList } from "./project-memory/ProjectMemoryEntityList";
 import { ProjectMemoryHome } from "./project-memory/ProjectMemoryHome";
 import { ProjectMemorySearch } from "./project-memory/ProjectMemorySearch";
+import { MeetingIntelligenceDialog } from "./project-memory/MeetingIntelligenceDialog";
 import type { MemoryKind } from "./project-memory/types";
 import { useProjectMemoryController } from "./project-memory/useProjectMemoryController";
 import type { PromotedTask } from "./project-memory/useProjectMemoryController";
@@ -28,6 +29,7 @@ export function StructuredKnowledge({
 }) {
   const memory = useProjectMemoryController(projectId, { onTaskCreated });
   const [activeTab, setActiveTab] = useState("home");
+  const [isAiRecapOpen, setIsAiRecapOpen] = useState(false);
 
   const openSearchResult = (type: string) => {
     if (type === "action" || type === "meeting") setActiveTab("meeting");
@@ -109,6 +111,7 @@ export function StructuredKnowledge({
               onQuickRecap={memory.quickRecap}
               onQuickDecision={memory.quickDecision}
               onQuickRequirement={memory.quickRequirement}
+              onOpenAiRecap={() => setIsAiRecapOpen(true)}
               onQuickAction={memory.quickAction}
               onEditAction={(meeting, action) =>
                 memory.openActionEditor(meeting.id, action)
@@ -165,6 +168,14 @@ export function StructuredKnowledge({
         onFormChange={memory.setActionItemForm}
         onClose={memory.closeActionEditor}
         onSave={() => void memory.saveAction()}
+      />
+      <MeetingIntelligenceDialog
+        projectId={projectId}
+        open={isAiRecapOpen}
+        onOpenChange={setIsAiRecapOpen}
+        onSaved={async () => {
+          await memory.refresh();
+        }}
       />
     </Card>
   );

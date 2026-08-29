@@ -38,6 +38,25 @@ export type ProjectAction = {
 
 export type MemoryForm = Record<string, string>;
 
+export type MeetingIntelligenceDraft = {
+  title: string;
+  summary: string;
+  warnings: string[];
+  decisions: {
+    title: string;
+    description: string;
+    reason?: string | null;
+    selected?: boolean;
+  }[];
+  actionItems: {
+    title: string;
+    description?: string | null;
+    externalAssigneeName?: string | null;
+    dueDate?: string | null;
+    selected?: boolean;
+  }[];
+};
+
 export const statusOptions: Record<MemoryKind, string[]> = {
   decision: ["proposed", "accepted", "superseded", "rejected"],
   meeting: ["scheduled", "completed", "cancelled"],

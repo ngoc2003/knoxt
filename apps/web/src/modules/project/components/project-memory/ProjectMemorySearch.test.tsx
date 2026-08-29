@@ -3,23 +3,26 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ProjectMemorySearch } from "./ProjectMemorySearch";
 
 vi.mock("@apollo/client/react", () => ({
-  useQuery: () => ({
-    data: {
-      projectKnowledgeSearch: {
-        items: [
-          {
-            id: "action-1",
-            type: "action",
-            title: "Send proposal",
-            snippet: "Send proposal",
-            status: "open",
-          },
-        ],
+  useLazyQuery: () => [
+    vi.fn(),
+    {
+      data: {
+        projectKnowledgeSearch: {
+          items: [
+            {
+              id: "action-1",
+              type: "action",
+              title: "Send proposal",
+              snippet: "Send proposal",
+              status: "open",
+            },
+          ],
+        },
       },
+      error: undefined,
+      loading: false,
     },
-    error: undefined,
-    loading: false,
-  }),
+  ],
 }));
 
 describe("ProjectMemorySearch", () => {
@@ -37,7 +40,7 @@ describe("ProjectMemorySearch", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /send proposal/i }));
 
-    expect(screen.getByText("Actions")).toBeInTheDocument();
+    expect(screen.getByText("action")).toBeInTheDocument();
     expect(onOpenResult).toHaveBeenCalledWith(
       expect.objectContaining({ id: "action-1", type: "action" }),
     );

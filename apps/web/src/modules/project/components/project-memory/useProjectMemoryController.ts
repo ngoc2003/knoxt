@@ -339,6 +339,7 @@ export function useProjectMemoryController(
     openActionEditor,
     openEditor,
     query,
+    refresh: refetch,
     quickAction,
     quickDecision,
     quickRecap,
@@ -362,7 +363,6 @@ export function useProjectMemoryController(
       void promote({ variables: { id } }).then(async (result) => {
         const task = (result.data as { promoteActionItem?: PromotedTask })
           .promoteActionItem;
-        await refetch();
         if (task) await options.onTaskCreated?.(task);
       }),
   };
