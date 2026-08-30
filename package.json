@@ -14,9 +14,9 @@
     "test:ci": "turbo run test:ci"
   },
   "devDependencies": {
-    "@types/lodash": "^4.17.24",
-    "prettier": "^3.7.4",
-    "turbo": "^2.9.3",
+    "@types/lodash": "^4.17.25",
+    "prettier": "^3.9.6",
+    "turbo": "^2.10.12",
     "typescript": "5.9.2"
   },
   "packageManager": "pnpm@11.13.1",
